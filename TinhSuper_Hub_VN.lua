@@ -2782,6 +2782,30 @@ local FarmLevel = L_1_[93]["Main"]:AddToggle({
 local isInSea3 = false
 local isTeleporting = false
 
+-- 🔹 AUTO EQUIP WEAPON ĐÃ CHỌN
+local function AutoEquipWeapon()
+	if not _G.SelectWeapon then return end
+	local char = plr.Character
+	if not char then return end
+
+	local hum = char:FindFirstChild("Humanoid")
+	if not hum then return end
+
+	-- nếu đang cầm đúng weapon thì bỏ qua
+	local currentTool = char:FindFirstChildOfClass("Tool")
+	if currentTool and currentTool.Name == _G.SelectWeapon then
+		return
+	end
+
+	-- tìm trong Backpack và equip
+	for _, tool in pairs(plr.Backpack:GetChildren()) do
+		if tool:IsA("Tool") and tool.Name == _G.SelectWeapon then
+			hum:EquipTool(tool)
+			break
+		end
+	end
+end
+
 local function CheckSubmergedIsland()
 	local char = plr.Character
 	if not char then return false end
@@ -2794,6 +2818,7 @@ local function CheckSubmergedIsland()
 
 	return (currentPos - targetPos).Magnitude < 2000
 end
+
 task.spawn(function()
 	while task.wait(Sec) do
 		if _G.Level then
@@ -2878,6 +2903,10 @@ task.spawn(function()
 								found = true
 								repeat
 									task.wait(Sec)
+
+									-- ✅ AUTO EQUIP TRƯỚC KHI ĐÁNH
+									AutoEquipWeapon()
+
 									_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
 									L_1_[4].Kill(mob, _G.Level)
 								until not _G.Level
@@ -2914,15 +2943,20 @@ spawn(function()
 		pcall(function()
 			if _G.AutoFarmNear then
 				for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-					if enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") then
-						if enemy.Humanoid.Health > 0 then
-							repeat
-								wait()
-								L_1_[4].Kill(enemy, _G.AutoFarmNear)
-							until not _G.AutoFarmNear
-								or not enemy.Parent
-								or enemy.Humanoid.Health <= 0
-						end
+					if enemy:FindFirstChild("Humanoid")
+					and enemy:FindFirstChild("HumanoidRootPart")
+					and enemy.Humanoid.Health > 0 then
+
+						repeat
+							wait()
+
+							-- ✅ AUTO CẦM WEAPON ĐÃ CHỌN
+							AutoEquipWeapon()
+
+							L_1_[4].Kill(enemy, _G.AutoFarmNear)
+						until not _G.AutoFarmNear
+							or not enemy.Parent
+							or enemy.Humanoid.Health <= 0
 					end
 				end
 			end
@@ -2946,6 +2980,7 @@ spawn(function()
 				if CoreEnemy then
 					repeat
 						wait()
+						AutoEquipWeapon()
 						EquipWeapon(_G.SelectWeapon)
 						_tp(CFrame.new(448.46756, 199.356781, -441.389252))
 					until CoreEnemy.Humanoid.Health <= 0
@@ -2986,6 +3021,7 @@ spawn(function()
 							if (Enemy.HumanoidRootPart.Position - Root.Position).Magnitude <= 2000 then
 								repeat
 									wait()
+									AutoEquipWeapon()
 									L_1_[4].Kill(Enemy, _G.AutoRaidCastle)
 								until not _G.AutoRaidCastle
 									or not Enemy.Parent
@@ -3043,6 +3079,7 @@ spawn(function()
 				if L_1_[4].Alive(Enemy) then
 					repeat
 						wait()
+						AutoEquipWeapon()
 						L_1_[4].Kill(Enemy, _G.AutoEctoplasm)
 					until not _G.AutoEctoplasm
 						or not Enemy.Parent
@@ -3505,21 +3542,28 @@ L_1_[93]["Main"]:AddToggle({
 		_G["AutoKillMob"] = L_406_[2]
 	end
 })
+
 spawn(function()
 	while wait() do
 		if _G["AutoKillMob"] then
 			pcall(function()
-				if (game:GetService("Workspace"))["Enemies"]:FindFirstChild((getgenv())["SelectMob"]) then
-					for L_407_forvar0, L_408_forvar1 in pairs((game:GetService("Workspace"))["Enemies"]:GetChildren()) do
-						local L_409_ = {}
-						L_409_[3], L_409_[1] = L_407_forvar0, L_408_forvar1
-						if L_409_[1]["Name"] == (getgenv())["SelectMob"] then
-							if L_409_[1]:FindFirstChild("Humanoid") and (L_409_[1]:FindFirstChild("HumanoidRootPart") and L_409_[1]["Humanoid"]["Health"] > 0) then
-								repeat
-									(game:GetService("RunService"))["Heartbeat"]:Wait()
-									L_1_[4]["Kill"](L_409_[1], _G["AutoKillMob"])
-								until not _G["AutoKillMob"] or not L_409_[1]["Parent"] or L_409_[1]["Humanoid"]["Health"] <= 0
-							end
+				if workspace.Enemies:FindFirstChild(getgenv()["SelectMob"]) then
+					for _, mob in pairs(workspace.Enemies:GetChildren()) do
+						if mob.Name == getgenv()["SelectMob"]
+						and mob:FindFirstChild("Humanoid")
+						and mob:FindFirstChild("HumanoidRootPart")
+						and mob.Humanoid.Health > 0 then
+
+							repeat
+								game:GetService("RunService").Heartbeat:Wait()
+
+								-- ✅ AUTO CẦM WEAPON ĐÃ CHỌN
+								AutoEquipWeapon()
+
+								L_1_[4].Kill(mob, _G["AutoKillMob"])
+							until not _G["AutoKillMob"]
+								or not mob.Parent
+								or mob.Humanoid.Health <= 0
 						end
 					end
 				end
@@ -3634,55 +3678,89 @@ elseif World2 then
 elseif World3 then
 	L_1_[60] = L_1_[98]
 end
-
 L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Tự động Farm quái ở tất cả đảo",
-	["Default"] = false;
-	["Callback"] = function(L_416_arg0)
-		local L_417_ = {}
-		L_417_[1] = L_416_arg0
-		_G["AutoFarmIsland"] = L_417_[1]
+	["Name"] = "Tự động farm quái theo đảo",
+	["Default"] = false,
+	["Callback"] = function(Value)
+		_G.AutoFarmIsland = Value
 	end
 })
-task["spawn"](function()
-	while task["wait"](.2) do
-		local L_418_ = {}
-		if not _G["AutoFarmIsland"] then
-			continue
+
+task.spawn(function()
+	while task.wait(0.2) do
+		if not _G.AutoFarmIsland then continue end
+		if not _G.SelectIsland then continue end
+		if not L_1_[60] then continue end
+
+		local IslandData = L_1_[60][_G.SelectIsland]
+		if not IslandData then continue end
+
+		local IslandCFrame = IslandData.CFrame
+		local MobList = IslandData.Mobs
+
+		-- Danh sách quái hợp lệ
+		local ValidMobs = {}
+		for _, mobName in ipairs(MobList) do
+			ValidMobs[mobName] = true
 		end
-		if not _G["SelectIsland"] then
-			continue
-		end
-		if not L_1_[60] then
-			continue
-		end
-		L_418_[1] = L_1_[60][_G["SelectIsland"]]
-		if not L_418_[1] then
-			continue
-		end
-		L_418_[3] = L_418_[1]["CFrame"]
-		L_418_[2] = L_418_[1]["Mobs"]
-		L_418_[5] = {}
-		for L_419_forvar0, L_420_forvar1 in ipairs(L_418_[2]) do
-			local L_421_ = {}
-			L_421_[3], L_421_[1] = L_419_forvar0, L_420_forvar1
-			L_418_[5][L_421_[1]] = true
-		end
-		L_418_[4] = false
-		for L_422_forvar0, L_423_forvar1 in pairs(workspace["Enemies"]:GetChildren()) do
-			local L_424_ = {}
-			L_424_[3], L_424_[2] = L_422_forvar0, L_423_forvar1
-			if L_418_[5][L_424_[2]["Name"]] and (L_424_[2]:FindFirstChild("Humanoid") and (L_424_[2]:FindFirstChild("HumanoidRootPart") and L_424_[2]["Humanoid"]["Health"] > 0)) then
-				L_418_[4] = true
+
+		local FoundMob = false
+
+		for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+			if ValidMobs[enemy.Name]
+				and enemy:FindFirstChild("Humanoid")
+				and enemy:FindFirstChild("HumanoidRootPart")
+				and enemy.Humanoid.Health > 0 then
+
+				FoundMob = true
 				repeat
-					task["wait"]()
-					_tp(L_424_[2]["HumanoidRootPart"]["CFrame"] * CFrame["new"](0, 10, 0))
-					L_1_[4]["Kill"](L_424_[2], true)
-				until not _G["AutoFarmIsland"] or not L_424_[2]["Parent"] or L_424_[2]["Humanoid"]["Health"] <= 0
+					task.wait()
+					_tp(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+					L_1_[4].Kill(enemy, true)
+				until not _G.AutoFarmIsland
+					or not enemy.Parent
+					or enemy.Humanoid.Health <= 0
 			end
 		end
-		if not L_418_[4] then
-			_tp(L_418_[3])
+
+		if not FoundMob then
+			_tp(IslandCFrame)
+		end
+	end
+end)
+L_1_[93]["Main"]:AddToggle({
+	["Name"] = "Tự động giết quái đã chọn",
+	["Default"] = false,
+	["Callback"] = function(Value)
+		_G.AutoKillMob = Value
+	end
+})
+
+spawn(function()
+	while wait() do
+		if _G.AutoKillMob then
+			pcall(function()
+				if workspace.Enemies:FindFirstChild(getgenv().SelectMob) then
+					for _, mob in pairs(workspace.Enemies:GetChildren()) do
+						if mob.Name == getgenv().SelectMob
+							and mob:FindFirstChild("Humanoid")
+							and mob:FindFirstChild("HumanoidRootPart")
+							and mob.Humanoid.Health > 0 then
+
+							repeat
+								game:GetService("RunService").Heartbeat:Wait()
+
+								-- ✅ Tự động cầm vũ khí đã chọn
+								AutoEquipWeapon()
+
+								L_1_[4].Kill(mob, _G.AutoKillMob)
+							until not _G.AutoKillMob
+								or not mob.Parent
+								or mob.Humanoid.Health <= 0
+						end
+					end
+				end
+			end)
 		end
 	end
 end)
@@ -3780,6 +3858,7 @@ spawn(function()
 							_tp(L_435_[2]["HumanoidRootPart"]["CFrame"] * CFrame["new"](0, 30, 0))
 							repeat
 								wait()
+								AutoEquipWeapon()
 								L_1_[4]["Kill"](L_435_[2], _G["FarmEliteHunt"])
 							until not _G["FarmEliteHunt"] or not L_435_[2]["Parent"] or L_435_[2]["Humanoid"]["Health"] <= 0 or not L_429_[2]["Visible"]
 						else
@@ -3898,6 +3977,7 @@ spawn(function()
 							_tp(L_456_[1]["HumanoidRootPart"]["CFrame"] * CFrame["new"](0, 30, 0))
 							repeat
 								wait()
+								AutoEquipWeapon()
 								L_1_[4]["Kill"](L_456_[1], _G["FarmEliteH"])
 							until not _G["FarmEliteH"] or not L_456_[1]["Parent"] or L_456_[1]["Humanoid"]["Health"] <= 0 or not L_450_[2]["Visible"]
 						else
@@ -3939,6 +4019,7 @@ spawn(function()
 				if not GetWP("Dark Dagger") or not GetIn("Valkyrie") and L_465_[2] then
 					repeat
 						wait()
+						AutoEquipWeapon()
 						L_1_[4]["Kill"](L_465_[2], _G["AutoRipIngay"])
 					until not _G["AutoRipIngay"] or not L_465_[2]["Parent"] or L_465_[2]["Humanoid"]["Health"] <= 0
 				else
@@ -4125,6 +4206,7 @@ spawn(function()
 					if L_485_[2] then
 						repeat
 							task["wait"]()
+							AutoEquipWeapon()
 							L_1_[4]["Kill"](L_485_[2], _G["Auto_Cake_Prince"])
 						until not _G["Auto_Cake_Prince"] or not L_485_[2]["Parent"] or L_485_[2]["Humanoid"]["Health"] <= 0 or L_482_[7] and L_482_[7]["Other"]["Transparency"] == 0
 					else
@@ -4247,6 +4329,7 @@ spawn(function()
 					if L_494_[2] then
 						repeat
 							task["wait"]()
+							AutoEquipWeapon()
 							L_1_[4]["Kill"](L_494_[2], _G["AutoDoughKing"])
 						until _G["AutoDoughKing"] == false or not L_494_[2]["Parent"] or L_494_[2]["Humanoid"]["Health"] <= 0
 					else
@@ -4275,6 +4358,7 @@ spawn(function()
 				if L_497_[1] then
 					repeat
 						task["wait"]()
+						AutoEquipWeapon()
 						L_1_[4]["Kill"](L_497_[1], _G["AutoAttackDoughKing"])
 					until not _G["AutoAttackDoughKing"] or not L_497_[1]["Parent"] or L_497_[1]["Humanoid"]["Health"] <= 0
 				else
@@ -4330,6 +4414,7 @@ spawn(function()
 				if L_504_[2] then
 					repeat
 						task["wait"]()
+						AutoEquipWeapon()
 						L_1_[4]["Kill"](L_504_[2], _G["AutoHop_Dough"])
 					until not _G["AutoHop_Dough"] or not L_504_[2]["Parent"] or L_504_[2]["Humanoid"]["Health"] <= 0
 				else
@@ -4550,6 +4635,7 @@ spawn(function()
 			if L_515_[2] then
 				repeat
 					wait()
+					AutoEquipWeapon()
 					L_1_[4]["Kill"](L_515_[2], true)
 				until not _G["AutoFarm_Bone"] or not L_515_[2]["Parent"] or L_515_[2]["Humanoid"]["Health"] <= 0
 			else
@@ -4761,6 +4847,7 @@ spawn(function()
 					_tp(CFrame["new"](L_538_[1]))
 					repeat
 						wait()
+						AutoEquipWeapon()
 					until not _G["FarmTyrant"] or L_1_[136]["Character"] and (L_1_[136]["Character"]:FindFirstChild("HumanoidRootPart") and (L_1_[136]["Character"]["HumanoidRootPart"]["Position"] - L_538_[1])["Magnitude"] <= 5)
 				end
 				L_538_[4] = workspace["Enemies"]:FindFirstChild("Tyrant of the Skies")
@@ -4960,6 +5047,7 @@ spawn(function()
 
 			repeat
 				wait()
+				AutoEquipWeapon()
 				L_1_[4].Kill(L_567_arg0, (getgenv())["AutoMaterial"])
 			until not (getgenv())["AutoMaterial"]
 				or not L_567_arg0.Parent
@@ -5069,6 +5157,7 @@ FarmBoss = L_1_[93]["Main"]:AddToggle({
 									if L_1_[4]["Alive"](L_592_[1]) and L_592_[1]["Name"] == (QuestBeta())[1] then
 										repeat
 											wait()
+											AutoEquipWeapon()
 											L_1_[4]["Kill"](L_592_[1], _G["FarmBoss"])
 										until not _G["FarmBoss"] or L_592_[1]["Humanoid"]["Health"] <= 0 or not L_592_[1]["Parent"]
 									end
@@ -5227,6 +5316,7 @@ spawn(function()
 						HealthM = (L_611_[2]["Humanoid"]["MaxHealth"] * 70) / 100
 						repeat
 							wait()
+							AutoEquipWeapon()
 							MousePos = L_611_[2]["HumanoidRootPart"]["Position"]
 							L_1_[4]["Mas"](L_611_[2], _G["FarmMastery_Dev"])
 						until _G["FarmMastery_Dev"] == false or L_611_[2]["Humanoid"]["Health"] <= 0 or not L_611_[2]["Parent"]
@@ -5251,114 +5341,104 @@ spawn(function()
 		end
 	end
 end)
+-- Toggle Auto Farm Mastery Gun
 L_1_[46] = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Tự Động Cày Thông Thạo Súng",
-	["Description"] = "";
-	["Default"] = false;
-	["Callback"] = function(L_613_arg0)
-		local L_614_ = {}
-		L_614_[1] = L_613_arg0
-		_G["FarmMastery_G"] = L_614_[1]
+	["Name"] = "Tự động cày thông thạo Súng",
+	["Description"] = "",
+	["Default"] = false,
+	["Callback"] = function(Value)
+		_G.FarmMastery_G = Value
 	end
 })
+
+-- Hàm auto cầm Súng
+local function AutoEquipGun()
+	if not _G.FarmMastery_G then return end
+
+	local char = L_1_[136].Character
+	if not char then return end
+
+	-- Nếu đang cầm Gun rồi thì thôi
+	local tool = char:FindFirstChildOfClass("Tool")
+	if tool and tool.ToolTip == "Gun" then return end
+
+	-- Tìm Gun trong Backpack
+	for _, v in pairs(L_1_[136].Backpack:GetChildren()) do
+		if v:IsA("Tool") and v.ToolTip == "Gun" then
+			char.Humanoid:EquipTool(v)
+			break
+		end
+	end
+end
 spawn(function()
 	while wait(Sec) do
-		if _G["FarmMastery_G"] then
-			pcall(function()
-				if SelectIsland == "Cake" then
-					local L_615_ = {}
-					L_615_[2] = GetConnectionEnemies(L_1_[122])
-					if L_615_[2] then
-						HealthM = (L_615_[2]["Humanoid"]["MaxHealth"] * 70) / 100
-						repeat
-							local L_616_ = {}
-							wait()
-							MousePos = L_615_[2]["HumanoidRootPart"]["Position"]
-							L_1_[4]["Masgun"](L_615_[2], _G["FarmMastery_G"])
-							L_616_[2] = L_1_[18]:FindFirstChild("Modules")
-							L_616_[1] = L_616_[2]:FindFirstChild("Net")
-							L_616_[3] = L_616_[1]:FindFirstChild("RE/ShootGunEvent")
-							if (L_1_[136]["Character"]:FindFirstChildOfClass("Tool"))["ToolTip"] ~= "Gun" then
-								return
-							end
-							if L_1_[136]["Character"]:FindFirstChildOfClass("Tool") and (L_1_[136]["Character"]:FindFirstChildOfClass("Tool"))["Name"] == "Skull Guitar" then
-								SoulGuitar = true;
-								(L_1_[136]["Character"]:FindFirstChildOfClass("Tool"))["RemoteEvent"]:FireServer("TAP", MousePos)
-								if _G["FarmMastery_G"] then
-									vim1:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-									wait(.05)
-									vim1:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-									wait(.05)
-								end
-							elseif L_1_[136]["Character"]:FindFirstChildOfClass("Tool") and (L_1_[136]["Character"]:FindFirstChildOfClass("Tool"))["Name"] ~= "Skull Guitar" then
-								SoulGuitar = false
-								L_616_[3]:FireServer(MousePos, {
-									L_615_[2]["HumanoidRootPart"]
-								})
-								if _G["FarmMastery_G"] then
-									vim1:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-									wait(.05)
-									vim1:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-									wait(.05)
-								end
-							end
-						until _G["FarmMastery_G"] == false or L_615_[2]["Humanoid"]["Health"] <= 0 or not L_615_[2]["Parent"]
-						SoulGuitar = false
-					else
-						_tp(CFrame["new"](-1943.6765136719, 251.50956726074, -12337.880859375))
-					end
-				elseif SelectIsland == "Bone" then
-					local L_617_ = {}
-					L_617_[2] = GetConnectionEnemies(L_1_[95])
-					if L_617_[2] then
-						HealthM = (L_617_[2]["Humanoid"]["MaxHealth"] * 70) / 100
-						repeat
-							local L_618_ = {}
-							wait()
-							MousePos = L_617_[2]["HumanoidRootPart"]["Position"]
-							L_1_[4]["Masgun"](L_617_[2], _G["FarmMastery_G"])
-							L_618_[2] = L_1_[18]:FindFirstChild("Modules")
-							L_618_[4] = L_618_[2]:FindFirstChild("Net")
-							L_618_[3] = L_618_[4]:FindFirstChild("RE/ShootGunEvent")
-							if (L_1_[136]["Character"]:FindFirstChildOfClass("Tool"))["ToolTip"] ~= "Gun" then
-								return
-							end
-							if L_1_[136]["Character"]:FindFirstChildOfClass("Tool") and (L_1_[136]["Character"]:FindFirstChildOfClass("Tool"))["Name"] == "Skull Guitar" then
-								SoulGuitar = true;
-								(L_1_[136]["Character"]:FindFirstChildOfClass("Tool"))["RemoteEvent"]:FireServer("TAP", MousePos)
-								if _G["FarmMastery_G"] then
-									vim1:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-									wait(.05)
-									vim1:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-									wait(.05)
-								end
-							elseif L_1_[136]["Character"]:FindFirstChildOfClass("Tool") and (L_1_[136]["Character"]:FindFirstChildOfClass("Tool"))["Name"] ~= "Skull Guitar" then
-								SoulGuitar = false
-								L_618_[3]:FireServer(MousePos, {
-									L_617_[2]["HumanoidRootPart"]
-								})
-								if _G["FarmMastery_G"] then
-									vim1:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-									wait(.05)
-									vim1:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-									wait(.05)
-								end
-							end
-						until _G["FarmMastery_G"] == false or L_617_[2]["Humanoid"]["Health"] <= 0 or not L_617_[2]["Parent"]
-						SoulGuitar = false
-					else
-						_tp(CFrame["new"](-9495.6806640625, 453.58624267578, 5977.3486328125))
-					end
+		if not _G.FarmMastery_G then continue end
+
+		pcall(function()
+			local Enemy, TelePos
+
+			-- 📍 Đảo Cake
+			if SelectIsland == "Cake" then
+				Enemy = GetConnectionEnemies(L_1_[122])
+				TelePos = CFrame.new(-1943.6765, 251.5095, -12337.8809)
+
+			-- 📍 Đảo Bone
+			elseif SelectIsland == "Bone" then
+				Enemy = GetConnectionEnemies(L_1_[95])
+				TelePos = CFrame.new(-9495.6807, 453.5862, 5977.3486)
+			end
+
+			if not Enemy then
+				_tp(TelePos)
+				return
+			end
+
+			-- HP mục tiêu (70%)
+			HealthM = (Enemy.Humanoid.MaxHealth * 70) / 100
+
+			repeat
+				wait()
+
+				if not _G.FarmMastery_G then break end
+				if not Enemy.Parent or Enemy.Humanoid.Health <= 0 then break end
+
+				-- ✅ AUTO CẦM SÚNG
+				AutoEquipGun()
+
+				MousePos = Enemy.HumanoidRootPart.Position
+				L_1_[4].Masgun(Enemy, true)
+
+				local tool = L_1_[136].Character:FindFirstChildOfClass("Tool")
+				if not tool or tool.ToolTip ~= "Gun" then
+					continue
 				end
-			end)
-		end
+
+				-- 🎸 Skull Guitar
+				if tool.Name == "Skull Guitar" then
+					SoulGuitar = true
+					tool.RemoteEvent:FireServer("TAP", MousePos)
+
+				-- 🔫 Súng thường
+				else
+					SoulGuitar = false
+					game.ReplicatedStorage.Modules.Net["RE/ShootGunEvent"]
+						:FireServer(MousePos, { Enemy.HumanoidRootPart })
+				end
+
+				-- Fake click
+				vim1:SendMouseButtonEvent(0,0,0,true,game,1)
+				wait(0.05)
+				vim1:SendMouseButtonEvent(0,0,0,false,game,1)
+				wait(0.05)
+
+			until not _G.FarmMastery_G
+
+			SoulGuitar = false
+		end)
 	end
 end)
 L_1_[29] = L_1_[93]["Main"]:AddToggle({
-	["Name"] = L_1_[2]({
-		"Tự Động Cày Thông Thạo Tất C",
-		"ả Kiếm"
-	}),
+	["Name"] = "Tự Động Cày Thông Thạo Tất Cả Kiếm",
 	["Description"] = "",
 	["Default"] = false;
 	["Callback"] = function(L_619_arg0)
@@ -5367,6 +5447,7 @@ L_1_[29] = L_1_[93]["Main"]:AddToggle({
 		_G["FarmMastery_S"] = L_620_[2]
 	end
 })
+
 spawn(function()
 	while wait(Sec) do
 		pcall(function()
@@ -5386,7 +5467,9 @@ spawn(function()
 											repeat
 												wait()
 												L_1_[4]["Sword"](L_624_[2], _G["FarmMastery_S"])
-											until _G["FarmMastery_S"] == false or not L_624_[2]["Parent"] or L_624_[2]["Humanoid"]["Health"] <= 0
+											until _G["FarmMastery_S"] == false 
+												or not L_624_[2]["Parent"] 
+												or L_624_[2]["Humanoid"]["Health"] <= 0
 										else
 											_tp(CFrame["new"](-1943.6765136719, 251.50956726074, -12337.880859375))
 										end
@@ -5404,6 +5487,7 @@ spawn(function()
 							end
 						end
 					end
+
 				elseif SelectIsland == "Bone" then
 					for L_625_forvar0, L_626_forvar1 in next, L_1_[18]["Remotes"]["CommF_"]:InvokeServer("getInventory") do
 						local L_627_ = {}
@@ -5419,7 +5503,9 @@ spawn(function()
 											repeat
 												wait()
 												L_1_[4]["Sword"](L_628_[2], _G["FarmMastery_S"])
-											until _G["FarmMastery_S"] == false or not L_628_[2]["Parent"] or L_628_[2]["Humanoid"]["Health"] <= 0
+											until _G["FarmMastery_S"] == false 
+												or not L_628_[2]["Parent"] 
+												or L_628_[2]["Humanoid"]["Health"] <= 0
 										else
 											_tp(CFrame["new"](-9495.6806640625, 453.58624267578, 5977.3486328125))
 										end
@@ -13553,71 +13639,72 @@ spawn(function()
 	end
 end)
 L_1_[93]["Raids"]:AddDropdown({
-	["Name"] = "Chọn Trái Cây Trong Cửa Hàng";
+	["Name"] = "Chọn Trái Cây Trong Cửa Hàng",
 	["Options"] = {
-		"Rocket-Rocket",
-		"Spin-Spin";
-		"Blade-Blade",
-		"Spring-Spring";
-		"Bomb-Bomb",
-		"Smoke-Smoke";
-		"Spike-Spike",
-		"Flame-Flame";
-		"Ice-Ice";
-		"Sand-Sand";
-		"Dark-Dark";
-		"Eagle-Eagle",
-		"Diamond-Diamond";
-		"Light-Light";
-		"Rubber-Rubber",
-		"Ghost-Ghost";
-		"Magma-Magma";
-		"Quake-Quake",
-		"Buddha-Buddha";
-		"Love-Love",
-		"Creation-Creation";
-		"Spider-Spider";
-		"Sound-Sound";
-		"Phoenix-Phoenix";
-		"Portal-Portal",
-		"Lightning-Lightning",
-		"Pain-Pain";
-		"Blizzard-Blizzard",
-		"Gravity-Gravity";
-		"T-Rex-T-Rex";
-		"Mammoth-Mammoth";
-		"Dough-Dough",
-		"Shadow-Shadow";
-		"Venom-Venom";
-		"Gas-Gas";
-		"Control-Control";
-		"Spirit-Spirit",
-		"Leopard-Leopard",
-		"Yeti-Yeti";
-		"Kitsune-Kitsune";
-		"Dragon-Dragon"
-	};
+		{ Name = "Rocket (Tên Lửa)", Value = "Rocket-Rocket" },
+		{ Name = "Spin (Quay)", Value = "Spin-Spin" },
+		{ Name = "Blade (Phân Tách)", Value = "Blade-Blade" },
+		{ Name = "Spring (Lò Xo)", Value = "Spring-Spring" },
+		{ Name = "Bomb (Bom)", Value = "Bomb-Bomb" },
+		{ Name = "Smoke (Khói)", Value = "Smoke-Smoke" },
+		{ Name = "Spike (Gai)", Value = "Spike-Spike" },
+		{ Name = "Flame (Lửa)", Value = "Flame-Flame" },
+		{ Name = "Ice (Băng)", Value = "Ice-Ice" },
+		{ Name = "Sand (Cát)", Value = "Sand-Sand" },
+		{ Name = "Dark (Bóng Tối)", Value = "Dark-Dark" },
+		{ Name = "Eagle (Đại Bàng)", Value = "Eagle-Eagle" },
+		{ Name = "Diamond (Kim Cương)", Value = "Diamond-Diamond" },
+		{ Name = "Light (Ánh Sáng)", Value = "Light-Light" },
+		{ Name = "Rubber (Cao Su)", Value = "Rubber-Rubber" },
+		{ Name = "Ghost (Hồn Ma)", Value = "Ghost-Ghost" },
+		{ Name = "Magma (Dung Nham)", Value = "Magma-Magma" },
+		{ Name = "Quake (Chấn Động)", Value = "Quake-Quake" },
+		{ Name = "Buddha (Phật Tổ)", Value = "Buddha-Buddha" },
+		{ Name = "Love (Tình Yêu)", Value = "Love-Love" },
+		{ Name = "Creation (Sáng Tạo)", Value = "Creation-Creation" },
+		{ Name = "Spider (Nhện)", Value = "Spider-Spider" },
+		{ Name = "Sound (Âm Thanh)", Value = "Sound-Sound" },
+		{ Name = "Phoenix (Phượng Hoàng)", Value = "Phoenix-Phoenix" },
+		{ Name = "Portal (Cổng Dịch Chuyển)", Value = "Portal-Portal" },
+		{ Name = "Lightning (Sấm Sét)", Value = "Lightning-Lightning" },
+		{ Name = "Pain (Đau Đớn)", Value = "Pain-Pain" },
+		{ Name = "Blizzard (Bão Tuyết)", Value = "Blizzard-Blizzard" },
+		{ Name = "Gravity (Trọng Lực)", Value = "Gravity-Gravity" },
+		{ Name = "T-Rex (Khủng Long)", Value = "T-Rex-T-Rex" },
+		{ Name = "Mammoth (Voi Ma Mút)", Value = "Mammoth-Mammoth" },
+		{ Name = "Dough (Bột)", Value = "Dough-Dough" },
+		{ Name = "Shadow (Bóng Ma)", Value = "Shadow-Shadow" },
+		{ Name = "Venom (Độc)", Value = "Venom-Venom" },
+		{ Name = "Gas (Khí Độc)", Value = "Gas-Gas" },
+		{ Name = "Control (Điều Khiển)", Value = "Control-Control" },
+		{ Name = "Spirit (Linh Hồn)", Value = "Spirit-Spirit" },
+		{ Name = "Leopard (Báo)", Value = "Leopard-Leopard" },
+		{ Name = "Yeti (Người Tuyết)", Value = "Yeti-Yeti" },
+		{ Name = "Kitsune (Hồ Ly)", Value = "Kitsune-Kitsune" },
+		{ Name = "Dragon (Rồng)", Value = "Dragon-Dragon" }
+	},
 	["Callback"] = function(L_1457_arg0)
-		local L_1458_ = {}
-		L_1458_[1] = L_1457_arg0;
-		(getgenv())["SelectFruit"] = L_1458_[1]
+		(getgenv())["SelectFruit"] = L_1457_arg0
 	end
 })
+
 L_1_[93]["Raids"]:AddToggle({
 	["Name"] = "Tự Động Mua Trái Blox Fruits",
-	["Default"] = false;
+	["Default"] = false,
 	["Callback"] = function(L_1459_arg0)
-		local L_1460_ = {}
-		L_1460_[1] = L_1459_arg0;
-		(getgenv())["AutoBuyFruitSniper"] = L_1460_[1]
+		(getgenv())["AutoBuyFruitSniper"] = L_1459_arg0
 	end
 })
+
 spawn(function()
 	pcall(function()
 		while wait() do
 			if (getgenv())["AutoBuyFruitSniper"] then
-				(game:GetService("ReplicatedStorage"))["Remotes"]["CommF_"]:InvokeServer("GetFruits");
-				(game:GetService("ReplicatedStorage"))["Remotes"]["CommF_"]:InvokeServer("PurchaseRawFruit", (getgenv())["SelectFruit"])
+				game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("GetFruits")
+				game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(
+					"PurchaseRawFruit",
+					(getgenv())["SelectFruit"]
+				)
 			end
 		end
 	end)
@@ -13650,195 +13737,81 @@ spawn(function()
 	end
 end)
 L_1_[15] = {
-	"Flame";
-	"Ice";
-	"Quake";
-	"Light";
-	"Dark",
-	"String";
-	"Rumble",
-	"Magma",
-	"Human: Buddha",
-	"Sand",
-	"Bird: Phoenix";
-	"Dough"
+	{ Name = "Flame (Lửa)", Value = "Flame" },
+	{ Name = "Ice (Băng)", Value = "Ice" },
+	{ Name = "Quake (Chấn Động)", Value = "Quake" },
+	{ Name = "Light (Ánh Sáng)", Value = "Light" },
+	{ Name = "Dark (Bóng Tối)", Value = "Dark" },
+	{ Name = "Spider (Nhện)", Value = "String" },
+	{ Name = "Rumble (Sấm Sét)", Value = "Rumble" },
+	{ Name = "Magma (Dung Nham)", Value = "Magma" },
+	{ Name = "Human: Buddha (Phật Tổ)", Value = "Human: Buddha" },
+	{ Name = "Sand (Cát)", Value = "Sand" },
+	{ Name = "Bird: Phoenix (Phượng Hoàng)", Value = "Bird: Phoenix" },
+	{ Name = "Dough (Bột)", Value = "Dough" }
 }
+
 Q = L_1_[93]["Raids"]:AddDropdown({
-	["Name"] = "Chọn Chip Raid";
-	["Description"] = "";
-	["Options"] = L_1_[15];
+	["Name"] = "Chọn Chip Raid",
+	["Description"] = "",
+	["Options"] = L_1_[15],
 	["Default"] = false,
 	["Callback"] = function(L_1461_arg0)
-		local L_1462_ = {}
-		L_1462_[2] = L_1461_arg0
-		_G["SelectChip"] = L_1462_[2]
+		_G["SelectChip"] = L_1461_arg0
 	end
 })
 Q = L_1_[93]["Raids"]:AddToggle({
-	["Name"] = L_1_[2]({
-		"Chọn Chip Tập Kích Hầm ",
-		"Ngục"
-	}),
-	["Description"] = "";
-	["Default"] = false;
+	["Name"] = "Tự Động Chọn Chip Tập Kích Hầm Ngục",
+	["Description"] = "",
+	["Default"] = false,
 	["Callback"] = function(L_1463_arg0)
-		local L_1464_ = {}
-		L_1464_[1] = L_1463_arg0
-		_G["AutoSelectDungeon"] = L_1464_[1]
+		_G["AutoSelectDungeon"] = L_1463_arg0
 	end
 })
-L_1_[93]["Raids"]:AddToggle({
-	["Name"] = L_1_[2]({
-		"Lấy Trái Dưới 1M Beli K",
-		"hỏi Kho Đồ"
-	});
-	["Default"] = false,
-	["Callback"] = function(L_1465_arg0)
-		local L_1466_ = {}
-		L_1466_[2] = L_1465_arg0;
-		(getgenv())["AutoGetFruit"] = L_1466_[2]
-	end
-})
-spawn(function()
-	while wait() do
-		pcall(function()
-			if (getgenv())["AutoGetFruit"] then
-				local L_1467_ = {}
-				L_1467_[1] = {
-					"Rocket-Rocket";
-					"Spin-Spin",
-					"Chop-Chop";
-					"Spring-Spring";
-					"Bomb-Bomb";
-					"Smoke-Smoke";
-					"Spike-Spike",
-					"Flame-Flame",
-					"Falcon-Falcon",
-					"Ice-Ice";
-					"Sand-Sand";
-					"Dark-Dark";
-					"Ghost-Ghost",
-					"Diamond-Diamond";
-					"Light-Light";
-					"Rubber-Rubber",
-					"Barrier-Barrier"
-				}
-				for L_1468_forvar0, L_1469_forvar1 in ipairs(L_1467_[1]) do
-					local L_1470_ = {}
-					L_1470_[3], L_1470_[2] = L_1468_forvar0, L_1469_forvar1
-					L_1470_[4] = {
-						[1] = "LoadFruit";
-						[2] = L_1470_[2]
-					};
-					(game:GetService("ReplicatedStorage"))["Remotes"]["CommF_"]:InvokeServer(unpack(L_1470_[4]))
-				end
-			end
-		end)
-	end
-end)
-L_1_[93]["Raids"]:AddButton({
-	["Name"] = L_1_[2]({
-		"Tự Động Mua Chip Tập Kích [B",
-		"eli]"
-	}),
-	["Description"] = "";
-	["Callback"] = function()
-		if not GetBP("Special Microchip") then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("RaidsNpc", "Select", _G["SelectChip"])
-		end
-	end
-})
-L_1_[93]["Raids"]:AddButton({
-	["Name"] = L_1_[2]({
-		"Tự Động Mua Chip Tập Kích [T";
-		"rái Blox]"
-	});
+L_1_[15] = {
+	{ Name = "Flame (Lửa)", Value = "Flame" },
+	{ Name = "Ice (Băng)", Value = "Ice" },
+	{ Name = "Quake (Động Đất)", Value = "Quake" },
+	{ Name = "Light (Ánh Sáng)", Value = "Light" },
+	{ Name = "Dark (Bóng Tối)", Value = "Dark" },
+	{ Name = "String (Tơ)", Value = "String" },
+	{ Name = "Rumble (Sấm Sét)", Value = "Rumble" },
+	{ Name = "Magma (Dung Nham)", Value = "Magma" },
+	{ Name = "Human: Buddha (Phật)", Value = "Human: Buddha" },
+	{ Name = "Sand (Cát)", Value = "Sand" },
+	{ Name = "Bird: Phoenix (Phượng Hoàng)", Value = "Bird: Phoenix" },
+	{ Name = "Dough (Bột)", Value = "Dough" }
+}
+
+Q = L_1_[93]["Raids"]:AddDropdown({
+	["Name"] = "Chọn Chip Raid",
 	["Description"] = "",
-	["Callback"] = function()
-		local L_1471_ = {}
-		if GetBP("Special Microchip") then
-			return
-		end
-		L_1471_[2] = {}
-		L_1471_[1] = {}
-		for L_1472_forvar0, L_1473_forvar1 in next, (L_1_[55]:WaitForChild("Remotes"))["CommF_"]:InvokeServer("GetFruits") do
-			local L_1474_ = {}
-			L_1474_[2], L_1474_[3] = L_1472_forvar0, L_1473_forvar1
-			if L_1474_[3]["Price"] <= 490000 then
-				table["insert"](L_1471_[2], L_1474_[3]["Name"])
-			end
-		end
-		for L_1475_forvar0, L_1476_forvar1 in pairs(L_1471_[2]) do
-			local L_1477_ = {}
-			L_1477_[3], L_1477_[2] = L_1475_forvar0, L_1476_forvar1
-			for L_1478_forvar0, L_1479_forvar1 in pairs(L_1_[15]) do
-				if not GetBP("Special Microchip") then
-					L_1_[55]["Remotes"]["CommF_"]:InvokeServer("LoadFruit", tostring(L_1477_[2]))
-					L_1_[55]["Remotes"]["CommF_"]:InvokeServer("RaidsNpc", "Select", _G["SelectChip"])
-				end
-			end
-		end
-	end
-})
-AutoChipBeli = L_1_[93]["Raids"]:AddToggle({
-	["Name"] = "Tự Động Mua Chip Raid [Beli]";
-	["Description"] = "",
-	["Default"] = false;
-	["Callback"] = function(L_1480_arg0)
-		local L_1481_ = {}
-		L_1481_[2] = L_1480_arg0
-		_G["AutoChipBeli"] = L_1481_[2]
-	end
-})
-task["spawn"](function()
-	while task["wait"](1) do
-		if _G["AutoChipBeli"] then
-			pcall(function()
-				if not GetBP("Special Microchip") then
-					L_1_[55]["Remotes"]["CommF_"]:InvokeServer("RaidsNpc", "Select", _G["SelectChip"])
-				end
-			end)
-		end
-	end
-end)
-AutoChipFruit = L_1_[93]["Raids"]:AddToggle({
-	["Name"] = L_1_[2]({
-		"Tự Động Mua Chip Raid [Trái";
-		" Blox]"
-	}),
-	["Description"] = "";
+	["Options"] = L_1_[15],
 	["Default"] = false,
-	["Callback"] = function(L_1482_arg0)
-		local L_1483_ = {}
-		L_1483_[2] = L_1482_arg0
-		_G["AutoChipFruit"] = L_1483_[2]
+	["Callback"] = function(L_1461_arg0)
+		_G["SelectChip"] = L_1461_arg0
 	end
 })
-task["spawn"](function()
-	while task["wait"](1) do
-		if _G["AutoChipFruit"] then
-			pcall(function()
-				if not GetBP("Special Microchip") then
-					local L_1484_ = {}
-					L_1484_[3] = L_1_[55]["Remotes"]["CommF_"]:InvokeServer("GetFruits")
-					L_1484_[2] = nil
-					for L_1485_forvar0, L_1486_forvar1 in pairs(L_1484_[3]) do
-						local L_1487_ = {}
-						L_1487_[1], L_1487_[2] = L_1485_forvar0, L_1486_forvar1
-						if L_1487_[2]["Price"] <= 490000 then
-							L_1484_[2] = L_1487_[2]["Name"]
-							break
-						end
-					end
-					if L_1484_[2] then
-						L_1_[55]["Remotes"]["CommF_"]:InvokeServer("LoadFruit", tostring(L_1484_[2]))
-						L_1_[55]["Remotes"]["CommF_"]:InvokeServer("RaidsNpc", "Select", _G["SelectChip"])
-					end
-				end
-			end)
-		end
+
+Q = L_1_[93]["Raids"]:AddToggle({
+	["Name"] = "Tự Động Chọn Chip Tập Kích Hầm Ngục",
+	["Description"] = "",
+	["Default"] = false,
+	["Callback"] = function(L_1463_arg0)
+		_G["AutoSelectDungeon"] = L_1463_arg0
 	end
-end)
+})
+
+
+Q = L_1_[93]["Raids"]:AddToggle({
+	["Name"] = "Tự Động Chọn Chip Tập Kích Hầm Ngục",
+	["Description"] = "",
+	["Default"] = false,
+	["Callback"] = function(L_1463_arg0)
+		_G["AutoSelectDungeon"] = L_1463_arg0
+	end
+})
+
 StartR = L_1_[93]["Raids"]:AddToggle({
 	["Name"] = "Tự Động Bắt Đầu Raid",
 	["Description"] = "";
@@ -15105,57 +15078,87 @@ GoIsland = L_1_[93]["Travel"]:AddToggle({
 L_1_[93]["Travel"]:AddSection({
 	"Di Chuyển / Dịch Chuyển Tức Thời"
 })
+
+local Portal_Show = {}
+local Portal_Value = {}
+local Location_Portal = {}
+
 if World1 then
 	Location_Portal = {
-		"Sky";
-		"UnderWater"
+		{ Name = "Trời (Sky Island)", Value = "Sky" },
+		{ Name = "Dưới Nước (Underwater)", Value = "UnderWater" }
 	}
 elseif World2 then
 	Location_Portal = {
-		"SwanRoom";
-		"Cursed Ship"
+		{ Name = "Phòng Swan", Value = "SwanRoom" },
+		{ Name = "Tàu Ma Ám", Value = "Cursed Ship" }
 	}
 elseif World3 then
 	Location_Portal = {
-		"Castle On The Sea";
-		"Mansion Cafe";
-		"Hydra Teleport";
-		"Canvendish Room",
-		"Temple of Time"
+		{ Name = "Lâu Đài Trên Biển", Value = "Castle On The Sea" },
+		{ Name = "Quán Cafe Biệt Thự", Value = "Mansion Cafe" },
+		{ Name = "Dịch Chuyển Hydra", Value = "Hydra Teleport" },
+		{ Name = "Phòng Cavendish", Value = "Canvendish Room" },
+		{ Name = "Đền Thời Gian", Value = "Temple of Time" }
 	}
 end
+for _, v in pairs(Location_Portal) do
+	table.insert(Portal_Show, v.Name)
+	Portal_Value[v.Name] = v.Value
+end
 PortalTP = L_1_[93]["Travel"]:AddDropdown({
-	["Name"] = "Chọn Nơi Muốn Đến [Dịch Chuyển Ngay Lập Tức]",
-	["Options"] = Location_Portal,
-	["Default"] = false;
-	["Callback"] = function(L_1658_arg0)
-		local L_1659_ = {}
-		L_1659_[2] = L_1658_arg0
-		_G["Island_PT"] = L_1659_[2]
+	["Name"] = "Chọn Nơi Muốn Đến [TP]",
+	["Options"] = Portal_Show,
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G["Island_PT"] = Portal_Value[v]
 	end
 })
 L_1_[93]["Travel"]:AddButton({
-	["Name"] = "Dịch Chuyển Ngay Lập Tức";
+	["Name"] = "Dịch Chuyển Ngay Lập Tức",
 	["Description"] = "",
 	["Callback"] = function()
 		if _G["Island_PT"] == "Sky" then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](-7894, 5547, -380))
+			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3.new(-7894, 5547, -380))
+
 		elseif _G["Island_PT"] == "UnderWater" then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](61163, 11, 1819))
+			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3.new(61163, 11, 1819))
+
 		elseif _G["Island_PT"] == "SwanRoom" then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](2285, 15, 905))
+			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3.new(2285, 15, 905))
+
 		elseif _G["Island_PT"] == "Cursed Ship" then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](923, 126, 32852))
+			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3.new(923, 126, 32852))
+
 		elseif _G["Island_PT"] == "Castle On The Sea" then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](-5097.93164, 316.447021, -3142.66602, -0.405007899, -4.31682743e-08, .914313197, -1.90943332e-08, 1, 3.8755779e-08, -0.914313197, -1.76180437e-09, -0.405007899))
+			L_1_[55]["Remotes"]["CommF_"]:InvokeServer(
+				"requestEntrance",
+				CFrame.new(-5097.93, 316.44, -3142.66)
+			)
+
 		elseif _G["Island_PT"] == "Mansion Cafe" then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](-12471.169921875, 374.94024658203, -7551.677734375))
+			L_1_[55]["Remotes"]["CommF_"]:InvokeServer(
+				"requestEntrance",
+				Vector3.new(-12471.16, 374.94, -7551.67)
+			)
+
 		elseif _G["Island_PT"] == "Hydra Teleport" then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](5643.4526367188, 1013.0858154297, -340.51025390625))
+			L_1_[55]["Remotes"]["CommF_"]:InvokeServer(
+				"requestEntrance",
+				Vector3.new(5643.45, 1013.08, -340.51)
+			)
+
 		elseif _G["Island_PT"] == "Canvendish Room" then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](5314.5463867188, 22.562219619751, -127.06755065918))
+			L_1_[55]["Remotes"]["CommF_"]:InvokeServer(
+				"requestEntrance",
+				Vector3.new(5314.54, 22.56, -127.06)
+			)
+
 		elseif _G["Island_PT"] == "Temple of Time" then
-			L_1_[55]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](28310.0234, 14895.1123, 109.456741, -0.469690144, -2.85620132e-08, -0.882831335, -3.23509219e-08, 1, -1.51411736e-08, .882831335, 2.14487486e-08, -0.469690144))
+			L_1_[55]["Remotes"]["CommF_"]:InvokeServer(
+				"requestEntrance",
+				CFrame.new(28310.02, 14895.11, 109.45)
+			)
 		end
 	end
 })
@@ -15178,7 +15181,7 @@ NPCsPos = L_1_[93]["Travel"]:AddDropdown({
 	end
 })
 GoNPCs = L_1_[93]["Travel"]:AddToggle({
-	["Name"] = "Tự Động Di Chuyển NPC",
+	["Name"] = "Tự Động Di Chuyển Đến NPC",
 	["Description"] = "",
 	["Default"] = false,
 	["Callback"] = function(L_1665_arg0)
@@ -15237,77 +15240,77 @@ L_1_[93]["Shop"]:AddSection({
 	"Kiểu Chiến Đấu / Võ"
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Black Leg",
+	["Name"] = "Mua Chân Đen",
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyBlackLeg")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Electro";
+	["Name"] = "Mua Võ Điện";
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyElectro")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Fishman Karate";
+	["Name"] = "Mua Karate Người Cá";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyFishmanKarate")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua DragonClaw";
+	["Name"] = "Mua Vuốt Rồng";
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BlackbeardReward", "DragonClaw", "2")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Superhuman";
+	["Name"] = "Mua Võ Thượng Nhân Quyền";
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuySuperhuman")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Death Step";
+	["Name"] = "Mua Tử Cước";
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyDeathStep")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Sharkman Karate";
+	["Name"] = "Mua Karate Cá Mập";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuySharkmanKarate")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua ElectricClaw";
+	["Name"] = "Mua Lôi Trảo Thủ";
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyElectricClaw")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua DragonTalon";
+	["Name"] = "Mua Long Trảo Thủ";
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyDragonTalon")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Godhuman",
+	["Name"] = "Mua Thần Diệt Quyền",
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyGodhuman")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua SanguineArt",
+	["Name"] = "Mua Huyết Quỷ Thuật",
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuySanguineArt")
@@ -15317,35 +15320,35 @@ L_1_[93]["Shop"]:AddSection({
 	"Accessory"
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Tomoe Ring",
+	["Name"] = "Mua Vòng Tomoe",
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Tomoe Ring")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Black Cape";
+	["Name"] = "Mua Áo Choàng Đen";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Black Cape")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Swordsman Hat";
+	["Name"] = "Mua Mũ Kiếm Sĩ";
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Swordsman Hat")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Bizarre Rifle",
+	["Name"] = "Mua Súng Lục Kỳ Lạ",
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("Ectoplasm", "Buy", 1)
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Ghoul Mask";
+	["Name"] = "Mua Mặt Nạ Quỷ";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("Ectoplasm", "Buy", 2)
@@ -15355,7 +15358,7 @@ L_1_[93]["Shop"]:AddSection({
 	"Kiểu Chiến Đấu Khác Ở Sea 1"
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Cutlass",
+	["Name"] = "Mua Đao Hải Tặc",
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Cutlass")
@@ -15369,28 +15372,28 @@ L_1_[93]["Shop"]:AddButton({
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Iron Mace",
+	["Name"] = "Mua Chùy Sắt",
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Iron Mace")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Duel Katana",
+	["Name"] = "Mua Song Kiếm Katana",
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Duel Katana")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Triple Katana";
+	["Name"] = "Mua Tam Kiếm Katana";
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Triple Katana")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Pipe",
+	["Name"] = "Mua Ống Nước",
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Pipe")
@@ -15398,8 +15401,8 @@ L_1_[93]["Shop"]:AddButton({
 })
 L_1_[93]["Shop"]:AddButton({
 	["Name"] = L_1_[2]({
-		"Mua Dual-Headed Blad";
-		"e"
+		"Mua Lưỡi Dao Hai Đầ";
+		"u"
 	});
 	["Description"] = "";
 	["Callback"] = function()
@@ -15407,42 +15410,42 @@ L_1_[93]["Shop"]:AddButton({
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Bisento";
+	["Name"] = "Mua Đại Đao Bisento";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Bisento")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Soul Cane";
+	["Name"] = "Mua Gậy Chiêu Hồn";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Soul Cane")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Slingshot";
+	["Name"] = "Mua Ná Cao Su";
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Slingshot")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Musket",
+	["Name"] = "Mua Súng Hỏa Mai",
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Musket")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Dual Flintlock";
+	["Name"] = "Mua Đôi Súng Kíp";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Dual Flintlock")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Flintlock";
+	["Name"] = "Mua Súng Kíp";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Flintlock")
@@ -15450,8 +15453,8 @@ L_1_[93]["Shop"]:AddButton({
 })
 L_1_[93]["Shop"]:AddButton({
 	["Name"] = L_1_[2]({
-		"Mua Refined Flintloc",
-		"k"
+		"Mua Ná Cao Su Cải Tiế",
+		"n"
 	});
 	["Description"] = "",
 	["Callback"] = function()
@@ -15459,14 +15462,14 @@ L_1_[93]["Shop"]:AddButton({
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Cannon";
+	["Name"] = "Mua Pháo";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BuyItem", "Cannon")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Kabucha",
+	["Name"] = "Mua Ná Kabucha",
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BlackbeardReward", "Slingshot", "2")
@@ -15476,21 +15479,21 @@ L_1_[93]["Shop"]:AddSection({
 	"Cửa Hàng Fragments - Nguyên Thạch"
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Refund Stats",
+	["Name"] = "Đổi Chỉ Số",
 	["Description"] = "";
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BlackbeardReward", "Refund", "2")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Reroll Race",
+	["Name"] = "Đổi Tộc",
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("BlackbeardReward", "Reroll", "2")
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Ghoul Race";
+	["Name"] = "Đổi Tộc Quỷ";
 	["Description"] = "",
 	["Callback"] = function()
 		L_1_[55]["Remotes"]["CommF_"]:InvokeServer("Ectoplasm", " Change", 4)
@@ -15498,8 +15501,8 @@ L_1_[93]["Shop"]:AddButton({
 })
 L_1_[93]["Shop"]:AddButton({
 	["Name"] = L_1_[2]({
-		"Mua Cyborg Race (2.5";
-		"k)"
+		"Đổi Tộc Người M";
+		"áy"
 	});
 	["Description"] = "",
 	["Callback"] = function()
@@ -15507,7 +15510,7 @@ L_1_[93]["Shop"]:AddButton({
 	end
 })
 L_1_[93]["Shop"]:AddButton({
-	["Name"] = "Mua Draco Race",
+	["Name"] = "Đổi Tộc Rồng",
 	["Callback"] = function()
 		local L_1670_ = {}
 		_tp(CFrame["new"](5814.4272460938, 1208.3267822266, 884.57855224609))
@@ -15875,18 +15878,20 @@ spawn(function()
 end)
 L_1_[93]["Misc"]:AddSection({
 	L_1_[2]({
-		"Đồ Họa / Bao Phủ Hak",
-		"i"
+		"Đồ Họa / Bao Phủ Haki",
+		""
 	})
 })
+
 HakiSt = {
-	"State 0",
-	"State 1",
-	"State 2";
-	"State 3";
-	"State 4",
-	"State 5"
+	{ Name = "Mức 0 (Không Bao Phủ)", Value = "State 0" },
+	{ Name = "Mức 1 (Bao Phủ Tay)", Value = "State 1" },
+	{ Name = "Mức 2 (Bao Phủ Tay & Chân)", Value = "State 2" },
+	{ Name = "Mức 3 (Bao Phủ Nửa Người)", Value = "State 3" },
+	{ Name = "Mức 4 (Bao Phủ Toàn Thân - Trừ Đầu)", Value = "State 4" },
+	{ Name = "Mức 5 (Bao Phủ Tối Đa)", Value = "State 5" }
 }
+
 HakiStat = L_1_[93]["Misc"]:AddDropdown({
 	["Name"] = "Chọn Độ Bao Phủ Haki",
 	["Options"] = HakiSt;
@@ -15897,8 +15902,9 @@ HakiStat = L_1_[93]["Misc"]:AddDropdown({
 		_G["SelectStateHaki"] = L_1705_[1]
 	end
 })
+
 L_1_[93]["Misc"]:AddButton({
-	["Name"] = "ChangeBusoStage";
+	["Name"] = "Áp Dụng Độ Bao Phủ Haki",
 	["Description"] = "",
 	["Callback"] = function()
 		if _G["SelectStateHaki"] == "State 0" then
@@ -16027,7 +16033,7 @@ L_1_[93]["Misc"]:AddButton({
 	end
 })
 L_1_[93]["Misc"]:AddSection({
-	"Cấu Hình / Chúa"
+	"Cấu Hình / Ánh Sáng"
 })
 L_1_[93]["Misc"]:AddButton({
 	["Name"] = "Mưa Trái Ác Quỷ (Giả)",
@@ -16075,12 +16081,12 @@ briggt1 = L_1_[93]["Misc"]:AddToggle({
 	end
 })
 DayN = L_1_[93]["Misc"]:AddDropdown({
-	["Name"] = "Chọn Thời Gian";
-	["Description"] = "";
+	["Name"] = "Chọn Thời Gian",
+	["Description"] = "",
 	["Options"] = {
-		"Day",
-		"Night"
-	};
+		{ Name = "Ban Ngày", Value = "Day" },
+		{ Name = "Ban Đêm", Value = "Night" }
+	},
 	["Default"] = false,
 	["Callback"] = function(L_1722_arg0)
 		local L_1723_ = {}
@@ -16088,9 +16094,10 @@ DayN = L_1_[93]["Misc"]:AddDropdown({
 		_G["SelectDN"] = L_1723_[2]
 	end
 })
+
 dayornight = L_1_[93]["Misc"]:AddToggle({
-	["Name"] = "Bật thời gian";
-	["Description"] = "";
+	["Name"] = "Bật / Tắt Thay Đổi Thời Gian",
+	["Description"] = "",
 	["Default"] = false,
 	["Callback"] = function(L_1724_arg0)
 		local L_1725_ = {}
@@ -16098,6 +16105,7 @@ dayornight = L_1_[93]["Misc"]:AddToggle({
 		_G["daylightN"] = L_1725_[2]
 	end
 })
+
 task["spawn"](function()
 	while task["wait"]() do
 		if _G["daylightN"] then
