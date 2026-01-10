@@ -3369,10 +3369,6 @@ end)
 L_1_[93]["Main"]:AddSection({
 	"Farm quái tự động"
 })
-L_1_[93]["Main"]:AddSection({
-	"Farm Quái Vật"
-})
-
 local mobDisplayMap = {
 	["Bandit"] = "Tên Cướp",
 	["Monkey"] = "Khỉ",
@@ -3679,91 +3675,12 @@ elseif World3 then
 	L_1_[60] = L_1_[98]
 end
 L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Tự động farm quái theo đảo",
-	["Default"] = false,
-	["Callback"] = function(Value)
-		_G.AutoFarmIsland = Value
-	end
-})
-
-task.spawn(function()
-	while task.wait(0.2) do
-		if not _G.AutoFarmIsland then continue end
-		if not _G.SelectIsland then continue end
-		if not L_1_[60] then continue end
-
-		local IslandData = L_1_[60][_G.SelectIsland]
-		if not IslandData then continue end
-
-		local IslandCFrame = IslandData.CFrame
-		local MobList = IslandData.Mobs
-
-		-- Danh sách quái hợp lệ
-		local ValidMobs = {}
-		for _, mobName in ipairs(MobList) do
-			ValidMobs[mobName] = true
-		end
-
-		local FoundMob = false
-
-		for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-			if ValidMobs[enemy.Name]
-				and enemy:FindFirstChild("Humanoid")
-				and enemy:FindFirstChild("HumanoidRootPart")
-				and enemy.Humanoid.Health > 0 then
-
-				FoundMob = true
-				repeat
-					task.wait()
-					_tp(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
-					L_1_[4].Kill(enemy, true)
-				until not _G.AutoFarmIsland
-					or not enemy.Parent
-					or enemy.Humanoid.Health <= 0
-			end
-		end
-
-		if not FoundMob then
-			_tp(IslandCFrame)
-		end
-	end
-end)
-L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Tự động giết quái đã chọn",
 	["Default"] = false,
 	["Callback"] = function(Value)
 		_G.AutoKillMob = Value
 	end
-})
-
-spawn(function()
-	while wait() do
-		if _G.AutoKillMob then
-			pcall(function()
-				if workspace.Enemies:FindFirstChild(getgenv().SelectMob) then
-					for _, mob in pairs(workspace.Enemies:GetChildren()) do
-						if mob.Name == getgenv().SelectMob
-							and mob:FindFirstChild("Humanoid")
-							and mob:FindFirstChild("HumanoidRootPart")
-							and mob.Humanoid.Health > 0 then
-
-							repeat
-								game:GetService("RunService").Heartbeat:Wait()
-
-								-- ✅ Tự động cầm vũ khí đã chọn
-								AutoEquipWeapon()
-
-								L_1_[4].Kill(mob, _G.AutoKillMob)
-							until not _G.AutoKillMob
-								or not mob.Parent
-								or mob.Humanoid.Health <= 0
-						end
-					end
-				end
-			end)
-		end
-	end
-end)
+}) 
 L_1_[93]["Main"]:AddSection({
 	"Thợ Săn Elite"
 })
