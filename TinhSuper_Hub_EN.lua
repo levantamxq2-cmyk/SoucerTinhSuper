@@ -3,9 +3,10 @@ L_1_[2] = table["concat"]
 do
 	ply = game["Players"]
 	plr = ply["LocalPlayer"]
-	Root = plr["Character"]["HumanoidRootPart"]
+	repeat task.wait() until plr.Character and plr.Character.Parent
+	Root = plr.Character:WaitForChild("HumanoidRootPart")
 	replicated = game:GetService("ReplicatedStorage")
-	Lv = game["Players"]["LocalPlayer"]["Data"]["Level"]["Value"]
+	Lv = plr:WaitForChild("Data"):WaitForChild("Level").Value
 	TeleportService = game:GetService("TeleportService")
 	TW = game:GetService("TweenService")
 	Lighting = game:GetService("Lighting")
@@ -15,7 +16,7 @@ do
 	TeamSelf = plr["Team"]
 	RunSer = game:GetService("RunService")
 	Stats = game:GetService("Stats")
-	Energy = plr["Character"]["Energy"]["Value"]
+	Energy = plr.Character:WaitForChild("Energy").Value
 	BringConnections = {}
 	BossList = {}
 	MaterialList = {}
@@ -31,11 +32,7 @@ do
 	ClickState = 0
 	Num_self = 25
 end
-repeat
-	local L_2_ = {}
-	L_2_[2] = (plr["PlayerGui"]:WaitForChild("Main")):WaitForChild("Loading") and game:IsLoaded()
-	wait()
-until L_2_[2]
+repeat task.wait() until game:IsLoaded()
 World1 = game["PlaceId"] == 2753915549 or game["PlaceId"] == 85211729168715
 World2 = game["PlaceId"] == 4442272183 or game["PlaceId"] == 79091703265657
 World3 = game["PlaceId"] == 7449423635 or game["PlaceId"] == 1.0011733112309e+14
@@ -2389,8 +2386,8 @@ L_1_[93]["Info"]:AddDiscordInvite({
 		"3568989"
 	}),
 	["Invite"] = L_1_[2]({
-		"https://discord.gg/A",
-		"v2SM8wPCD"
+		"https://discord.gg/n",
+		"TTR5ubc7Q"
 	})
 })
 L_1_[93]["Info"]:AddSection("Status Server")
@@ -16586,6 +16583,4 @@ pcall(function()
 		["Headers"] = L_1_[37];
 		["Body"] = L_1_[114]
 	})
-
 end)
-
