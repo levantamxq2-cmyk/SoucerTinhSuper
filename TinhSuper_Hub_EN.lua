@@ -3,9 +3,16 @@ L_1_[2] = table["concat"]
 do
 	ply = game["Players"]
 	plr = ply["LocalPlayer"]
-	Root = plr["Character"]["HumanoidRootPart"]
+	repeat task.wait() until plr.Character and plr.Character.Parentlocal plr = game.Players.LocalPlayer
+	if not plr then return false end
+
+	local char = plr.Character
+	if not char then return false end
+
+	local Root = char:FindFirstChild("HumanoidRootPart")
+	if not Root then return false end
 	replicated = game:GetService("ReplicatedStorage")
-	Lv = game["Players"]["LocalPlayer"]["Data"]["Level"]["Value"]
+	Lv = plr:WaitForChild("Data"):WaitForChild("Level").Value
 	TeleportService = game:GetService("TeleportService")
 	TW = game:GetService("TweenService")
 	Lighting = game:GetService("Lighting")
@@ -15,7 +22,7 @@ do
 	TeamSelf = plr["Team"]
 	RunSer = game:GetService("RunService")
 	Stats = game:GetService("Stats")
-	Energy = plr["Character"]["Energy"]["Value"]
+	Energy = plr.Character:WaitForChild("Energy").Value
 	BringConnections = {}
 	BossList = {}
 	MaterialList = {}
@@ -31,11 +38,7 @@ do
 	ClickState = 0
 	Num_self = 25
 end
-repeat
-	local L_2_ = {}
-	L_2_[2] = (plr["PlayerGui"]:WaitForChild("Main")):WaitForChild("Loading") and game:IsLoaded()
-	wait()
-until L_2_[2]
+repeat task.wait() until game:IsLoaded()
 World1 = game["PlaceId"] == 2753915549 or game["PlaceId"] == 85211729168715
 World2 = game["PlaceId"] == 4442272183 or game["PlaceId"] == 79091703265657
 World3 = game["PlaceId"] == 7449423635 or game["PlaceId"] == 1.0011733112309e+14
@@ -266,9 +269,29 @@ L_1_[4]["Alive"] = function(L_10_arg0)
 	return L_11_[3] and L_11_[3]["Health"] > 0
 end
 L_1_[4]["Pos"] = function(L_12_arg0, L_13_arg1)
-	local L_14_ = {}
-	L_14_[1], L_14_[2] = L_12_arg0, L_13_arg1
-	return (Root["Position"] - mode["Position"])["Magnitude"] <= L_14_[2]
+    local plr = game.Players.LocalPlayer
+    if not plr then return false end
+
+    local char = plr.Character
+    if not char then return false end
+
+    local Root = char:FindFirstChild("HumanoidRootPart")
+    if not Root then return false end
+
+    local target = L_12_arg0
+    local dist = L_13_arg1
+
+    if typeof(target) == "Instance" then
+        if target:IsA("Model") then
+            local hrp = target:FindFirstChild("HumanoidRootPart")
+            if not hrp then return false end
+            return (Root.Position - hrp.Position).Magnitude <= dist
+        elseif target:IsA("BasePart") then
+            return (Root.Position - target.Position).Magnitude <= dist
+        end
+    end
+
+    return false
 end
 L_1_[4]["Dist"] = function(L_15_arg0, L_16_arg1)
 	local L_17_ = {}
@@ -494,8 +517,6 @@ BringEnemy = function()
 		L_48_[2] = L_48_[1]:FindFirstChild("Humanoid")
 		L_48_[3] = L_48_[1]:FindFirstChild("HumanoidRootPart")
 		if not(L_48_[2] and (L_48_[3] and L_48_[2]["Health"] > 0)) then
-			continue
-		end
 		if (L_48_[3]["Position"] - L_45_[5]["Position"])["Magnitude"] <= L_45_[8] then
 			local L_52_ = {}
 			R_[1] += 1
