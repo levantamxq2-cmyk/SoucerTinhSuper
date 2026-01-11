@@ -3517,7 +3517,6 @@ if World3 then
 	})
 	L_1_[93]["Main"]:AddDropdown({
 		["Name"] = "Chọn Quái",
-		["Default"] = opts[1]
 		["Options"] = opts,
 		["Callback"] = function(vn)
 			getgenv().SelectMob = rev[vn]
@@ -3623,7 +3622,6 @@ if World1 then
 	L_1_[93]["Main"]:AddDropdown({
 		["Name"] = "Chọn đảo",
 		["Options"] = opts,
-		["Default"] = opts[1],
 		["Callback"] = function(vn)
 			_G["SelectIsland"] = rev[vn]
 		end
@@ -3639,7 +3637,6 @@ if World2 then
 	L_1_[93]["Main"]:AddDropdown({
 		["Name"] = "Chọn đảo",
 		["Options"] = opts,
-		["Default"] = opts[1],
 		["Callback"] = function(vn)
 			_G["SelectIsland"] = rev[vn]
 		end
@@ -3655,7 +3652,6 @@ if World3 then
 	L_1_[93]["Main"]:AddDropdown({
 		["Name"] = "Chọn đảo",
 		["Options"] = opts,
-		["Default"] = opts[1],
 		["Callback"] = function(vn)
 			_G["SelectIsland"] = rev[vn]
 		end
