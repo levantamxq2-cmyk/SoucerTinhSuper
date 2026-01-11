@@ -2389,8 +2389,8 @@ L_1_[93]["Info"]:AddDiscordInvite({
 		"3568989"
 	}),
 	["Invite"] = L_1_[2]({
-		"https://discord.gg/n",
-		"TTR5ubc7Q"
+		"https://discord.gg/A",
+		"v2SM8wPCD"
 	})
 })
 L_1_[93]["Info"]:AddSection("Status Server")
@@ -16588,3 +16588,4 @@ pcall(function()
 	})
 
 end)
+
