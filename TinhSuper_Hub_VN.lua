@@ -2412,7 +2412,7 @@ L_1_[93]["Info"]:AddSection("Thông Tin Chính")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Ngày cập nhật [10/1/";
+		"Ngày cập nhật [11/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -3467,7 +3467,6 @@ local function BuildDropdown(worldMobList)
 
 	return optionsVN, reverse
 end
-
 if World1 then
 	local opts, rev = BuildDropdown({
 		"Bandit","Monkey","Gorilla","Pirate","Brute","Desert Bandit","Desert Officer",
@@ -3486,7 +3485,6 @@ if World1 then
 		end
 	})
 end
-
 if World2 then
 	local opts, rev = BuildDropdown({
 		"Raider","Mercenary","Swan Pirate","Factory Staff","Marine Lieutenant",
@@ -3505,7 +3503,6 @@ if World2 then
 		end
 	})
 end
-
 if World3 then
 	local opts, rev = BuildDropdown({
 		"Pirate Millionaire","Dragon Crew Warrior","Dragon Crew Archer",
@@ -3518,17 +3515,15 @@ if World3 then
 		"Chocolate Bar Battle","Sweet Thief","Candy Rebel","Candy Pirate",
 		"Snow Demon","Isle Outlaw","Island Boy","Sun-kissed Warrior","Isle Champion"
 	})
-
 	L_1_[93]["Main"]:AddDropdown({
 		["Name"] = "Chọn Quái",
-		["Default"] = false,
+		["Default"] = opts[1]
 		["Options"] = opts,
 		["Callback"] = function(vn)
 			getgenv().SelectMob = rev[vn]
 		end
 	})
 end
-
 L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Tự động giết quái";
 	["Default"] = false,
@@ -3615,10 +3610,8 @@ local function BuildIslandDropdown(islands)
 		table.insert(optionsVN, vn)
 		reverse[vn] = islandEN
 	end
-
 	return optionsVN, reverse
 end
-
 if World1 then
 	local opts, rev = BuildIslandDropdown({
 		"Pirates","Marine","Jungle","Pirate Village","Desert",
@@ -3630,12 +3623,12 @@ if World1 then
 	L_1_[93]["Main"]:AddDropdown({
 		["Name"] = "Chọn đảo",
 		["Options"] = opts,
+		["Default"] = opts[1],
 		["Callback"] = function(vn)
 			_G["SelectIsland"] = rev[vn]
 		end
 	})
 end
-
 if World2 then
 	local opts, rev = BuildIslandDropdown({
 		"Kingdom of Rose","Green Zone","Graveyard Island",
@@ -3646,6 +3639,7 @@ if World2 then
 	L_1_[93]["Main"]:AddDropdown({
 		["Name"] = "Chọn đảo",
 		["Options"] = opts,
+		["Default"] = opts[1],
 		["Callback"] = function(vn)
 			_G["SelectIsland"] = rev[vn]
 		end
@@ -3661,6 +3655,7 @@ if World3 then
 	L_1_[93]["Main"]:AddDropdown({
 		["Name"] = "Chọn đảo",
 		["Options"] = opts,
+		["Default"] = opts[1],
 		["Callback"] = function(vn)
 			_G["SelectIsland"] = rev[vn]
 		end
@@ -4106,6 +4101,7 @@ spawn(function()
 					if L_484_[1] then
 						repeat
 							task["wait"]()
+							AutoEquipWeapon()
 							L_1_[4]["Kill2"](L_484_[1], _G["Auto_Cake_Prince"])
 						until not _G["Auto_Cake_Prince"] or not L_484_[1]["Parent"] or L_484_[1]["Humanoid"]["Health"] <= 0
 					else
@@ -4419,6 +4415,7 @@ spawn(function()
 					if L_509_[3] then
 						repeat
 							wait()
+							AutoEquipWeapon()
 							L_1_[4]["Kill"](L_509_[3], _G["Doughv2"])
 						until _G["Doughv2"] == false or not L_509_[3]["Parent"] or L_509_[3]["Humanoid"]["Health"] <= 0
 					else
