@@ -3,10 +3,9 @@ L_1_[2] = table["concat"]
 do
 	ply = game["Players"]
 	plr = ply["LocalPlayer"]
-	repeat task.wait() until plr.Character and plr.Character.Parent
-	Root = plr.Character:WaitForChild("HumanoidRootPart")
+	Root = plr["Character"]["HumanoidRootPart"]
 	replicated = game:GetService("ReplicatedStorage")
-	Lv = plr:WaitForChild("Data"):WaitForChild("Level").Value
+	Lv = game["Players"]["LocalPlayer"]["Data"]["Level"]["Value"]
 	TeleportService = game:GetService("TeleportService")
 	TW = game:GetService("TweenService")
 	Lighting = game:GetService("Lighting")
@@ -16,7 +15,7 @@ do
 	TeamSelf = plr["Team"]
 	RunSer = game:GetService("RunService")
 	Stats = game:GetService("Stats")
-	Energy = plr.Character:WaitForChild("Energy").Value
+	Energy = plr["Character"]["Energy"]["Value"]
 	BringConnections = {}
 	BossList = {}
 	MaterialList = {}
@@ -32,7 +31,11 @@ do
 	ClickState = 0
 	Num_self = 25
 end
-repeat task.wait() until game:IsLoaded()
+repeat
+	local L_2_ = {}
+	L_2_[2] = (plr["PlayerGui"]:WaitForChild("Main")):WaitForChild("Loading") and game:IsLoaded()
+	wait()
+until L_2_[2]
 World1 = game["PlaceId"] == 2753915549 or game["PlaceId"] == 85211729168715
 World2 = game["PlaceId"] == 4442272183 or game["PlaceId"] == 79091703265657
 World3 = game["PlaceId"] == 7449423635 or game["PlaceId"] == 1.0011733112309e+14
@@ -491,6 +494,8 @@ BringEnemy = function()
 		L_48_[2] = L_48_[1]:FindFirstChild("Humanoid")
 		L_48_[3] = L_48_[1]:FindFirstChild("HumanoidRootPart")
 		if not(L_48_[2] and (L_48_[3] and L_48_[2]["Health"] > 0)) then
+			continue
+		end
 		if (L_48_[3]["Position"] - L_45_[5]["Position"])["Magnitude"] <= L_45_[8] then
 			local L_52_ = {}
 			R_[1] += 1
@@ -3814,10 +3819,18 @@ task["spawn"](function()
 	while task["wait"](.2) do
 		local L_418_ = {}
 		if not _G["AutoFarmIsland"] then
+			continue
+		end
 		if not _G["SelectIsland"] then
+			continue
+		end
 		if not L_1_[60] then
+			continue
+		end
 		L_418_[1] = L_1_[60][_G["SelectIsland"]]
 		if not L_418_[1] then
+			continue
+		end
 		L_418_[3] = L_418_[1]["CFrame"]
 		L_418_[2] = L_418_[1]["Mobs"]
 		L_418_[5] = {}
@@ -4660,6 +4673,8 @@ spawn(function()
 	}
 	while wait(.5) do
 		if not _G["AutoFarm_Bone"] then
+			continue
+		end
 		pcall(function()
 			local L_515_ = {}
 			L_515_[3] = L_514_[1]["Character"]
@@ -14011,6 +14026,8 @@ StartR = L_1_[93]["Raids"]:AddToggle({
 task["spawn"](function()
 	while task["wait"](Sec) do
 		if not _G["Auto_StartRaid"] then
+			continue
+		end
 		pcall(function()
 			local L_1490_ = {}
 			L_1490_[2] = game["Players"]["LocalPlayer"]
@@ -14075,14 +14092,24 @@ spawn(function()
 	while task["wait"](.3) do
 		local L_1496_ = {}
 		if not _G["Raiding"] then
+			continue
+		end
 		L_1496_[8] = L_1_[23]["PlayerGui"]["Main"]["TopHUDList"]["RaidTimer"]
 		if not L_1496_[8]["Visible"] then
+			continue
+		end
 		L_1496_[1] = L_1_[23]["Character"]
 		if not L_1496_[1] then
+			continue
+		end
 		L_1496_[7] = L_1496_[1]:FindFirstChild("HumanoidRootPart")
 		L_1496_[5] = L_1496_[1]:FindFirstChildOfClass("Humanoid")
 		if not L_1496_[7] or not L_1496_[5] or L_1496_[5]["Health"] <= 0 then
+			continue
+		end
 		if L_1496_[5]["Sit"] or L_1496_[5]["PlatformStand"] or L_1496_[7]["Anchored"] then
+			continue
+		end
 		L_1496_[2] = 999999
 		for L_1497_forvar0, L_1498_forvar1 in ipairs(L_1495_[1]) do
 			local L_1499_ = {}
@@ -14098,8 +14125,12 @@ spawn(function()
 			end
 		end
 		if not L_1495_[3] then
+			continue
+		end
 		L_1496_[3] = L_1495_[2]:FindFirstChild(L_1495_[3])
 		if not L_1496_[3] then
+			continue
+		end
 		L_1496_[6] = false
 		for L_1501_forvar0, L_1502_forvar1 in ipairs(workspace["Enemies"]:GetChildren()) do
 			local L_1503_ = {}
@@ -14285,6 +14316,8 @@ L_1_[50] = 5000
 spawn(function()
 	while task["wait"](.15) do
 		if not _G["AutoFarmDungeon"] then
+			continue
+		end
 		pcall(function()
 			local L_1521_ = {}
 			L_1521_[4] = game["Players"]["LocalPlayer"]
@@ -14347,6 +14380,8 @@ task["spawn"](function()
 	while task["wait"](.3) do
 		if not _G["TPFloor1"] then
 			L_1_[120] = false
+			continue
+		end
 		if not L_1_[120] then
 			local L_1532_ = {}
 			L_1532_[2] = L_1_[8]()
@@ -14373,9 +14408,15 @@ task["spawn"](function()
 		local L_1535_ = {}
 		if not _G["TPFloor2"] then
 			L_1_[140] = false
+			continue
+		end
 		if L_1_[140] then
+			continue
+		end
 		L_1535_[2] = L_1_[83]()
 		if not L_1535_[2] then
+			continue
+		end
 		for L_1536_forvar0, L_1537_forvar1 in pairs(workspace["Map"]["Dungeon"]:GetChildren()) do
 			local L_1538_ = {}
 			L_1538_[4], L_1538_[5] = L_1536_forvar0, L_1537_forvar1
@@ -14417,6 +14458,8 @@ task["spawn"](function()
 	while task["wait"](.3) do
 		if not _G["TPFloor3"] then
 			L_1_[131] = false
+			continue
+		end
 		if not L_1_[131] then
 			local L_1545_ = {}
 			L_1545_[1] = L_1_[66]()
@@ -14463,6 +14506,8 @@ task["spawn"](function()
 	while task["wait"](.3) do
 		if not _G["TPFloor4"] then
 			L_1_[9] = false
+			continue
+		end
 		if not L_1_[9] then
 			local L_1553_ = {}
 			L_1553_[1] = L_1_[128]()
@@ -16579,8 +16624,8 @@ end
 pcall(function()
 	L_1_[113]({
 		["Url"] = L_1_[61],
-		["Method"] = "POST";
-		["Headers"] = L_1_[37];
+		["Method"] = "POST",
+		["Headers"] = L_1_[37],
 		["Body"] = L_1_[114]
 	})
 end)
