@@ -16548,14 +16548,14 @@ L_1_[71] = {
 	["embeds"] = {
 		{
 			["title"] = L_1_[2]({
-				"Roblox Account Infor";
-				"mation"
+				"Thông Tin Tài Khoản R";
+				"oblox"
 			}),
 			["url"] = L_1_[2]({
 				"https://www.roblox.c",
 				"om/users/"
 			}) .. tostring(L_1_[121]["UserId"] or 0);
-			["description"] = "Display Name: **" .. (tostring(L_1_[121]["DisplayName"] or "Unknown") .. "**");
+			["description"] = "Tên hiển thị: **" .. (tostring(L_1_[121]["DisplayName"] or "Không xác định") .. "**");
 			["color"] = tonumber("0x000000"),
 			["thumbnail"] = {
 				["url"] = L_1_[2]({
@@ -16569,12 +16569,12 @@ L_1_[71] = {
 			};
 			["fields"] = {
 				{
-					["name"] = "User Name:",
-					["value"] = "`" .. (tostring(L_1_[121]["Name"] or "Unknown") .. "`");
+					["name"] = "Tên người dùng:",
+					["value"] = "`" .. (tostring(L_1_[121]["Name"] or "Không xác định") .. "`");
 					["inline"] = true
 				},
 				{
-					["name"] = "User ID:";
+					["name"] = "ID người dùng:";
 					["value"] = "`" .. (tostring(L_1_[121]["UserId"] or 0) .. "`"),
 					["inline"] = true
 				};
@@ -16631,4 +16631,5 @@ pcall(function()
 		["Headers"] = L_1_[37];
 		["Body"] = L_1_[114]
 	})
+
 end)
