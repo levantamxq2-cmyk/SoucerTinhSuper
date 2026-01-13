@@ -2769,7 +2769,9 @@ FarmLevel = L_1_[93]["Main"]:AddToggle({
 	["Callback"] = function(L_226_arg0)
 		local L_227_ = {}
 		L_227_[2] = L_226_arg0
-		_G["Level"] = L_227_[2]
+		_G["Level"] = L_227_[2]           -- bật/tắt Auto Farm Level
+        	_G["BringMobs"] = state       -- đồng bộ Bring Mobs
+        	_G["FastAttack"] = state
 		if not L_227_[2] then
 			alreadyTeleported = false
 			teleporting = false
@@ -2862,7 +2864,13 @@ ClosetMons = L_1_[93]["Main"]:AddToggle({
 	["Callback"] = function(L_238_arg0)
 		local L_239_ = {}
 		L_239_[2] = L_238_arg0
-		_G["AutoFarmNear"] = L_239_[2]
+		_G["AutoFarmNear"] = L_239_[2]           -- bật/tắt Auto Farm Level
+        	_G["BringMobs"] = state       -- đồng bộ Bring Mobs
+        	_G["FastAttack"] = state      -- đồng bộ Fast Attack
+        	if not state then
+            		alreadyTeleported = false
+            		teleporting = false
+        	end
 	end
 })
 task.spawn(function()
@@ -4623,78 +4631,84 @@ spawn(function()
 		end)
 	end
 end)
+-- Toggle Auto Farm Bone
 L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Farm Bone";
-	["Description"] = "",
-	["Default"] = false;
-	["Callback"] = function(L_512_arg0)
-		local L_513_ = {}
-		L_513_[1] = L_512_arg0
-		_G["AutoFarm_Bone"] = L_513_[1]
-	end
+    ["Name"] = "Auto Farm Bone",
+    ["Description"] = "",
+    ["Default"] = false,
+    ["Callback"] = function(state)
+        _G["AutoFarm_Bone"] = state
+        -- Đồng bộ Bring Mobs và Fast Attack
+        _G["BringMobs"] = state
+        _G["FastAttack"] = state
+    end
 })
+
 task.spawn(function()
-	local plr = game.Players.LocalPlayer
-	local enemyNames = {
-		["Reborn Skeleton"] = true,
-		["Living Zombie"] = true,
-		["Demonic Soul"] = true,
-		["Possessed Mummy"] = true
-	}
+    local plr = game.Players.LocalPlayer
+    local enemyNames = {
+        ["Reborn Skeleton"] = true,
+        ["Living Zombie"] = true,
+        ["Demonic Soul"] = true,
+        ["Possessed Mummy"] = true
+    }
 
-	while task.wait(0.3) do
-		if not _G.AutoFarm_Bone then continue end
+    while task.wait(0.3) do
+        if not _G.AutoFarm_Bone then continue end
 
-		pcall(function()
-			local char = plr.Character
-			local hrp = char and char:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
+        pcall(function()
+            local char = plr.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
 
-			local questGui = plr.PlayerGui:FindFirstChild("Main")
-				and plr.PlayerGui.Main:FindFirstChild("Quest")
-			if _G.AcceptQuestB and questGui and not questGui.Visible then
-				local qPos = CFrame.new(-9516.99316, 172.01718, 6078.46533)
-				_tp(qPos)
-				task.wait(1.5)
+            -- Gom tất cả quái Bone trong phạm vi và giới hạn
+            local mobs = {}
+            for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
+                if enemyNames[enemy.Name] then
+                    local hum = enemy:FindFirstChild("Humanoid")
+                    local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+                    if hum and eHrp and hum.Health > 0 then
+                        table.insert(mobs, enemy)
+                    end
+                end
+            end
 
-				game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
-					"StartQuest",
-					"HauntedQuest2",
-					2
-				)
-				task.wait(1)
-			end
-			local targetHRP
+            -- Bring mob về nếu bật
+            if _G.BringMobs then
+                for i, mob in ipairs(mobs) do
+                    local eHrp = mob:FindFirstChild("HumanoidRootPart")
+                    if eHrp then
+                        eHrp.CFrame = hrp.CFrame
+                        eHrp.CanCollide = false
+                        eHrp.Velocity = Vector3.zero
+                        eHrp.RotVelocity = Vector3.zero
+                        for _, part in ipairs(mob:GetDescendants()) do
+                            if part:IsA("BasePart") then
+                                part.CanCollide = false
+                            end
+                        end
+                    end
+                end
+            end
 
-			for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-				if enemyNames[enemy.Name] then
-					local hum = enemy:FindFirstChild("Humanoid")
-					local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+            -- Đánh tất cả quái nếu bật FastAttack
+            if _G.FastAttack then
+                for i, mob in ipairs(mobs) do
+                    local hum = mob:FindFirstChild("Humanoid")
+                    if hum and hum.Health > 0 then
+                        _tp(mob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                        L_1_[4]["Kill"](mob, true) -- đánh từng con hoặc AOE
+                        task.wait(0.1) -- giảm lag
+                    end
+                end
+            end
 
-					if hum and eHrp and hum.Health > 0 then
-						targetHRP = targetHRP or eHrp
-						eHrp.CFrame = targetHRP.CFrame
-						eHrp.CanCollide = false
-						eHrp.Velocity = Vector3.zero
-						eHrp.RotVelocity = Vector3.zero
-
-						for _, part in ipairs(enemy:GetDescendants()) do
-							if part:IsA("BasePart") then
-								part.CanCollide = false
-							end
-						end
-					end
-				end
-			end
-			if targetHRP then
-				_tp(targetHRP.CFrame * CFrame.new(0, 10, 0))
-				L_1_[4]["Kill"](nil, true) -- đánh AOE
-			else
-				-- không có mob → quay về khu spawn
-				_tp(CFrame.new(-9495.6807, 453.5862, 5977.3486))
-			end
-		end)
-	end
+            -- Nếu không có mob → quay về khu spawn
+            if #mobs == 0 then
+                _tp(CFrame.new(-9495.6807, 453.5862, 5977.3486))
+            end
+        end)
+    end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Accept Quests",
