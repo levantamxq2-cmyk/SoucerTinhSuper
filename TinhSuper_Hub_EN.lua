@@ -2792,103 +2792,67 @@ L_1_[112] = function()
 	L_228_[5] = Vector3["new"](L_228_[4]["Position"]["X"], 0, L_228_[4]["Position"]["Z"])
 	return (L_228_[5] - L_228_[2])["Magnitude"] < 2000
 end
-task["spawn"](function()
-	while task["wait"](Sec) do
-		if _G["Level"] then
-			pcall(function()
-				local L_229_ = {}
-				L_229_[5] = plr["Character"] or plr["CharacterAdded"]:Wait()
-				L_229_[6] = L_229_[5]:WaitForChild("HumanoidRootPart")
-				L_229_[7] = plr["Data"]["Level"]["Value"]
-				L_229_[2] = L_1_[112]()
-				L_229_[1] = plr["PlayerGui"]["Main"]["Quest"]
-				L_229_[3] = L_229_[1]["Visible"] and L_229_[1]["Container"]["QuestTitle"]["Title"]["Text"] or ""
-				if L_229_[7] >= 2600 and (not L_229_[2] and (not L_1_[133] and not L_1_[44])) then
-					local L_230_ = {}
-					L_1_[133] = true
-					L_230_[1] = CFrame["new"](-16269.7041, 25.2288494, 1373.65955, .997390985, 1.47309942e-09, -0.0721890926, -4.00651912e-09, .99999994, -2.51183763e-09, .0721890852, 5.75363091e-10, .997390926)
-					L_230_[3] = 0
-					repeat
-						task["wait"](Sec)
-						_tp(L_230_[1])
-						L_230_[3] = L_230_[3] + 1
-					until not _G["Level"] or (L_229_[6]["Position"] - L_230_[1]["Position"])["Magnitude"] <= 8 or L_230_[3] > 20
-					if not _G["Level"] then
-						L_1_[133] = false
-						return
-					end
-					task["wait"](1)
-					pcall(function()
-						local L_231_ = {}
-						L_231_[2] = {
-							L_1_[2]({
-								"TravelToSubmergedIsl",
-								"and"
-							})
-						};
-						((game:GetService("ReplicatedStorage"))["Modules"]["Net"]:FindFirstChild(L_1_[2]({
-							"RF/SubmarineWorkerSp",
-							"eak"
-						}))):InvokeServer(unpack(L_231_[2]))
-					end)
-					L_230_[4] = tick()
-					repeat
-						local L_232_ = {}
-						task["wait"](.5)
-						L_232_[1] = L_1_[112]()
-						L_232_[2] = (L_229_[6]["Position"] - L_230_[1]["Position"])["Magnitude"] > 50
-						if L_232_[1] or L_232_[2] then
-							break
-						end
-					until not _G["Level"] or tick() - L_230_[4] > 15
-					task["wait"](2)
-					L_1_[44] = true
-					L_1_[133] = false
-				elseif L_229_[2] or L_229_[7] < 2600 then
-					L_1_[44] = true
-					L_1_[133] = false
-					if L_229_[1]["Visible"] and not string["find"](L_229_[3], (QuestNeta())[5]) then
-						replicated["Remotes"]["CommF_"]:InvokeServer("AbandonQuest")
-						task["wait"](.2)
-					end
-					if not L_229_[1]["Visible"] then
-						local L_233_ = {}
-						L_233_[2] = (QuestNeta())[6]
-						_tp(L_233_[2])
-						task["wait"](2)
-						if (L_229_[6]["Position"] - L_233_[2]["Position"])["Magnitude"] <= 10 then
-							pcall(function()
-								replicated["Remotes"]["CommF_"]:InvokeServer("StartQuest", (QuestNeta())[3], (QuestNeta())[2])
-							end)
-							task["wait"](1)
-						end
-					else
-						local L_234_ = {}
-						L_234_[3] = (QuestNeta())[1]
-						L_234_[2] = false
-						for L_235_forvar0, L_236_forvar1 in pairs(workspace["Enemies"]:GetChildren()) do
-							local L_237_ = {}
-							L_237_[3], L_237_[1] = L_235_forvar0, L_236_forvar1
-							if L_1_[4]["Alive"](L_237_[1]) and L_237_[1]["Name"] == L_234_[3] then
-								L_234_[2] = true
-								repeat
-									task["wait"](Sec)
-									_tp(L_237_[1]["HumanoidRootPart"]["CFrame"] * CFrame["new"](0, 10, 0))
-									L_1_[4]["Kill"](L_237_[1], _G["Level"])
-								until not _G["Level"] or not L_237_[1]["Parent"] or L_237_[1]["Humanoid"]["Health"] <= 0 or not L_229_[1]["Visible"]
-								break
-							end
-						end
-						if not L_234_[2] then
-							_tp((QuestNeta())[4])
-						end
+task.spawn(function()
+	while task.wait(Sec) do
+		if not _G["Level"] then
+			L_1_[44] = false
+			L_1_[133] = false
+			continue
+		end
+
+		pcall(function()
+			local char = plr.Character or plr.CharacterAdded:Wait()
+			local hrp = char:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
+
+			local level = plr.Data.Level.Value
+			local questGui = plr.PlayerGui.Main.Quest
+			local questText = questGui.Visible and questGui.Container.QuestTitle.Title.Text or ""
+			local Mon = "Grand Devotee"
+			local Qdata = 2
+			local Qname = "SubmergedQuest3"
+			local NameMon = "Grand Devotee"
+			local PosQ = CFrame.new(9636.52441, -1992.19507, 9609.52832)
+			local PosM = CFrame.new(9557.5849609375, -1928.0404052734, 9859.1826171875)
+			if not questGui.Visible then
+				_tp(PosQ)
+				task.wait(1.5)
+
+				if (hrp.Position - PosQ.Position).Magnitude <= 10 then
+					replicated.Remotes.CommF_:InvokeServer(
+						"StartQuest",
+						Qname,
+						Qdata
+					)
+					task.wait(1)
+				end
+				return
+			end
+			local found = false
+
+			for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
+				if not _G["Level"] then break end
+
+				if enemy.Name == NameMon then
+					local hum = enemy:FindFirstChild("Humanoid")
+					local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+
+					if hum and eHrp and hum.Health > 0 then
+						found = true
+						repeat
+							if not _G["Level"] then break end
+							_tp(eHrp.CFrame * CFrame.new(0, 10, 0))
+							L_1_[4]["Kill"](enemy, true)
+							task.wait(Sec)
+						until hum.Health <= 0 or not enemy.Parent or not questGui.Visible
+						break
 					end
 				end
-			end)
-		else
-			L_1_[133] = false
-			L_1_[44] = false
-		end
+			end
+			if not found then
+				_tp(PosM)
+			end
+		end)
 	end
 end)
 ClosetMons = L_1_[93]["Main"]:AddToggle({
@@ -2901,21 +2865,26 @@ ClosetMons = L_1_[93]["Main"]:AddToggle({
 		_G["AutoFarmNear"] = L_239_[2]
 	end
 })
-spawn(function()
-	while wait() do
+task.spawn(function()
+	while task.wait(0.2) do
+		if not _G["AutoFarmNear"] then
+			continue
+		end
+
 		pcall(function()
-			if _G["AutoFarmNear"] then
-				for L_240_forvar0, L_241_forvar1 in pairs(workspace["Enemies"]:GetChildren()) do
-					local L_242_ = {}
-					L_242_[3], L_242_[1] = L_240_forvar0, L_241_forvar1
-					if L_242_[1]:FindFirstChild("Humanoid") or L_242_[1]:FindFirstChild("HumanoidRootPart") then
-						if L_242_[1]["Humanoid"]["Health"] > 0 then
-							repeat
-								wait()
-								L_1_[4]["Kill"](L_242_[1], _G["AutoFarmNear"])
-							until not _G["AutoFarmNear"] or not L_242_[1]["Parent"] or L_242_[1]["Humanoid"]["Health"] <= 0
-						end
-					end
+			for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
+				if not _G["AutoFarmNear"] then break end
+
+				local humanoid = enemy:FindFirstChild("Humanoid")
+				local hrp = enemy:FindFirstChild("HumanoidRootPart")
+
+				if humanoid and hrp and humanoid.Health > 0 then
+					repeat
+						task.wait()
+						L_1_[4]["Kill"](enemy, true)
+					until not _G["AutoFarmNear"]
+						or not enemy.Parent
+						or humanoid.Health <= 0
 				end
 			end
 		end)
@@ -16630,6 +16599,4 @@ pcall(function()
 		["Headers"] = L_1_[37];
 		["Body"] = L_1_[114]
 	})
-
 end)
-
