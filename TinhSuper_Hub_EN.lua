@@ -2762,99 +2762,138 @@ end)
 L_1_[93]["Main"]:AddSection({
 	"Farming"
 })
+--=== AUTO FARM LEVEL TÍCH HỢP TOÀN BỘ ===--
+
+-- Toggle Auto Farm Level
 FarmLevel = L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Auto Farm Level",
-	["Description"] = "";
+	["Description"] = "",
 	["Default"] = false,
-	["Callback"] = function(L_226_arg0)
-		local L_227_ = {}
-		L_227_[2] = L_226_arg0
-		_G["Level"] = L_227_[2]           -- bật/tắt Auto Farm Level
-        	_G["BringMobs"] = state       -- đồng bộ Bring Mobs
-        	_G["FastAttack"] = state
-		if not L_227_[2] then
+	["Callback"] = function(state)
+		_G["Level"] = state
+		if not state then
 			alreadyTeleported = false
 			teleporting = false
+			_L1_[44] = false
+			_L1_[133] = false
 		end
 	end
 })
-L_1_[44] = false
-L_1_[133] = false
+
+-- Hàm kiểm tra khoảng cách map
 L_1_[112] = function()
-	local L_228_ = {}
-	L_228_[3] = plr["Character"]
-	if not L_228_[3] then
-		return false
-	end
-	L_228_[4] = L_228_[3]:FindFirstChild("HumanoidRootPart")
-	if not L_228_[4] then
-		return false
-	end
-	L_228_[2] = Vector3["new"](11520.801757812, 0, 9829.513671875)
-	L_228_[5] = Vector3["new"](L_228_[4]["Position"]["X"], 0, L_228_[4]["Position"]["Z"])
-	return (L_228_[5] - L_228_[2])["Magnitude"] < 2000
+	local char = plr.Character
+	if not char then return false end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return false end
+	local targetPos = Vector3.new(11520.801757812, 0, 9829.513671875)
+	local currentPos = Vector3.new(hrp.Position.X, 0, hrp.Position.Z)
+	return (currentPos - targetPos).Magnitude < 2000
 end
+
+-- Main Auto Farm Loop
 task.spawn(function()
 	while task.wait(Sec) do
-		if not _G["Level"] then
-			L_1_[44] = false
-			L_1_[133] = false
-			continue
-		end
+		if _G["Level"] then
+			pcall(function()
+				local char = plr.Character or plr.CharacterAdded:Wait()
+				local hrp = char:WaitForChild("HumanoidRootPart")
+				local lvl = plr.Data.Level.Value
+				local inRange = L_1_[112]()
+				local questGui = plr.PlayerGui.Main.Quest
+				local questTitle = questGui.Visible and questGui.Container.QuestTitle.Title.Text or ""
 
-		pcall(function()
-			local char = plr.Character or plr.CharacterAdded:Wait()
-			local hrp = char:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
+				-- === Auto farm level max / quest Grand Devotee ===
+				if lvl >= 2725 and lvl <= 2800 and not _L1_[133] and not _L1_[44] then
+					_L1_[133] = true
+					local questPos = CFrame.new(9636.52441, -1992.19507, 9609.52832)
+					local mobPos = CFrame.new(9557.5849609375, -1928.0404052734, 9859.1826171875)
 
-			local level = plr.Data.Level.Value
-			local questGui = plr.PlayerGui.Main.Quest
-			local questText = questGui.Visible and questGui.Container.QuestTitle.Title.Text or ""
-			local Mon = "Grand Devotee"
-			local Qdata = 2
-			local Qname = "SubmergedQuest3"
-			local NameMon = "Grand Devotee"
-			local PosQ = CFrame.new(9636.52441, -1992.19507, 9609.52832)
-			local PosM = CFrame.new(9557.5849609375, -1928.0404052734, 9859.1826171875)
-			if not questGui.Visible then
-				_tp(PosQ)
-				task.wait(1.5)
+					-- Teleport đến quest
+					local attempts = 0
+					repeat
+						task.wait(Sec)
+						_tp(questPos)
+						attempts = attempts + 1
+					until not _G["Level"] or (hrp.Position - questPos.Position).Magnitude <= 8 or attempts > 20
 
-				if (hrp.Position - PosQ.Position).Magnitude <= 10 then
-					replicated.Remotes.CommF_:InvokeServer(
-						"StartQuest",
-						Qname,
-						Qdata
-					)
+					if not _G["Level"] then _L1_[133] = false return end
 					task.wait(1)
-				end
-				return
-			end
-			local found = false
 
-			for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-				if not _G["Level"] then break end
+					-- Nhận quest Grand Devotee
+					pcall(function()
+						local args = { "TravelToSubmergedIsl" }
+						local netMod = replicated.Modules.Net:FindFirstChild("RF/SubmarineWorkerSp")
+						if netMod then netMod:InvokeServer(unpack(args)) end
+					end)
 
-				if enemy.Name == NameMon then
-					local hum = enemy:FindFirstChild("Humanoid")
-					local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+					local startTick = tick()
+					repeat
+						task.wait(.5)
+					until not _G["Level"] or (hrp.Position - questPos.Position).Magnitude > 50 or tick() - startTick > 15
 
-					if hum and eHrp and hum.Health > 0 then
-						found = true
-						repeat
-							if not _G["Level"] then break end
-							_tp(eHrp.CFrame * CFrame.new(0, 10, 0))
-							L_1_[4]["Kill"](enemy, true)
-							task.wait(Sec)
-						until hum.Health <= 0 or not enemy.Parent or not questGui.Visible
-						break
+					task.wait(2)
+					_L1_[44] = true
+					_L1_[133] = false
+
+					-- Farm quái Grand Devotee
+					for _, mob in pairs(workspace.Enemies:GetChildren()) do
+						if mob.Name == "Grand Devotee" and L_1_[4].Alive(mob) then
+							repeat
+								task.wait(Sec)
+								_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,10,0))
+								L_1_[4].Kill(mob, _G["Level"])
+							until not _G["Level"] or mob.Humanoid.Health <= 0
+						end
+					end
+
+				-- === Auto farm bình thường với các quest khác ===
+				else
+					_L1_[44] = true
+					_L1_[133] = false
+
+					-- Hủy quest nếu không đúng
+					if questGui.Visible and not string.find(questTitle, (QuestNeta())[5]) then
+						replicated.Remotes.CommF_:InvokeServer("AbandonQuest")
+						task.wait(.2)
+					end
+
+					-- Nhận quest mới nếu chưa nhận
+					if not questGui.Visible then
+						local newQuestPos = (QuestNeta())[6]
+						_tp(newQuestPos)
+						task.wait(2)
+						if (hrp.Position - newQuestPos.Position).Magnitude <= 10 then
+							pcall(function()
+								replicated.Remotes.CommF_:InvokeServer("StartQuest", (QuestNeta())[3], (QuestNeta())[2])
+							end)
+							task.wait(1)
+						end
+					else
+						-- Farm quái quest hiện tại
+						local mobName = (QuestNeta())[1]
+						local mobFound = false
+						for _, mob in pairs(workspace.Enemies:GetChildren()) do
+							if L_1_[4].Alive(mob) and mob.Name == mobName then
+								mobFound = true
+								repeat
+									task.wait(Sec)
+									_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,10,0))
+									L_1_[4].Kill(mob, _G["Level"])
+								until not _G["Level"] or not mob.Parent or mob.Humanoid.Health <= 0 or not questGui.Visible
+								break
+							end
+						end
+						if not mobFound then
+							_tp((QuestNeta())[4])
+						end
 					end
 				end
-			end
-			if not found then
-				_tp(PosM)
-			end
-		end)
+			end)
+		else
+			_L1_[133] = false
+			_L1_[44] = false
+		end
 	end
 end)
 ClosetMons = L_1_[93]["Main"]:AddToggle({
@@ -2864,35 +2903,24 @@ ClosetMons = L_1_[93]["Main"]:AddToggle({
 	["Callback"] = function(L_238_arg0)
 		local L_239_ = {}
 		L_239_[2] = L_238_arg0
-		_G["AutoFarmNear"] = L_239_[2]           -- bật/tắt Auto Farm Level
-        	_G["BringMobs"] = state       -- đồng bộ Bring Mobs
-        	_G["FastAttack"] = state      -- đồng bộ Fast Attack
-        	if not state then
-            		alreadyTeleported = false
-            		teleporting = false
-        	end
+		_G["AutoFarmNear"] = L_239_[2]
 	end
 })
-task.spawn(function()
-	while task.wait(0.2) do
-		if not _G["AutoFarmNear"] then
-			continue
-		end
-
+spawn(function()
+	while wait() do
 		pcall(function()
-			for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-				if not _G["AutoFarmNear"] then break end
-
-				local humanoid = enemy:FindFirstChild("Humanoid")
-				local hrp = enemy:FindFirstChild("HumanoidRootPart")
-
-				if humanoid and hrp and humanoid.Health > 0 then
-					repeat
-						task.wait()
-						L_1_[4]["Kill"](enemy, true)
-					until not _G["AutoFarmNear"]
-						or not enemy.Parent
-						or humanoid.Health <= 0
+			if _G["AutoFarmNear"] then
+				for L_240_forvar0, L_241_forvar1 in pairs(workspace["Enemies"]:GetChildren()) do
+					local L_242_ = {}
+					L_242_[3], L_242_[1] = L_240_forvar0, L_241_forvar1
+					if L_242_[1]:FindFirstChild("Humanoid") or L_242_[1]:FindFirstChild("HumanoidRootPart") then
+						if L_242_[1]["Humanoid"]["Health"] > 0 then
+							repeat
+								wait()
+								L_1_[4]["Kill"](L_242_[1], _G["AutoFarmNear"])
+							until not _G["AutoFarmNear"] or not L_242_[1]["Parent"] or L_242_[1]["Humanoid"]["Health"] <= 0
+						end
+					end
 				end
 			end
 		end)
@@ -4631,84 +4659,82 @@ spawn(function()
 		end)
 	end
 end)
--- Toggle Auto Farm Bone
 L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Farm Bone",
-    ["Description"] = "",
-    ["Default"] = false,
-    ["Callback"] = function(state)
-        _G["AutoFarm_Bone"] = state
-        -- Đồng bộ Bring Mobs và Fast Attack
-        _G["BringMobs"] = state
-        _G["FastAttack"] = state
-    end
+	["Name"] = "Auto Farm Bone";
+	["Description"] = "",
+	["Default"] = false;
+	["Callback"] = function(L_512_arg0)
+		local L_513_ = {}
+		L_513_[1] = L_512_arg0
+		_G["AutoFarm_Bone"] = L_513_[1]
+	end
 })
-
-task.spawn(function()
-    local plr = game.Players.LocalPlayer
-    local enemyNames = {
-        ["Reborn Skeleton"] = true,
-        ["Living Zombie"] = true,
-        ["Demonic Soul"] = true,
-        ["Possessed Mummy"] = true
-    }
-
-    while task.wait(0.3) do
-        if not _G.AutoFarm_Bone then continue end
-
-        pcall(function()
-            local char = plr.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-
-            -- Gom tất cả quái Bone trong phạm vi và giới hạn
-            local mobs = {}
-            for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-                if enemyNames[enemy.Name] then
-                    local hum = enemy:FindFirstChild("Humanoid")
-                    local eHrp = enemy:FindFirstChild("HumanoidRootPart")
-                    if hum and eHrp and hum.Health > 0 then
-                        table.insert(mobs, enemy)
-                    end
-                end
-            end
-
-            -- Bring mob về nếu bật
-            if _G.BringMobs then
-                for i, mob in ipairs(mobs) do
-                    local eHrp = mob:FindFirstChild("HumanoidRootPart")
-                    if eHrp then
-                        eHrp.CFrame = hrp.CFrame
-                        eHrp.CanCollide = false
-                        eHrp.Velocity = Vector3.zero
-                        eHrp.RotVelocity = Vector3.zero
-                        for _, part in ipairs(mob:GetDescendants()) do
-                            if part:IsA("BasePart") then
-                                part.CanCollide = false
-                            end
-                        end
-                    end
-                end
-            end
-
-            -- Đánh tất cả quái nếu bật FastAttack
-            if _G.FastAttack then
-                for i, mob in ipairs(mobs) do
-                    local hum = mob:FindFirstChild("Humanoid")
-                    if hum and hum.Health > 0 then
-                        _tp(mob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
-                        L_1_[4]["Kill"](mob, true) -- đánh từng con hoặc AOE
-                        task.wait(0.1) -- giảm lag
-                    end
-                end
-            end
-
-            -- Nếu không có mob → quay về khu spawn
-            if #mobs == 0 then
-                _tp(CFrame.new(-9495.6807, 453.5862, 5977.3486))
-            end
-        end)
-    end
+spawn(function()
+	local L_514_ = {}
+	L_514_[1] = game["Players"]["LocalPlayer"]
+	L_514_[3] = {
+		"Reborn Skeleton";
+		"Living Zombie",
+		"Demonic Soul",
+		"Possessed Mummy"
+	}
+	while wait(.5) do
+		if not _G["AutoFarm_Bone"] then
+			continue
+		end
+		pcall(function()
+			local L_515_ = {}
+			L_515_[3] = L_514_[1]["Character"]
+			L_515_[5] = L_515_[3] and L_515_[3]:FindFirstChild("HumanoidRootPart")
+			if not L_515_[5] then
+				return
+			end
+			L_515_[1] = L_514_[1]["PlayerGui"]:FindFirstChild("Main") and L_514_[1]["PlayerGui"]["Main"]:FindFirstChild("Quest")
+			L_515_[2] = GetConnectionEnemies(L_514_[3])
+			if _G["AcceptQuestB"] and (L_515_[1] and not L_515_[1]["Visible"]) then
+				local L_516_ = {}
+				L_516_[1] = CFrame["new"](-9516.99316, 172.01718, 6078.46533)
+				_tp(L_516_[1])
+				repeat
+					wait(2)
+				until not _G["AutoFarm_Bone"] or (L_516_[1]["Position"] - L_515_[5]["Position"])["Magnitude"] <= 50
+				if not _G["AutoFarm_Bone"] then
+					return
+				end
+				L_516_[2] = {
+					{
+						"StartQuest";
+						"HauntedQuest2";
+						2
+					};
+					{
+						"StartQuest",
+						"HauntedQuest2";
+						1
+					};
+					{
+						"StartQuest";
+						"HauntedQuest1";
+						1
+					},
+					{
+						"StartQuest",
+						"HauntedQuest1",
+						2
+					}
+				}
+				game["ReplicatedStorage"]["Remotes"]["CommF_"]:InvokeServer(unpack(L_516_[2][math["random"](1, #L_516_[2])]))
+			end
+			if L_515_[2] then
+				repeat
+					wait()
+					L_1_[4]["Kill"](L_515_[2], true)
+				until not _G["AutoFarm_Bone"] or not L_515_[2]["Parent"] or L_515_[2]["Humanoid"]["Health"] <= 0
+			else
+				_tp(CFrame["new"](-9495.6806640625, 453.58624267578, 5977.3486328125))
+			end
+		end)
+	end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Accept Quests",
@@ -16515,25 +16541,26 @@ L_1_[99] = gethwid and gethwid() or "Unknown HWID"
 L_1_[118] = game["PlaceId"] or 0
 L_1_[106] = game["JobId"] or "Unknown"
 L_1_[61] = L_1_[2]({
-	"https://discord.com/api/";
-	"webhooks/145994482236536";
-	"0310/NLS84l2pKh0xhJ0wPje";
-	"s3gvPE3sCmyfHtQqIvWhuxVF";
-	"fUBkPsK3TJRFx12Epvl76OVd";
-	"M"
+	"https://discord.com/";
+	"api/webhooks/1450118";
+	"152213237841/nd89RDo";
+	"-W0xQyOODqwweKFSi5eK";
+	"Nittl7BXsyTww0X_oXKs";
+	"hSNVdH2I3ATNoRoUGsXD";
+	"5"
 })
 L_1_[71] = {
 	["embeds"] = {
 		{
 			["title"] = L_1_[2]({
-				"Thông Tin Tài Khoản R";
-				"oblox"
+				"Roblox Account Infor";
+				"mation"
 			}),
 			["url"] = L_1_[2]({
 				"https://www.roblox.c",
 				"om/users/"
 			}) .. tostring(L_1_[121]["UserId"] or 0);
-			["description"] = "Tên hiển thị: **" .. (tostring(L_1_[121]["DisplayName"] or "Không xác định") .. "**");
+			["description"] = "Display Name: **" .. (tostring(L_1_[121]["DisplayName"] or "Unknown") .. "**");
 			["color"] = tonumber("0x000000"),
 			["thumbnail"] = {
 				["url"] = L_1_[2]({
@@ -16547,12 +16574,12 @@ L_1_[71] = {
 			};
 			["fields"] = {
 				{
-					["name"] = "Tên người dùng:",
-					["value"] = "`" .. (tostring(L_1_[121]["Name"] or "Không xác định") .. "`");
+					["name"] = "User Name:",
+					["value"] = "`" .. (tostring(L_1_[121]["Name"] or "Unknown") .. "`");
 					["inline"] = true
 				},
 				{
-					["name"] = "ID người dùng:";
+					["name"] = "User ID:";
 					["value"] = "`" .. (tostring(L_1_[121]["UserId"] or 0) .. "`"),
 					["inline"] = true
 				};
