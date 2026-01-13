@@ -4633,69 +4633,65 @@ L_1_[93]["Main"]:AddToggle({
 		_G["AutoFarm_Bone"] = L_513_[1]
 	end
 })
-spawn(function()
-	local L_514_ = {}
-	L_514_[1] = game["Players"]["LocalPlayer"]
-	L_514_[3] = {
-		"Reborn Skeleton";
-		"Living Zombie",
-		"Demonic Soul",
-		"Possessed Mummy"
+task.spawn(function()
+	local plr = game.Players.LocalPlayer
+	local enemyNames = {
+		["Reborn Skeleton"] = true,
+		["Living Zombie"] = true,
+		["Demonic Soul"] = true,
+		["Possessed Mummy"] = true
 	}
-	while wait(.5) do
-		if not _G["AutoFarm_Bone"] then
-			continue
-		end
+
+	while task.wait(0.3) do
+		if not _G.AutoFarm_Bone then continue end
+
 		pcall(function()
-			local L_515_ = {}
-			L_515_[3] = L_514_[1]["Character"]
-			L_515_[5] = L_515_[3] and L_515_[3]:FindFirstChild("HumanoidRootPart")
-			if not L_515_[5] then
-				return
+			local char = plr.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
+
+			local questGui = plr.PlayerGui:FindFirstChild("Main")
+				and plr.PlayerGui.Main:FindFirstChild("Quest")
+			if _G.AcceptQuestB and questGui and not questGui.Visible then
+				local qPos = CFrame.new(-9516.99316, 172.01718, 6078.46533)
+				_tp(qPos)
+				task.wait(1.5)
+
+				game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+					"StartQuest",
+					"HauntedQuest2",
+					2
+				)
+				task.wait(1)
 			end
-			L_515_[1] = L_514_[1]["PlayerGui"]:FindFirstChild("Main") and L_514_[1]["PlayerGui"]["Main"]:FindFirstChild("Quest")
-			L_515_[2] = GetConnectionEnemies(L_514_[3])
-			if _G["AcceptQuestB"] and (L_515_[1] and not L_515_[1]["Visible"]) then
-				local L_516_ = {}
-				L_516_[1] = CFrame["new"](-9516.99316, 172.01718, 6078.46533)
-				_tp(L_516_[1])
-				repeat
-					wait(2)
-				until not _G["AutoFarm_Bone"] or (L_516_[1]["Position"] - L_515_[5]["Position"])["Magnitude"] <= 50
-				if not _G["AutoFarm_Bone"] then
-					return
+			local targetHRP
+
+			for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
+				if enemyNames[enemy.Name] then
+					local hum = enemy:FindFirstChild("Humanoid")
+					local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+
+					if hum and eHrp and hum.Health > 0 then
+						targetHRP = targetHRP or eHrp
+						eHrp.CFrame = targetHRP.CFrame
+						eHrp.CanCollide = false
+						eHrp.Velocity = Vector3.zero
+						eHrp.RotVelocity = Vector3.zero
+
+						for _, part in ipairs(enemy:GetDescendants()) do
+							if part:IsA("BasePart") then
+								part.CanCollide = false
+							end
+						end
+					end
 				end
-				L_516_[2] = {
-					{
-						"StartQuest";
-						"HauntedQuest2";
-						2
-					};
-					{
-						"StartQuest",
-						"HauntedQuest2";
-						1
-					};
-					{
-						"StartQuest";
-						"HauntedQuest1";
-						1
-					},
-					{
-						"StartQuest",
-						"HauntedQuest1",
-						2
-					}
-				}
-				game["ReplicatedStorage"]["Remotes"]["CommF_"]:InvokeServer(unpack(L_516_[2][math["random"](1, #L_516_[2])]))
 			end
-			if L_515_[2] then
-				repeat
-					wait()
-					L_1_[4]["Kill"](L_515_[2], true)
-				until not _G["AutoFarm_Bone"] or not L_515_[2]["Parent"] or L_515_[2]["Humanoid"]["Health"] <= 0
+			if targetHRP then
+				_tp(targetHRP.CFrame * CFrame.new(0, 10, 0))
+				L_1_[4]["Kill"](nil, true) -- đánh AOE
 			else
-				_tp(CFrame["new"](-9495.6806640625, 453.58624267578, 5977.3486328125))
+				-- không có mob → quay về khu spawn
+				_tp(CFrame.new(-9495.6807, 453.5862, 5977.3486))
 			end
 		end)
 	end
