@@ -3881,61 +3881,78 @@ elseif World3 then
 end
 L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Auto Farm All Island",
-	["Default"] = false;
-	["Callback"] = function(L_416_arg0)
-		local L_417_ = {}
-		L_417_[1] = L_416_arg0
-		_G["AutoFarmIsland"] = L_417_[1]
+	["Default"] = false,
+	["Callback"] = function(state)
+		_G["AutoFarmIsland"] = state
+		_G["FastAttack"] = state
+		_G["BringMobs"] = state
 	end
 })
 
-task["spawn"](function()
-	while task["wait"](0.2) do
-		local L_418_ = {}
+task.spawn(function()
+	local currentTarget = nil
+
+	while true do
 		if not _G["AutoFarmIsland"] then
+			currentTarget = nil
+			task.wait(0.5)
 			continue
 		end
-		if not _G["SelectIsland"] then
-			continue
-		end
-		if not L_1_[60] then
-			continue
-		end
-		L_418_[1] = L_1_[60][_G["SelectIsland"]]
-		if not L_418_[1] then
-			continue
-		end
-		L_418_[3] = L_418_[1]["CFrame"]
-		L_418_[2] = L_418_[1]["Mobs"]
-		L_418_[5] = {}
-		for L_419_forvar0, L_420_forvar1 in ipairs(L_418_[2]) do
-			local L_421_ = {}
-			L_421_[3], L_421_[1] = L_419_forvar0, L_420_forvar1
-			L_418_[5][L_421_[1]] = true
-		end
-		L_418_[4] = false
-		
-		-- Kiểm tra và đánh quái
-		for L_422_forvar0, L_423_forvar1 in pairs(workspace["Enemies"]:GetChildren()) do
-			local L_424_ = {}
-			L_424_[3], L_424_[2] = L_422_forvar0, L_423_forvar1
-			if L_418_[5][L_424_[2]["Name"]] and (L_424_[2]:FindFirstChild("Humanoid") and (L_424_[2]:FindFirstChild("HumanoidRootPart") and L_424_[2]["Humanoid"]["Health"] > 0)) then
-				L_418_[4] = true
-				repeat
-					task["wait"]()
-					-- Di chuyển nhanh đến quái
-					_tp(L_424_[2]["HumanoidRootPart"]["CFrame"] * CFrame["new"](0, 10, 0))
-					-- Đánh quái siêu nhanh
-					L_1_[4]["Kill"](L_424_[2], true)
-				until not _G["AutoFarmIsland"] or not L_424_[2]["Parent"] or L_424_[2]["Humanoid"]["Health"] <= 0
+
+		pcall(function()
+			if not _G["SelectIsland"] or not L_1_[60] then
+				task.wait(0.5)
+				return
 			end
-		end
-		
-		-- Nếu không có quái, di chuyển đến vị trí của đảo
-		if not L_418_[4] then
-			-- Di chuyển bình thường đến đảo
-			_tp(L_418_[3])
-		end
+
+			local islandData = L_1_[60][_G["SelectIsland"]]
+			if not islandData then
+				task.wait(0.5)
+				return
+			end
+
+			local waitCFrame = islandData.CFrame
+			local mobList = islandData.Mobs
+			local mobMap = {}
+
+			for _, name in ipairs(mobList) do
+				mobMap[name] = true
+			end
+
+			local target
+			for _, mob in pairs(workspace.Enemies:GetChildren()) do
+				if mobMap[mob.Name]
+				and mob:FindFirstChild("Humanoid")
+				and mob:FindFirstChild("HumanoidRootPart")
+				and mob.Humanoid.Health > 0 then
+					target = mob
+					break
+				end
+			end
+
+			if not target then
+				currentTarget = nil
+				task.wait(0.5)
+				return
+			end
+
+			if target ~= currentTarget then
+				currentTarget = target
+				_tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0))
+				task.wait(0.2)
+			end
+
+			repeat
+				if not _G["AutoFarmIsland"] then break end
+				if not target.Parent then break end
+				task.wait()
+				L_1_[4]["Kill"](target, true)
+			until target.Humanoid.Health <= 0
+
+			currentTarget = nil
+		end)
+
+		task.wait(0.15)
 	end
 end)
 L_1_[93]["Main"]:AddSection({
@@ -3970,91 +3987,98 @@ spawn(function()
 	end
 end)
 EliteQ = L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Farm Elite",
-    ["Description"] = "",
-    ["Default"] = false,
-    ["Callback"] = function(L_427_arg0)
-        local L_428_ = {}
-        L_428_[1] = L_427_arg0
-        _G["FarmEliteHunt"] = L_428_[1]
-    end
+	["Name"] = "Auto Farm Elite",
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G["FarmEliteHunt"] = v
+	end
 })
 
-spawn(function()
-    while wait(1) do
-        pcall(function()
-            if _G["FarmEliteHunt"] then
-                local L_429_ = {}
-                L_429_[2] = L_1_[136]["PlayerGui"]["Main"]["Quest"]
-                L_429_[3] = L_429_[2]["Container"]["QuestTitle"]["Title"]["Text"]
-                
-                -- Nếu chưa có quest, bắt đầu quest mới
-                if not L_429_[2]["Visible"] then
-                    local L_430_ = {}
-                    L_430_[2] = L_1_[18]["Remotes"]["CommF_"]:InvokeServer("EliteHunter")
-                    if L_430_[2] == nil or string.find(L_430_[2], "Cooldown") then
-                        wait(10)
-                        return
-                    end
-                    task.wait(1)
-                else
-                    local L_431_ = {}
-                    L_431_[2] = nil
-                    -- Kiểm tra xem boss nào có trong quest
-                    for L_432_forvar0, L_433_forvar1 in pairs({
-                        "Diablo", "Urban", "Deandre"
-                    }) do
-                        local L_434_ = {}
-                        L_434_[2], L_434_[3] = L_432_forvar0, L_433_forvar1
-                        if string.find(L_429_[3], L_434_[3]) then
-                            L_431_[2] = L_434_[3]
-                            break
-                        end
-                    end
-                    
-                    if L_431_[2] then
-                        local L_435_ = {}
-                        L_435_[2] = nil
-                        
-                        -- Kiểm tra xem boss đã xuất hiện trong game chưa
-                        for L_436_forvar0, L_437_forvar1 in pairs(L_1_[18]:GetChildren()) do
-                            local L_438_ = {}
-                            L_438_[2], L_438_[3] = L_436_forvar0, L_437_forvar1
-                            if L_438_[3]["Name"] == L_431_[2] and L_438_[3]:FindFirstChild("HumanoidRootPart") then
-                                L_435_[2] = L_438_[3]
-                                break
-                            end
-                        end
-                        
-                        -- Kiểm tra trong workspace
-                        for L_439_forvar0, L_440_forvar1 in pairs(Enemies:GetChildren()) do
-                            local L_441_ = {}
-                            L_441_[1], L_441_[3] = L_439_forvar0, L_440_forvar1
-                            if L_441_[3]["Name"] == L_431_[2] and L_1_[4]["Alive"](L_441_[3]) then
-                                L_435_[2] = L_441_[3]
-                                break
-                            end
-                        end
-                        
-                        -- Nếu tìm thấy boss, di chuyển và bắt đầu farm
-                        if L_435_[2] and L_435_[2]:FindFirstChild("HumanoidRootPart") then
-                            _tp(L_435_[2]["HumanoidRootPart"]["CFrame"] * CFrame.new(0, 30, 0))
-                            repeat
-                                wait()
-                                L_1_[4]["Kill"](L_435_[2], _G["FarmEliteHunt"])
-                            until not _G["FarmEliteHunt"] or not L_435_[2]["Parent"] or L_435_[2]["Humanoid"]["Health"] <= 0 or not L_429_[2]["Visible"]
-                        else
-                            -- Nếu không tìm thấy boss, chờ và kiểm tra lại
-                            wait(5)
-                        end
-                    else
-                        -- Nếu không có boss, hủy quest
-                        L_1_[18]["Remotes"]["CommF_"]:InvokeServer("AbandonQuest")
-                    end
-                end
-            end
-        end)
-    end
+task.spawn(function()
+	local currentBoss = nil
+	local waitingQuest = false
+
+	while true do
+		-- 🔴 OFF = ngủ hoàn toàn
+		if not _G["FarmEliteHunt"] then
+			currentBoss = nil
+			waitingQuest = false
+			task.wait(1)
+			continue
+		end
+
+		task.wait(0.5)
+		pcall(function()
+			local player = game.Players.LocalPlayer
+			local questGui = player.PlayerGui.Main.Quest
+
+			-- 🟡 CHƯA CÓ QUEST → xin 1 lần
+			if not questGui.Visible then
+				if not waitingQuest then
+					waitingQuest = true
+					local res = game.ReplicatedStorage.Remotes.CommF_:InvokeServer("EliteHunter")
+					if not res or string.find(res, "Cooldown") then
+						task.wait(5)
+						waitingQuest = false
+					end
+				end
+				return
+			end
+
+			waitingQuest = false
+
+			-- 🟢 XÁC ĐỊNH TÊN BOSS
+			local questText = questGui.Container.QuestTitle.Title.Text
+			local bossName
+
+			for _, name in ipairs({"Diablo","Urban","Deandre"}) do
+				if string.find(questText, name) then
+					bossName = name
+					break
+				end
+			end
+
+			if not bossName then
+				task.wait(2)
+				return
+			end
+
+			-- 🔍 TÌM BOSS
+			local boss
+			for _, e in pairs(workspace.Enemies:GetChildren()) do
+				if e.Name == bossName
+				and e:FindFirstChild("Humanoid")
+				and e:FindFirstChild("HumanoidRootPart")
+				and e.Humanoid.Health > 0 then
+					boss = e
+					break
+				end
+			end
+
+			-- 🟡 CHƯA SPAWN → CHỜ (KHÔNG TELEPORT)
+			if not boss then
+				task.wait(1)
+				return
+			end
+
+			-- 🟢 CHỈ TELEPORT 1 LẦN KHI ĐỔI TARGET
+			if boss ~= currentBoss then
+				currentBoss = boss
+				_tp(boss.HumanoidRootPart.CFrame * CFrame.new(0, 25, 0))
+				task.wait(0.2)
+			end
+
+			-- ⚔️ ĐÁNH
+			repeat
+				if not _G["FarmEliteHunt"] then break end
+				if not boss.Parent then break end
+				task.wait()
+				L_1_[4].Kill(boss, true)
+			until boss.Humanoid.Health <= 0
+
+			currentBoss = nil
+		end)
+	end
 end)
 EliteH = L_1_[93]["Main"]:AddToggle({
     ["Name"] = L_1_[2]({
@@ -4186,124 +4210,170 @@ end)
 L_1_[93]["Main"]:AddSection({
 	"Farm Rip Indra"
 })
-L_1_[93]["Main"]:AddToggle({
-    ["Name"] = L_1_[2]({
-        "Auto Attack Rip Indr",
-        "a"
-    }),
-    ["Description"] = "",
-    ["Default"] = false,
-    ["Callback"] = function(L_463_arg0)
-        local L_464_ = {}
-        L_464_[1] = L_463_arg0
-        _G["AutoRipIngay"] = L_464_[1]
-    end
+EliteQ = L_1_[93]["Main"]:AddToggle({
+	["Name"] = "Auto Farm Elite",
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G["FarmEliteHunt"] = v
+	end
 })
 
-spawn(function()
-    while wait(Sec) do
-        pcall(function()
-            if _G["AutoRipIngay"] then
-                local L_465_ = {}
-                L_465_[2] = GetConnectionEnemies("rip_indra")  -- Lấy đối tượng quái Rip Indra
+task.spawn(function()
+	local currentBoss = nil
+	local waitingQuest = false
 
-                -- Nếu không có vũ khí cần thiết và quái không có, yêu cầu vào
-                if not GetWP("Dark Dagger") or not GetIn("Valkyrie") and L_465_[2] then
-                    repeat
-                        wait()  -- Đợi một khoảng thời gian trước khi thực hiện hành động tiếp theo
-                        L_1_[4]["Kill"](L_465_[2], _G["AutoRipIngay"])  -- Tự động farm quái
-                    until not _G["AutoRipIngay"] or not L_465_[2]["Parent"] or L_465_[2]["Humanoid"]["Health"] <= 0  -- Kiểm tra điều kiện kết thúc
-                else
-                    -- Nếu không có quái, di chuyển đến khu vực yêu cầu
-                    L_1_[18]["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3.new(-5097.93164, 316.447021, -3142.66602))
-                    wait(0.1)  -- Đợi một chút trước khi teleport
-                    _tp(CFrame.new(-5344.822265625, 423.98541259766, -2725.0930175781))  -- Di chuyển đến vị trí chờ quái
-                end
-            end
-        end)
-    end
+	while true do
+		-- 🔴 OFF = ngủ hoàn toàn
+		if not _G["FarmEliteHunt"] then
+			currentBoss = nil
+			waitingQuest = false
+			task.wait(1)
+			continue
+		end
+
+		task.wait(0.5)
+		pcall(function()
+			local player = game.Players.LocalPlayer
+			local questGui = player.PlayerGui.Main.Quest
+
+			-- 🟡 CHƯA CÓ QUEST → xin 1 lần
+			if not questGui.Visible then
+				if not waitingQuest then
+					waitingQuest = true
+					local res = game.ReplicatedStorage.Remotes.CommF_:InvokeServer("EliteHunter")
+					if not res or string.find(res, "Cooldown") then
+						task.wait(5)
+						waitingQuest = false
+					end
+				end
+				return
+			end
+
+			waitingQuest = false
+
+			-- 🟢 XÁC ĐỊNH TÊN BOSS
+			local questText = questGui.Container.QuestTitle.Title.Text
+			local bossName
+
+			for _, name in ipairs({"Diablo","Urban","Deandre"}) do
+				if string.find(questText, name) then
+					bossName = name
+					break
+				end
+			end
+
+			if not bossName then
+				task.wait(2)
+				return
+			end
+
+			-- 🔍 TÌM BOSS
+			local boss
+			for _, e in pairs(workspace.Enemies:GetChildren()) do
+				if e.Name == bossName
+				and e:FindFirstChild("Humanoid")
+				and e:FindFirstChild("HumanoidRootPart")
+				and e.Humanoid.Health > 0 then
+					boss = e
+					break
+				end
+			end
+
+			-- 🟡 CHƯA SPAWN → CHỜ (KHÔNG TELEPORT)
+			if not boss then
+				task.wait(1)
+				return
+			end
+
+			-- 🟢 CHỈ TELEPORT 1 LẦN KHI ĐỔI TARGET
+			if boss ~= currentBoss then
+				currentBoss = boss
+				_tp(boss.HumanoidRootPart.CFrame * CFrame.new(0, 25, 0))
+				task.wait(0.2)
+			end
+
+			-- ⚔️ ĐÁNH
+			repeat
+				if not _G["FarmEliteHunt"] then break end
+				if not boss.Parent then break end
+				task.wait()
+				L_1_[4].Kill(boss, true)
+			until boss.Humanoid.Health <= 0
+
+			currentBoss = nil
+		end)
+	end
 end)
+-- ===== AUTO RIP_INDRA (FIX GIẬT) =====
+local RipIndraRunning = false
+local RipIndraTarget = nil
+
 L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Unlocked Haki",
-    ["Description"] = "",
-    ["Default"] = false,
-    ["Callback"] = function(L_466_arg0)
-        local L_467_ = {}
-        L_467_[1] = L_466_arg0
-        _G["AutoUnHaki"] = L_467_[1]
-    end
+	["Name"] = "Auto Rip Indra",
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G.AutoRipIndra = v
+		if not v then
+			RipIndraRunning = false
+			RipIndraTarget = nil
+		end
+	end
 })
 
-AuraSkin = function(L_468_arg0)
-    local L_469_ = {}
-    L_469_[2] = L_468_arg0
-    L_469_[1] = {
-        [1] = {
-            ["StorageName"] = L_469_[2];
-            ["Type"] = "AuraSkin",
-            ["Context"] = "Equip"
-        }
-    };
-    (((L_1_[18]:WaitForChild("Modules")):WaitForChild("Net")):WaitForChild("RF/FruitCustomizerRF")):InvokeServer(unpack(L_469_[1]))
-end
+task.spawn(function()
+	while true do
+		-- OFF → ngủ hẳn, không tốn tài nguyên
+		if not _G.AutoRipIndra then
+			task.wait(1)
+			continue
+		end
 
-VaildColor = function(L_470_arg0)
-    local L_471_ = {}
-    L_471_[2] = L_470_arg0
-    if L_471_[2] and L_471_[2]["BrickColor"] then
-        return tostring(L_471_[2]["BrickColor"]) == "Lime green"
-    end
-end
+		if RipIndraRunning then
+			task.wait()
+			continue
+		end
 
-HakiCalculate = function(L_472_arg0)
-    local L_473_ = {}
-    L_473_[1] = L_472_arg0
-    L_473_[3] = {
-        ["Really red"] = "Pure Red",
-        ["Oyster"] = "Snow White",
-        ["Hot pink"] = "Winter Sky"
-    }
-    if L_473_[1] and L_473_[1]["BrickColor"] then
-        return L_473_[3][tostring(L_473_[1]["BrickColor"])]
-    end
-end
+		RipIndraRunning = true
+		pcall(function()
 
-spawn(function()
-    while wait(Sec) do
-        if _G["AutoUnHaki"] then
-            pcall(function()
-                local L_474_ = {}
-                L_474_[2] = workspace["Map"]["Boat Castle"]:FindFirstChild("Summoner")
-                
-                -- Kiểm tra và tìm phần tử Circle trong Summoner
-                if L_474_[2] and L_474_[2]:FindFirstChild("Circle") then
-                    -- Lặp qua các phần tử con trong Circle
-                    for L_475_forvar0, L_476_forvar1 in pairs((L_474_[2]:FindFirstChild("Circle")):GetChildren()) do
-                        local L_477_ = {}
-                        L_477_[1], L_477_[2] = L_475_forvar0, L_476_forvar1
-                        
-                        -- Kiểm tra phần tử con "Part"
-                        if L_477_[2]["Name"] == "Part" then
-                            local L_478_ = {}
-                            L_478_[1] = L_477_[2]:FindFirstChild("Part")
-                            
-                            -- Kiểm tra màu sắc
-                            if VaildColor(L_478_[1]) == false then
-                                -- Áp dụng AuraSkin nếu chưa có
-                                AuraSkin(HakiCalculate(L_477_[2]))
-                                
-                                -- Di chuyển đến vị trí và chờ cho đến khi màu sắc hợp lệ
-                                repeat
-                                    wait()
-                                    _tp(L_477_[2]["CFrame"])  -- Di chuyển đến vị trí
-                                until VaildColor(L_478_[1]) == true or not _G["AutoUnHaki"]
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-    end
+			-- tìm boss 1 lần
+			RipIndraTarget = GetConnectionEnemies("rip_indra")
+
+			-- chưa có boss → CHỜ, KHÔNG TP
+			if not RipIndraTarget then
+				task.wait(2)
+				RipIndraRunning = false
+				return
+			end
+
+			-- có boss → đánh
+			repeat
+				if not _G.AutoRipIndra then break end
+
+				if RipIndraTarget
+				and RipIndraTarget.Parent
+				and RipIndraTarget:FindFirstChild("Humanoid")
+				and RipIndraTarget.Humanoid.Health > 0 then
+
+					-- TP 1 lần ổn định
+					if Root and RipIndraTarget:FindFirstChild("HumanoidRootPart") then
+						_tp(RipIndraTarget.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0))
+					end
+
+					L_1_[4]["Kill"](RipIndraTarget, true)
+				end
+
+				task.wait(0.1)
+			until not RipIndraTarget
+			or not RipIndraTarget.Parent
+			or RipIndraTarget.Humanoid.Health <= 0
+
+			RipIndraTarget = nil
+		end)
+
+		RipIndraRunning = false
+		task.wait(0.5)
+	end
 end)
 L_1_[93]["Main"]:AddSection({
 	"Farming Cake"
