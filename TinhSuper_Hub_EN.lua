@@ -2891,46 +2891,42 @@ spawn(function()
 		end)
 	end
 end)
--- Tạo Toggle cho Auto Factory Raid
-FactoryRaids = L_1_[93]["Main"]:AddToggle({ 
-    ["Name"] = "Auto Factory Raid",
-    ["Description"] = "",
-    ["Default"] = false,
-    ["Callback"] = function(L_243_arg0)
-        local L_244_ = {}
-        L_244_[2] = L_243_arg0
-        _G["AutoFactory"] = L_244_[2]
-    end
-})
+FactoryRaids = L_1_[93]["Main"]:AddToggle({
+	["Name"] = "Auto Factory Raid",
+	["Default"] = false,
+	["Callback"] = function(state)
+		_G.AutoFactory = state
 
+		if state then
+			if Threads.Factory then return end -- tránh tạo trùng
+			Threads.Factory = task.spawn(function()
+				AutoFactoryLoop()
+			end)
+		else
+			Threads.Factory = nil
+		end
+	end
+})
 -- Cập nhật hàm chính cho Auto Factory Raid
-spawn(function()
-    while wait(Sec) do
-        if _G["AutoFactory"] then
-            pcall(function()
-                local L_245_ = {}
-                L_245_[2] = GetConnectionEnemies("Core")  -- Lấy quái ở khu vực nhà máy
-                if L_245_[2] then
-                    -- Nếu có quái thì di chuyển và đánh
-                    repeat
-                        wait()
-                        EquipWeapon(_G["SelectWeapon"])  -- Chọn vũ khí
-                        _tp(CFrame["new"](448.46756, 199.356781, -441.389252))  -- Di chuyển đến nhà máy
-                        L_1_[4]["Kill"](L_245_[2], _G["AutoFarmNear"])  -- Farm quái với tốc độ đánh nhanh
-                    until L_245_[2]["Humanoid"]["Health"] <= 0 or _G["AutoFactory"] == false
-                else
-                    -- Nếu không có quái, vào trạng thái chờ nhưng người chơi vẫn di chuyển
-                    -- Di chuyển bình thường cho đến khi có quái
-                    while not L_245_[2] or L_245_[2]["Humanoid"]["Health"] <= 0 do
-                        -- Di chuyển tới nhà máy và kiểm tra lại
-                        _tp(CFrame["new"](448.46756, 199.356781, -441.389252))  -- Di chuyển đến nhà máy
-                        wait(2)  -- Chờ 2 giây và kiểm tra lại
-                    end
-                end
-            end)
-        end
-    end
-end)
+function AutoFactoryLoop()
+	while _G.AutoFactory do
+		local enemy = GetConnectionEnemies("Core")
+
+		if enemy and enemy.Parent and enemy:FindFirstChild("Humanoid") then
+			repeat
+				if not _G.AutoFactory then return end
+				task.wait(0.2)
+
+				_tp(enemy.HumanoidRootPart.CFrame * CFrame.new(0,10,0))
+				L_1_[4].Kill(enemy, true)
+
+			until enemy.Humanoid.Health <= 0 or not enemy.Parent
+		else
+			-- CHỜ, KHÔNG TP
+			task.wait(1)
+		end
+	end
+end
 CastleRaids = L_1_[93]["Main"]:AddToggle({
     ["Name"] = "Auto Pirate Raid",
     ["Description"] = "",
