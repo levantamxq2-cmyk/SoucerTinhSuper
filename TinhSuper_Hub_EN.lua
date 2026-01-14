@@ -2845,60 +2845,62 @@ task.spawn(function()
         task.wait(0.15)
     end
 end)
-ClosetMons = L_1_[93]["Main"]:AddToggle({
+--// AUTO FARM NEAREST (FIX GIẬT – CHỌN QUÁI GẦN NHẤT – BAY TRÊN ĐẦU LIÊN TỤC)
+
+L_1_[93]["Main"]:AddToggle({
     ["Name"] = "Auto Farm Nearest",
     ["Description"] = "",
     ["Default"] = false,
     ["Callback"] = function(state)
-        _G["AutoFarmNear"] = state
-        _G["BringMobs"] = state
-        _G["FastAttack"] = state
+        _G.AutoFarmNear = state
+        _G.FastAttack = state
     end
 })
 
 task.spawn(function()
-    local lastTP = 0
+    local plr = game.Players.LocalPlayer
+    local RUN_DELAY = 0.15
 
-    while true do
-        if not _G["AutoFarmNear"] then
+    local function getNearestEnemy(hrp)
+        local nearest, dist = nil, math.huge
+        for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
+            local hum = enemy:FindFirstChild("Humanoid")
+            local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+            if hum and eHrp and hum.Health > 0 then
+                local d = (eHrp.Position - hrp.Position).Magnitude
+                if d < dist then
+                    dist = d
+                    nearest = enemy
+                end
+            end
+        end
+        return nearest
+    end
+
+    while task.wait(RUN_DELAY) do
+        if not _G.AutoFarmNear then
             task.wait(0.4)
             continue
         end
 
         pcall(function()
-            local plr = game.Players.LocalPlayer
             local char = plr.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
-            local nearest, dist = nil, math.huge
+            local target = getNearestEnemy(hrp)
+            if not target then return end
 
-            for _, mob in ipairs(workspace.Enemies:GetChildren()) do
-                if mob:FindFirstChild("Humanoid")
-                and mob:FindFirstChild("HumanoidRootPart")
-                and mob.Humanoid.Health > 0 then
-                    local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
-                    if d < dist then
-                        dist = d
-                        nearest = mob
-                    end
-                end
-            end
+            local hum = target:FindFirstChild("Humanoid")
+            local eHrp = target:FindFirstChild("HumanoidRootPart")
+            if not hum or not eHrp or hum.Health <= 0 then return end
 
-            if nearest then
-                repeat
-                    if not _G["AutoFarmNear"] then break end
-                    task.wait()
-                    L_1_[4]["Kill"](nearest, true)
-                until not nearest.Parent
-                    or nearest.Humanoid.Health <= 0
-            else
-                -- KHÔNG CÓ QUÁI → KHÔNG LÀM GÌ (KHÔNG GIẬT)
-                task.wait(0.5)
-            end
+            --// Luôn đứng trên đầu quái (không spam TP)
+            hrp.CFrame = eHrp.CFrame * CFrame.new(0, 12, 0)
+
+            --// Kill liên tục
+            L_1_[4]["Kill"](target, _G.FastAttack)
         end)
-
-        task.wait(0.12)
     end
 end)
 FactoryRaids = L_1_[93]["Main"]:AddToggle({ 
@@ -4838,40 +4840,45 @@ spawn(function()
 		end)
 	end
 end)
--- Toggle Auto Farm Bone
+--// AUTO FARM BONE
 L_1_[93]["Main"]:AddToggle({
     ["Name"] = "Auto Farm Bone",
     ["Description"] = "",
     ["Default"] = false,
     ["Callback"] = function(state)
-        _G["AutoFarm_Bone"] = state
-        -- Đồng bộ Bring Mobs và Fast Attack
-        _G["BringMobs"] = state
-        _G["FastAttack"] = state
+        _G.AutoFarm_Bone = state
+        _G.BringMobs = state
+        _G.FastAttack = state
     end
 })
 
 task.spawn(function()
     local plr = game.Players.LocalPlayer
-    local enemyNames = {
+    local boneMobs = {
         ["Reborn Skeleton"] = true,
         ["Living Zombie"] = true,
         ["Demonic Soul"] = true,
         ["Possessed Mummy"] = true
     }
 
-    while task.wait(0.3) do
-        if not _G.AutoFarm_Bone then continue end
+    local WAIT_TIME = 0.35
+    local BONE_WAIT_POS = CFrame.new(-9495.6807, 453.5862, 5977.3486)
+
+    while task.wait(WAIT_TIME) do
+        if not _G.AutoFarm_Bone then
+            task.wait(0.5)
+            continue
+        end
 
         pcall(function()
             local char = plr.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
-            -- Gom tất cả quái Bone trong phạm vi và giới hạn
+            --// Collect Bone mobs
             local mobs = {}
             for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-                if enemyNames[enemy.Name] then
+                if boneMobs[enemy.Name] then
                     local hum = enemy:FindFirstChild("Humanoid")
                     local eHrp = enemy:FindFirstChild("HumanoidRootPart")
                     if hum and eHrp and hum.Health > 0 then
@@ -4880,15 +4887,23 @@ task.spawn(function()
                 end
             end
 
-            -- Bring mob về nếu bật
-            if _G.BringMobs then
-                for i, mob in ipairs(mobs) do
+            --// Bring mobs (SAFE)
+            if _G.BringMobs and #mobs > 0 then
+                local offset = 0
+                for _, mob in ipairs(mobs) do
+                    local hum = mob:FindFirstChild("Humanoid")
                     local eHrp = mob:FindFirstChild("HumanoidRootPart")
-                    if eHrp then
-                        eHrp.CFrame = hrp.CFrame
+                    if hum and eHrp and hum.Health > 0 then
+                        offset += 4
+
+                        hum.PlatformStand = true
+                        eHrp.Anchored = false
                         eHrp.CanCollide = false
+                        eHrp.CFrame = hrp.CFrame * CFrame.new(offset, 0, -offset)
+
                         eHrp.Velocity = Vector3.zero
                         eHrp.RotVelocity = Vector3.zero
+
                         for _, part in ipairs(mob:GetDescendants()) do
                             if part:IsA("BasePart") then
                                 part.CanCollide = false
@@ -4896,23 +4911,23 @@ task.spawn(function()
                         end
                     end
                 end
+                task.wait(0.25) -- sync server
             end
 
-            -- Đánh tất cả quái nếu bật FastAttack
-            if _G.FastAttack then
-                for i, mob in ipairs(mobs) do
-                    local hum = mob:FindFirstChild("Humanoid")
-                    if hum and hum.Health > 0 then
-                        _tp(mob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
-                        L_1_[4]["Kill"](mob, true) -- đánh từng con hoặc AOE
-                        task.wait(0.1) -- giảm lag
+            --// Fast Attack
+            if _G.FastAttack and #mobs > 0 then
+                for _, mob in ipairs(mobs) do
+                    if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                        L_1_[4]["Kill"](mob, true)
                     end
                 end
             end
 
-            -- Nếu không có mob → quay về khu spawn
+            --// No mob → go wait position (NO TP SPAM)
             if #mobs == 0 then
-                _tp(CFrame.new(-9495.6807, 453.5862, 5977.3486))
+                if (hrp.Position - BONE_WAIT_POS.Position).Magnitude > 30 then
+                    _tp(BONE_WAIT_POS)
+                end
             end
         end)
     end
