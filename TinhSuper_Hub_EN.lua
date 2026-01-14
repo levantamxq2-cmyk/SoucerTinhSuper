@@ -4840,45 +4840,42 @@ spawn(function()
 		end)
 	end
 end)
---// AUTO FARM BONE - FULL FIX (NO JITTER / FULL EXP / AOE)
-
 L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Farm Bone (FIX)",
+    ["Name"] = "Auto Farm Bone",
     ["Description"] = "",
     ["Default"] = false,
     ["Callback"] = function(state)
-        _G.AutoFarmBone = state
+        _G.AutoFarm_Bone = state
         _G.BringMobs = state
         _G.FastAttack = state
     end
 })
+
 task.spawn(function()
     local plr = game.Players.LocalPlayer
-    local FARM_POS = CFrame.new(-9495.6807, 453.5862, 5977.3486)
+    local BoneSpawn = CFrame.new(-9495.6807, 453.5862, 5977.3486)
 
-    local boneMobs = {
+    local BoneMobs = {
         ["Reborn Skeleton"] = true,
         ["Living Zombie"] = true,
         ["Demonic Soul"] = true,
         ["Possessed Mummy"] = true
     }
 
-    while task.wait(0.25) do
-        if not _G.AutoFarm_Bone then
-            isMoving = false
-            continue
-        end
+    while task.wait(0.15) do
+        if not _G.AutoFarm_Bone then continue end
 
         local char = plr.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then continue end
 
+        -- luôn cầm vũ khí (để có EXP)
         EquipWeapon(_G.SelectWeapon)
 
         local mobs = {}
 
         for _, mob in ipairs(workspace.Enemies:GetChildren()) do
-            if boneMobs[mob.Name] then
+            if BoneMobs[mob.Name] then
                 local hum = mob:FindFirstChild("Humanoid")
                 local mhrp = mob:FindFirstChild("HumanoidRootPart")
                 if hum and mhrp and hum.Health > 0 then
@@ -4887,13 +4884,13 @@ task.spawn(function()
             end
         end
 
-        -- ❗ KHÔNG CÓ MOB → CHỈ MOVE 1 LẦN
+        -- không có mob → bay thẳng về khu farm (1 lần, không chờ)
         if #mobs == 0 then
-            SafeMove(FARM_POS, 25)
+            hrp.CFrame = BoneSpawn
             continue
         end
 
-        -- CHỌN MOB GẦN NHẤT
+        -- chọn mob gần nhất
         local target, dist = nil, math.huge
         for _, mob in ipairs(mobs) do
             local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
@@ -4904,19 +4901,27 @@ task.spawn(function()
         end
         if not target then continue end
 
-        -- ĐẾN TRÊN ĐẦU MOB (KHOẢNG CÁCH NGẮN → OK)
+        -- đứng trên đầu mob
         hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0)
 
-        -- BRING MOB XUỐNG DƯỚI CHÂN
+        -- bring TẤT CẢ mob xuống dưới chân
         if _G.BringMobs then
             for _, mob in ipairs(mobs) do
                 local mhrp = mob.HumanoidRootPart
                 mhrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
+                mhrp.Velocity = Vector3.zero
+                mhrp.RotVelocity = Vector3.zero
                 mhrp.CanCollide = false
+
+                for _, p in ipairs(mob:GetDescendants()) do
+                    if p:IsA("BasePart") then
+                        p.CanCollide = false
+                    end
+                end
             end
         end
 
-        -- AOE ATTACK
+        -- đánh AOE tất cả mob
         for _, mob in ipairs(mobs) do
             if mob.Humanoid.Health > 0 then
                 L_1_[4]["Kill"](mob, true)
