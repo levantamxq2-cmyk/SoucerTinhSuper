@@ -4840,13 +4840,14 @@ spawn(function()
 		end)
 	end
 end)
---// AUTO FARM BONE
+--// AUTO FARM BONE - FULL FIX (NO JITTER / FULL EXP / AOE)
+
 L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Farm Bone",
+    ["Name"] = "Auto Farm Bone (FIX)",
     ["Description"] = "",
     ["Default"] = false,
     ["Callback"] = function(state)
-        _G.AutoFarm_Bone = state
+        _G.AutoFarmBone = state
         _G.BringMobs = state
         _G.FastAttack = state
     end
@@ -4861,11 +4862,8 @@ task.spawn(function()
         ["Possessed Mummy"] = true
     }
 
-    local WAIT_TIME = 0.35
-    local BONE_WAIT_POS = CFrame.new(-9495.6807, 453.5862, 5977.3486)
-
-    while task.wait(WAIT_TIME) do
-        if not _G.AutoFarm_Bone then
+    while true do
+        if not _G.AutoFarmBone then
             task.wait(0.5)
             continue
         end
@@ -4875,61 +4873,60 @@ task.spawn(function()
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
-            --// Collect Bone mobs
-            local mobs = {}
-            for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-                if boneMobs[enemy.Name] then
-                    local hum = enemy:FindFirstChild("Humanoid")
-                    local eHrp = enemy:FindFirstChild("HumanoidRootPart")
-                    if hum and eHrp and hum.Health > 0 then
-                        table.insert(mobs, enemy)
-                    end
-                end
-            end
+            EquipWeapon(_G.SelectWeapon)
 
-            --// Bring mobs (SAFE)
-            if _G.BringMobs and #mobs > 0 then
-                local offset = 0
-                for _, mob in ipairs(mobs) do
+            --// LẤY TẤT CẢ MOB HỢP LỆ
+            local targets = {}
+            for _, mob in ipairs(workspace.Enemies:GetChildren()) do
+                if boneMobs[mob.Name] then
                     local hum = mob:FindFirstChild("Humanoid")
-                    local eHrp = mob:FindFirstChild("HumanoidRootPart")
-                    if hum and eHrp and hum.Health > 0 then
-                        offset += 4
-
-                        hum.PlatformStand = true
-                        eHrp.Anchored = false
-                        eHrp.CanCollide = false
-                        eHrp.CFrame = hrp.CFrame * CFrame.new(offset, 0, -offset)
-
-                        eHrp.Velocity = Vector3.zero
-                        eHrp.RotVelocity = Vector3.zero
-
-                        for _, part in ipairs(mob:GetDescendants()) do
-                            if part:IsA("BasePart") then
-                                part.CanCollide = false
-                            end
-                        end
-                    end
-                end
-                task.wait(0.25) -- sync server
-            end
-
-            --// Fast Attack
-            if _G.FastAttack and #mobs > 0 then
-                for _, mob in ipairs(mobs) do
-                    if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                        L_1_[4]["Kill"](mob, true)
+                    local mhrp = mob:FindFirstChild("HumanoidRootPart")
+                    if hum and mhrp and hum.Health > 0 then
+                        table.insert(targets, mob)
                     end
                 end
             end
 
-            --// No mob → go wait position (NO TP SPAM)
-            if #mobs == 0 then
-                if (hrp.Position - BONE_WAIT_POS.Position).Magnitude > 30 then
-                    _tp(BONE_WAIT_POS)
+            --// KHÔNG CÓ MOB → VỀ KHU SPAWN
+            if #targets == 0 then
+                _tp(CFrame.new(-9495.6807, 453.5862, 5977.3486))
+                return
+            end
+
+            --// CHỌN MOB GẦN NHẤT LÀM TÂM
+            local main = targets[1]
+            local minDist = math.huge
+            for _, mob in ipairs(targets) do
+                local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
+                if d < minDist then
+                    minDist = d
+                    main = mob
+                end
+            end
+
+            --// ĐỨNG TRÊN ĐẦU MOB CHÍNH
+            hrp.CFrame = main.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0)
+
+            --// BRING TẤT CẢ MOB XUỐNG DƯỚI CHÂN
+            if _G.BringMobs then
+                for _, mob in ipairs(targets) do
+                    local mhrp = mob.HumanoidRootPart
+                    mhrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
+                    mhrp.CanCollide = false
+                    mhrp.Velocity = Vector3.zero
+                    mhrp.RotVelocity = Vector3.zero
+                end
+            end
+
+            --// AOE ATTACK – CÓ EXP – KHÔNG MISS
+            for _, mob in ipairs(targets) do
+                if mob.Humanoid.Health > 0 then
+                    L_1_[4]["Kill"](mob, true)
                 end
             end
         end)
+
+        task.wait(0.15)
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
