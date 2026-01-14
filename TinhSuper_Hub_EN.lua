@@ -2766,296 +2766,331 @@ FarmLevel = L_1_[93]["Main"]:AddToggle({
     ["Name"] = "Auto Farm Level",
     ["Description"] = "",
     ["Default"] = false,
-    ["Callback"] = function(L_226_arg0)
-        local L_227_ = {}
-        L_227_[2] = L_226_arg0
-        _G["Level"] = L_227_[2]           -- bật/tắt Auto Farm Level
-        _G["BringMobs"] = L_227_[2]       -- đồng bộ Bring Mobs
-        _G["FastAttack"] = L_227_[2]      -- đồng bộ Fast Attack
-        if not L_227_[2] then
-            alreadyTeleported = false
-            teleporting = false
-        end
+    ["Callback"] = function(state)
+        _G["Level"] = state
+        _G["BringMobs"] = state
+        _G["FastAttack"] = state
     end
 })
 
--- Kiểm tra khoảng cách và mục tiêu farm
-L_1_[112] = function()
-    local L_228_ = {}
-    L_228_[3] = plr["Character"]
-    if not L_228_[3] then
-        return false
-    end
-    L_228_[4] = L_228_[3]:FindFirstChild("HumanoidRootPart")
-    if not L_228_[4] then
-        return false
-    end
-    L_228_[2] = Vector3["new"](11520.801757812, 0, 9829.513671875)
-    L_228_[5] = Vector3["new"](L_228_[4]["Position"]["X"], 0, L_228_[4]["Position"]["Z"])
-    return (L_228_[5] - L_228_[2])["Magnitude"] < 2000
-end
-
--- Main Auto Farm Loop
 task.spawn(function()
-    while task.wait(Sec) do
+    local lastTP = 0
+
+    while true do
         if not _G["Level"] then
-            L_1_[44] = false
-            L_1_[133] = false
+            task.wait(0.5)
             continue
         end
 
         pcall(function()
-            local char = plr.Character or plr.CharacterAdded:Wait()
-            local hrp = char:FindFirstChild("HumanoidRootPart")
+            local plr = game.Players.LocalPlayer
+            local char = plr.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
-            local level = plr.Data.Level.Value
             local questGui = plr.PlayerGui.Main.Quest
-            local questText = questGui.Visible and questGui.Container.QuestTitle.Title.Text or ""
-            local Mon = "Grand Devotee"
-            local Qdata = 2
-            local Qname = "SubmergedQuest3"
-            local NameMon = "Grand Devotee"
-            local PosQ = CFrame.new(9636.52441, -1992.19507, 9609.52832)
-            local PosM = CFrame.new(9557.5849609375, -1928.0404052734, 9859.1826171875)
 
-            -- Nếu chưa có quest, teleport đến vị trí quest
+            local NameMon = "Grand Devotee"
+            local Qname = "SubmergedQuest3"
+            local Qdata = 2
+
+            local PosQ = CFrame.new(9636.52, -1992.19, 9609.52)
+            local PosM = CFrame.new(9557.58, -1928.04, 9859.18)
+
+            -- Nhận quest
             if not questGui.Visible then
-                _tp(PosQ)
-                task.wait(1.5)
+                if tick() - lastTP > 2 then
+                    _tp(PosQ)
+                    lastTP = tick()
+                end
+
                 if (hrp.Position - PosQ.Position).Magnitude <= 10 then
-                    replicated.Remotes.CommF_:InvokeServer("StartQuest", Qname, Qdata)
-                    task.wait(1)
+                    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                        "StartQuest",
+                        Qname,
+                        Qdata
+                    )
                 end
                 return
             end
 
-            local found = false
-            -- Tìm và farm quái
+            local target = nil
+
             for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-                if not _G["Level"] then break end
-
-                if enemy.Name == NameMon then
-                    local hum = enemy:FindFirstChild("Humanoid")
-                    local eHrp = enemy:FindFirstChild("HumanoidRootPart")
-
-                    if hum and eHrp and hum.Health > 0 then
-                        found = true
-                        repeat
-                            if not _G["Level"] then break end
-                            _tp(eHrp.CFrame * CFrame.new(0, 10, 0))  -- Di chuyển đến quái
-                            L_1_[4]["Kill"](enemy, true)  -- Farm quái
-                            task.wait(Sec)
-                        until hum.Health <= 0 or not enemy.Parent or not questGui.Visible
-                        break
-                    end
+                if enemy.Name == NameMon
+                and enemy:FindFirstChild("Humanoid")
+                and enemy:FindFirstChild("HumanoidRootPart")
+                and enemy.Humanoid.Health > 0 then
+                    target = enemy
+                    break
                 end
             end
 
-            -- Nếu không tìm thấy quái, di chuyển đến điểm tiếp theo
-            if not found then
-                -- Di chuyển bình thường khi không có quái
-                _tp(PosM)
+            if target then
+                repeat
+                    if not _G["Level"] then break end
+                    task.wait()
+                    L_1_[4]["Kill"](target, true)
+                until not target.Parent
+                    or target.Humanoid.Health <= 0
+            else
+                -- KHÔNG GIẬT – chỉ TP mỗi 2s
+                if tick() - lastTP > 2 then
+                    _tp(PosM)
+                    lastTP = tick()
+                end
             end
         end)
+
+        task.wait(0.15)
     end
 end)
--- Tính năng gom quái và di chuyển tới quái đã chết
 ClosetMons = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Farm Nearest",
-	["Description"] = "",
-	["Default"] = false,
-	["Callback"] = function(L_238_arg0)
-		_G["AutoFarmNear"] = L_238_arg0
-	end
-})
-
-spawn(function()
-	while wait() do
-		pcall(function()
-			if _G["AutoFarmNear"] then
-				for L_240_forvar0, L_241_forvar1 in pairs(workspace["Enemies"]:GetChildren()) do
-					local L_242_ = {}
-					L_242_[3], L_242_[1] = L_240_forvar0, L_241_forvar1
-					if L_242_[1]:FindFirstChild("Humanoid") or L_242_[1]:FindFirstChild("HumanoidRootPart") then
-						if L_242_[1]["Humanoid"]["Health"] > 0 then
-							repeat
-								wait()
-								_tp(L_242_[1].HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))  -- Di chuyển đến quái
-								L_1_[4]["Kill"](L_242_[1], _G["AutoFarmNear"])  -- Farm quái
-							until not _G["AutoFarmNear"] or not L_242_[1]["Parent"] or L_242_[1]["Humanoid"]["Health"] <= 0
-						end
-					end
-				end
-			end
-		end)
-	end
-end)
-FactoryRaids = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Factory Raid",
-	["Default"] = false,
-	["Callback"] = function(state)
-		_G.AutoFactory = state
-
-		if state then
-			if Threads.Factory then return end -- tránh tạo trùng
-			Threads.Factory = task.spawn(function()
-				AutoFactoryLoop()
-			end)
-		else
-			Threads.Factory = nil
-		end
-	end
-})
--- Cập nhật hàm chính cho Auto Factory Raid
-function AutoFactoryLoop()
-	while _G.AutoFactory do
-		local enemy = GetConnectionEnemies("Core")
-
-		if enemy and enemy.Parent and enemy:FindFirstChild("Humanoid") then
-			repeat
-				if not _G.AutoFactory then return end
-				task.wait(0.2)
-
-				_tp(enemy.HumanoidRootPart.CFrame * CFrame.new(0,10,0))
-				L_1_[4].Kill(enemy, true)
-
-			until enemy.Humanoid.Health <= 0 or not enemy.Parent
-		else
-			-- CHỜ, KHÔNG TP
-			task.wait(1)
-		end
-	end
-end
-CastleRaids = L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Pirate Raid",
+    ["Name"] = "Auto Farm Nearest",
     ["Description"] = "",
     ["Default"] = false,
-    ["Callback"] = function(L_246_arg0)
-        local L_247_ = {}
-        L_247_[1] = L_246_arg0
-        _G["AutoRaidCastle"] = L_247_[1]
+    ["Callback"] = function(state)
+        _G["AutoFarmNear"] = state
+        _G["BringMobs"] = state
+        _G["FastAttack"] = state
     end
 })
 
-spawn(function()
-    while wait(Sec) do
-        if _G["AutoRaidCastle"] then
-            pcall(function()
-                local L_248_ = {}
-                L_248_[1] = CFrame["new"](-5496.17432, 313.768921, -2841.53027, .924894512, 7.37058015e-09, .380223751, 3.5881019e-08, 1, -1.06665446e-07, -0.380223751, 1.12297109e-07, .924894512)
+task.spawn(function()
+    local lastTP = 0
 
-                -- Kiểm tra khoảng cách với quái/boss
-                if ((CFrame["new"](-5539.3115234375, 313.80053710938, -2972.3723144531))["Position"] - Root["Position"])["Magnitude"] <= 500 then
-                    for L_249_forvar0, L_250_forvar1 in pairs(workspace["Enemies"]:GetChildren()) do
-                        local L_251_ = {}
-                        L_251_[3], L_251_[2] = L_249_forvar0, L_250_forvar1
-                        if L_251_[2]:FindFirstChild("HumanoidRootPart") and (L_251_[2]:FindFirstChild("Humanoid") and L_251_[2]["Humanoid"]["Health"] > 0) then
-                            if L_251_[2]["Name"] then
-                                if (L_251_[2]["HumanoidRootPart"]["Position"] - Root["Position"])["Magnitude"] <= 2000 then
-                                    repeat
-                                        wait()
-                                        L_1_[4]["Kill"](L_251_[2], _G["AutoRaidCastle"])
-                                    until not _G["AutoRaidCastle"] or not L_251_[2]["Parent"] or L_251_[2]["Humanoid"]["Health"] <= 0 or not workspace["Enemies"]:FindFirstChild(L_251_[2]["Name"])
-                                end
-                            end
-                        end
-                    end
-                else
-                    -- Nếu không có quái trong phạm vi, di chuyển đến điểm tiếp theo
-                    local L_252_ = {}
-                    L_252_[1] = {
-                        "Galley Pirate",
-                        "Galley Captain",
-                        "Raider",
-                        "Mercenary",
-                        "Vampire",
-                        "Zombie",
-                        "Snow Trooper",
-                        "Winter Warrior",
-                        "Lab Subordinate",
-                        "Horned Warrior",
-                        "Magma Ninja",
-                        "Lava Pirate",
-                        "Ship Deckhand",
-                        "Ship Engineer",
-                        "Ship Steward",
-                        "Ship Officer",
-                        "Arctic Warrior",
-                        "Snow Lurker",
-                        "Sea Soldier",
-                        "Water Fighter"
-                    }
+    while true do
+        if not _G["AutoFarmNear"] then
+            task.wait(0.4)
+            continue
+        end
 
-                    local hasMobs = false
-                    for L_253_forvar0 = 1, #L_252_[1], 1 do
-                        local L_254_ = {}
-                        L_254_[1] = L_253_forvar0
-                        if replicated:FindFirstChild(L_252_[1][L_254_[1]]) then
-                            hasMobs = true
-                            break
-                        end
-                    end
+        pcall(function()
+            local plr = game.Players.LocalPlayer
+            local char = plr.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
 
-                    -- Nếu không có quái nào, di chuyển đến nhà máy hoặc điểm chờ
-                    if not hasMobs then
-                        _tp(L_248_[1])
+            local nearest, dist = nil, math.huge
+
+            for _, mob in ipairs(workspace.Enemies:GetChildren()) do
+                if mob:FindFirstChild("Humanoid")
+                and mob:FindFirstChild("HumanoidRootPart")
+                and mob.Humanoid.Health > 0 then
+                    local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
+                    if d < dist then
+                        dist = d
+                        nearest = mob
                     end
                 end
-            end)
+            end
+
+            if nearest then
+                repeat
+                    if not _G["AutoFarmNear"] then break end
+                    task.wait()
+                    L_1_[4]["Kill"](nearest, true)
+                until not nearest.Parent
+                    or nearest.Humanoid.Health <= 0
+            else
+                -- KHÔNG CÓ QUÁI → KHÔNG LÀM GÌ (KHÔNG GIẬT)
+                task.wait(0.5)
+            end
+        end)
+
+        task.wait(0.12)
+    end
+end)
+FactoryRaids = L_1_[93]["Main"]:AddToggle({ 
+    ["Name"] = "Auto Factory Raid",
+    ["Description"] = "",
+    ["Default"] = false,
+    ["Callback"] = function(state)
+        _G["AutoFactory"] = state
+        _G["FastAttack"] = state
+        _G["BringMobs"] = state
+    end
+})
+
+task.spawn(function()
+    local lastCore -- lưu core hiện tại để tránh spam
+    local factoryPos = CFrame.new(448.46756, 199.356781, -441.389252)
+
+    while true do
+        if not _G["AutoFactory"] then
+            lastCore = nil
+            task.wait(0.5)
+            continue
         end
+
+        pcall(function()
+            local core = GetConnectionEnemies("Core")
+
+            -- ===== TRẠNG THÁI CHỜ FACTORY (KHÔNG GIẬT) =====
+            if not core or not core.Parent or core.Humanoid.Health <= 0 then
+                lastCore = nil
+                task.wait(1)
+                return
+            end
+
+            -- ===== FACTORY XUẤT HIỆN =====
+            if core ~= lastCore then
+                lastCore = core
+                _tp(factoryPos) -- TP 1 lần duy nhất
+                task.wait(0.3)
+            end
+
+            repeat
+                if not _G["AutoFactory"] then break end
+                if not core.Parent then break end
+                task.wait()
+                EquipWeapon(_G["SelectWeapon"])
+                L_1_[4]["Kill"](core, true)
+            until core.Humanoid.Health <= 0
+
+            lastCore = nil
+        end)
+
+        task.wait(0.15)
+    end
+end)
+CastleRaids = L_1_[93]["Main"]:AddToggle({
+    ["Name"] = "Auto Pirate Raid",
+    ["Default"] = false,
+    ["Callback"] = function(state)
+        _G["AutoRaidCastle"] = state
+        _G["FastAttack"] = state
+        _G["BringMobs"] = state
+    end
+})
+
+task.spawn(function()
+    local lastTarget = nil
+    local waitPos = CFrame.new(
+        -5496.17432, 313.768921, -2841.53027,
+        .924894512, 0, .380223751,
+        0, 1, 0,
+        -.380223751, 0, .924894512
+    )
+
+    while true do
+        if not _G["AutoRaidCastle"] then
+            lastTarget = nil
+            task.wait(0.5)
+            continue
+        end
+
+        pcall(function()
+            local target
+
+            -- 🔍 tìm quái gần
+            for _, mob in pairs(workspace.Enemies:GetChildren()) do
+                if mob:FindFirstChild("HumanoidRootPart")
+                and mob:FindFirstChild("Humanoid")
+                and mob.Humanoid.Health > 0
+                and (mob.HumanoidRootPart.Position - Root.Position).Magnitude < 2000 then
+                    target = mob
+                    break
+                end
+            end
+
+            -- ⏳ KHÔNG CÓ QUÁI → CHỜ (KHÔNG TP)
+            if not target then
+                lastTarget = nil
+                task.wait(0.6)
+                return
+            end
+
+            -- 🚀 CÓ QUÁI → TP 1 LẦN
+            if target ~= lastTarget then
+                lastTarget = target
+                _tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0))
+                task.wait(0.2)
+            end
+
+            -- ⚔️ ĐÁNH
+            repeat
+                if not _G["AutoRaidCastle"] then break end
+                if not target.Parent then break end
+                task.wait()
+                L_1_[4]["Kill"](target, true)
+            until target.Humanoid.Health <= 0
+
+            lastTarget = nil
+        end)
+
+        task.wait(0.15)
     end
 end)
 Ecto = L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Auto Farm Ectoplasm",
-	["Description"] = "",
 	["Default"] = false,
-	["Callback"] = function(L_258_arg0)
-		local L_259_ = {}
-		L_259_[1] = L_258_arg0
-		_G["AutoEctoplasm"] = L_259_[1]
+	["Callback"] = function(state)
+		_G["AutoEctoplasm"] = state
+		_G["FastAttack"] = state
+		_G["BringMobs"] = state
 	end
 })
-spawn(function()
-    while wait(Sec) do
-        if _G["AutoEctoplasm"] then  -- Kiểm tra xem tính năng có bật hay không
-            pcall(function()
-                local L_260_ = {}
-                L_260_[3] = {
-                    "Ship Deckhand",
-                    "Ship Engineer",
-                    "Ship Steward",
-                    "Ship Officer",
-                    "Arctic Warrior"
-                }
 
-                L_260_[2] = GetConnectionEnemies(L_260_[3])
+task.spawn(function()
+	local currentTarget = nil
 
-                -- Kiểm tra xem quái có sống không
-                if L_1_[4]["Alive"](L_260_[2]) then
-                    -- Nếu quái còn sống, di chuyển đến quái và đánh
-                    repeat
-                        wait()
-                        L_1_[4]["Kill"](L_260_[2], _G["AutoEctoplasm"])
-                    until not _G["AutoEctoplasm"] or not L_260_[2]["Parent"] or L_260_[2]["Humanoid"]["Health"] <= 0
-                else
-                    -- Nếu không có quái, di chuyển đến vị trí chờ
-                    replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](923.21252441406, 126.9760055542, 32852.83203125))
+	while true do
+		if not _G["AutoEctoplasm"] then
+			currentTarget = nil
+			task.wait(0.5)
+			continue
+		end
 
-                    -- Trong khi chờ quái, người chơi sẽ di chuyển bình thường
-                    while not L_260_[2] or L_260_[2]["Humanoid"]["Health"] <= 0 do
-                        -- Di chuyển tới vị trí chờ
-                        wait(0.5)
-                        -- Đảm bảo người chơi không đứng yên khi chờ quái xuất hiện
-                        local currentPos = plr.Character:FindFirstChild("HumanoidRootPart").Position
-                        local targetPos = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)
-                        local moveDirection = (targetPos - currentPos).unit
-                        plr.Character:FindFirstChild("HumanoidRootPart").CFrame = CFrame.new(currentPos + moveDirection * 10)  -- Di chuyển nhẹ
-                    end
-                end
-            end)
-        end
-    end
+		pcall(function()
+			-- danh sách quái ecto
+			local ectoMobs = {
+				"Ship Deckhand",
+				"Ship Engineer",
+				"Ship Steward",
+				"Ship Officer",
+				"Arctic Warrior"
+			}
+
+			-- tìm quái hợp lệ
+			local target
+			for _, mob in pairs(workspace.Enemies:GetChildren()) do
+				if table.find(ectoMobs, mob.Name)
+				and mob:FindFirstChild("Humanoid")
+				and mob:FindFirstChild("HumanoidRootPart")
+				and mob.Humanoid.Health > 0 then
+					target = mob
+					break
+				end
+			end
+
+			-- ⏳ không có quái → đứng yên chờ (KHÔNG TP, KHÔNG GIẬT)
+			if not target then
+				currentTarget = nil
+				task.wait(0.6)
+				return
+			end
+
+			-- 🚀 đổi mục tiêu → TP 1 lần
+			if target ~= currentTarget then
+				currentTarget = target
+				_tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0))
+				task.wait(0.2)
+			end
+
+			-- ⚔️ đánh liên tục
+			repeat
+				if not _G["AutoEctoplasm"] then break end
+				if not target.Parent then break end
+				task.wait()
+				L_1_[4]["Kill"](target, true)
+			until target.Humanoid.Health <= 0
+
+			currentTarget = nil
+		end)
+
+		task.wait(0.15)
+	end
 end)
 L_1_[93]["Main"]:AddSection({
 	"Collect Chest"
@@ -3458,48 +3493,69 @@ end
 L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Auto Kill Mob",
 	["Default"] = false,
-	["Callback"] = function(L_405_arg0)
-		local L_406_ = {}
-		L_406_[2] = L_405_arg0
-		_G["AutoKillMob"] = L_406_[2]
+	["Callback"] = function(state)
+		_G["AutoKillMob"] = state
+		_G["FastAttack"] = state
+		_G["BringMobs"] = state
 	end
 })
 
-spawn(function()
-	while wait(Sec) do
-		if _G["AutoKillMob"] then
-			pcall(function()
-				-- Kiểm tra xem quái đã xuất hiện trong workspace chưa
-				if (game:GetService("Workspace"))["Enemies"]:FindFirstChild((getgenv())["SelectMob"]) then
-					for L_407_forvar0, L_408_forvar1 in pairs((game:GetService("Workspace"))["Enemies"]:GetChildren()) do
-						local L_409_ = {}
-						L_409_[3], L_409_[1] = L_407_forvar0, L_408_forvar1
-						if L_409_[1]["Name"] == (getgenv())["SelectMob"] then
-							-- Kiểm tra xem quái có sống không
-							if L_409_[1]:FindFirstChild("Humanoid") and (L_409_[1]:FindFirstChild("HumanoidRootPart") and L_409_[1]["Humanoid"]["Health"] > 0) then
-								-- Nếu quái còn sống, đánh và di chuyển nhanh
-								repeat
-									(game:GetService("RunService"))["Heartbeat"]:Wait()
-									L_1_[4]["Kill"](L_409_[1], _G["AutoKillMob"])
+task.spawn(function()
+	local currentTarget = nil
 
-									-- Di chuyển nhanh đến quái nếu cần
-									_tp(L_409_[1]["HumanoidRootPart"].CFrame * CFrame.new(0, 10, 0))
-								until not _G["AutoKillMob"] or not L_409_[1]["Parent"] or L_409_[1]["Humanoid"]["Health"] <= 0
-							end
-						end
-					end
-				end
-			end)
-		else
-			-- Khi không có quái, di chuyển bình thường
-			-- Di chuyển đến các vị trí khác trong khi không có quái
-			local currentPos = plr.Character:FindFirstChild("HumanoidRootPart").Position
-			local targetPos = Vector3.new(1000, 0, 1000)  -- Ví dụ vị trí di chuyển
-			local moveDirection = (targetPos - currentPos).unit
-			plr.Character:FindFirstChild("HumanoidRootPart").CFrame = CFrame.new(currentPos + moveDirection * 10)  -- Di chuyển nhẹ
-
-			wait(1)  -- Cập nhật mỗi giây
+	while true do
+		-- ⛔ tắt → không làm gì cả
+		if not _G["AutoKillMob"] then
+			currentTarget = nil
+			task.wait(0.5)
+			continue
 		end
+
+		pcall(function()
+			local selectName = getgenv().SelectMob
+			if not selectName then
+				task.wait(0.5)
+				return
+			end
+
+			-- 🔍 tìm quái hợp lệ
+			local target
+			for _, mob in pairs(workspace.Enemies:GetChildren()) do
+				if mob.Name == selectName
+				and mob:FindFirstChild("Humanoid")
+				and mob:FindFirstChild("HumanoidRootPart")
+				and mob.Humanoid.Health > 0 then
+					target = mob
+					break
+				end
+			end
+
+			-- ⏳ không có quái → CHỜ (KHÔNG TP)
+			if not target then
+				currentTarget = nil
+				task.wait(0.6)
+				return
+			end
+
+			-- 🚀 đổi mục tiêu → TP 1 lần
+			if target ~= currentTarget then
+				currentTarget = target
+				_tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0))
+				task.wait(0.2)
+			end
+
+			-- ⚔️ đánh liên tục
+			repeat
+				if not _G["AutoKillMob"] then break end
+				if not target.Parent then break end
+				task.wait()
+				L_1_[4]["Kill"](target, true)
+			until target.Humanoid.Health <= 0
+
+			currentTarget = nil
+		end)
+
+		task.wait(0.15)
 	end
 end)
 L_1_[93]["Main"]:AddSection({
