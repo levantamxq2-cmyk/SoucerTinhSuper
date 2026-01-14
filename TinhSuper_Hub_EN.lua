@@ -4852,7 +4852,6 @@ L_1_[93]["Main"]:AddToggle({
         _G.FastAttack = state
     end
 })
-
 task.spawn(function()
     local plr = game.Players.LocalPlayer
     local boneMobs = {
@@ -4861,6 +4860,8 @@ task.spawn(function()
         ["Demonic Soul"] = true,
         ["Possessed Mummy"] = true
     }
+
+    local FARM_POS = CFrame.new(-9495.6807, 453.5862, 5977.3486)
 
     while true do
         if not _G.AutoFarmBone then
@@ -4875,8 +4876,8 @@ task.spawn(function()
 
             EquipWeapon(_G.SelectWeapon)
 
-            --// LẤY TẤT CẢ MOB HỢP LỆ
             local targets = {}
+
             for _, mob in ipairs(workspace.Enemies:GetChildren()) do
                 if boneMobs[mob.Name] then
                     local hum = mob:FindFirstChild("Humanoid")
@@ -4887,15 +4888,14 @@ task.spawn(function()
                 end
             end
 
-            --// KHÔNG CÓ MOB → VỀ KHU SPAWN
+            -- Không có mob → di chuyển TỪ TỪ về khu farm
             if #targets == 0 then
-                _tp(CFrame.new(-9495.6807, 453.5862, 5977.3486))
+                SafeMove(FARM_POS)
                 return
             end
 
-            --// CHỌN MOB GẦN NHẤT LÀM TÂM
-            local main = targets[1]
-            local minDist = math.huge
+            -- Chọn mob gần nhất
+            local main, minDist = nil, math.huge
             for _, mob in ipairs(targets) do
                 local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
                 if d < minDist then
@@ -4903,22 +4903,21 @@ task.spawn(function()
                     main = mob
                 end
             end
+            if not main then return end
 
-            --// ĐỨNG TRÊN ĐẦU MOB CHÍNH
-            hrp.CFrame = main.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0)
+            -- Chỉ teleport khi đang đánh + khoảng cách ngắn
+            SafeMove(main.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0))
 
-            --// BRING TẤT CẢ MOB XUỐNG DƯỚI CHÂN
+            -- Bring mobs xuống dưới chân
             if _G.BringMobs then
                 for _, mob in ipairs(targets) do
                     local mhrp = mob.HumanoidRootPart
                     mhrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
                     mhrp.CanCollide = false
-                    mhrp.Velocity = Vector3.zero
-                    mhrp.RotVelocity = Vector3.zero
                 end
             end
 
-            --// AOE ATTACK – CÓ EXP – KHÔNG MISS
+            -- AOE attack
             for _, mob in ipairs(targets) do
                 if mob.Humanoid.Health > 0 then
                     L_1_[4]["Kill"](mob, true)
