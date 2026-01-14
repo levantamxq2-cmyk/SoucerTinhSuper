@@ -4854,6 +4854,8 @@ L_1_[93]["Main"]:AddToggle({
 })
 task.spawn(function()
     local plr = game.Players.LocalPlayer
+    local FARM_POS = CFrame.new(-9495.6807, 453.5862, 5977.3486)
+
     local boneMobs = {
         ["Reborn Skeleton"] = true,
         ["Living Zombie"] = true,
@@ -4861,71 +4863,65 @@ task.spawn(function()
         ["Possessed Mummy"] = true
     }
 
-    local FARM_POS = CFrame.new(-9495.6807, 453.5862, 5977.3486)
-
-    while true do
-        if not _G.AutoFarmBone then
-            task.wait(0.5)
+    while task.wait(0.25) do
+        if not _G.AutoFarm_Bone then
+            isMoving = false
             continue
         end
 
-        pcall(function()
-            local char = plr.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
+        local char = plr.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
 
-            EquipWeapon(_G.SelectWeapon)
+        EquipWeapon(_G.SelectWeapon)
 
-            local targets = {}
+        local mobs = {}
 
-            for _, mob in ipairs(workspace.Enemies:GetChildren()) do
-                if boneMobs[mob.Name] then
-                    local hum = mob:FindFirstChild("Humanoid")
-                    local mhrp = mob:FindFirstChild("HumanoidRootPart")
-                    if hum and mhrp and hum.Health > 0 then
-                        table.insert(targets, mob)
-                    end
+        for _, mob in ipairs(workspace.Enemies:GetChildren()) do
+            if boneMobs[mob.Name] then
+                local hum = mob:FindFirstChild("Humanoid")
+                local mhrp = mob:FindFirstChild("HumanoidRootPart")
+                if hum and mhrp and hum.Health > 0 then
+                    table.insert(mobs, mob)
                 end
             end
+        end
 
-            -- Không có mob → di chuyển TỪ TỪ về khu farm
-            if #targets == 0 then
-                SafeMove(FARM_POS)
-                return
+        -- ❗ KHÔNG CÓ MOB → CHỈ MOVE 1 LẦN
+        if #mobs == 0 then
+            SafeMove(FARM_POS, 25)
+            continue
+        end
+
+        -- CHỌN MOB GẦN NHẤT
+        local target, dist = nil, math.huge
+        for _, mob in ipairs(mobs) do
+            local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
+            if d < dist then
+                dist = d
+                target = mob
             end
+        end
+        if not target then continue end
 
-            -- Chọn mob gần nhất
-            local main, minDist = nil, math.huge
-            for _, mob in ipairs(targets) do
-                local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
-                if d < minDist then
-                    minDist = d
-                    main = mob
-                end
+        -- ĐẾN TRÊN ĐẦU MOB (KHOẢNG CÁCH NGẮN → OK)
+        hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0)
+
+        -- BRING MOB XUỐNG DƯỚI CHÂN
+        if _G.BringMobs then
+            for _, mob in ipairs(mobs) do
+                local mhrp = mob.HumanoidRootPart
+                mhrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
+                mhrp.CanCollide = false
             end
-            if not main then return end
+        end
 
-            -- Chỉ teleport khi đang đánh + khoảng cách ngắn
-            SafeMove(main.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0))
-
-            -- Bring mobs xuống dưới chân
-            if _G.BringMobs then
-                for _, mob in ipairs(targets) do
-                    local mhrp = mob.HumanoidRootPart
-                    mhrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
-                    mhrp.CanCollide = false
-                end
+        -- AOE ATTACK
+        for _, mob in ipairs(mobs) do
+            if mob.Humanoid.Health > 0 then
+                L_1_[4]["Kill"](mob, true)
             end
-
-            -- AOE attack
-            for _, mob in ipairs(targets) do
-                if mob.Humanoid.Health > 0 then
-                    L_1_[4]["Kill"](mob, true)
-                end
-            end
-        end)
-
-        task.wait(0.15)
+        end
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
