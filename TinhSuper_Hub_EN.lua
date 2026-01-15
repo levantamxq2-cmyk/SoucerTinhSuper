@@ -4849,88 +4849,123 @@ L_1_[93]["Main"]:AddToggle({
         _G.AutoFarm_Bone = state
     end
 })
-task.spawn(function()
-    -- 🔥 DANH SÁCH SPAWN BONE (CÓ THỂ THÊM)
-    local BoneSpawns = {
-        CFrame.new(-9508.56, 142.13, 5737.36),
-        CFrame.new(-9300.12, 141.80, 5900.22),
-        CFrame.new(-9700.45, 143.20, 5600.88),
-        CFrame.new(-9600.77, 142.50, 6000.10)
-    }
+--------------------------------------------------
+-- BONE FARM - FULL REPLACE VERSION
+-- GIỮ LOGIC GỐC | KHÔNG QUEST | KHÔNG SKILL
+--------------------------------------------------
 
-    local BoneMobs = {
-        ["Reborn Skeleton"] = true,
-        ["Living Zombie"] = true,
-        ["Demonic Soul"] = true,
-        ["Posessed Mummy"] = true
-    }
+-- ===== CONFIG =====
+local BoneMobs = {
+    "Reborn Skeleton",
+    "Living Zombie",
+    "Demonic Soul",
+    "Posessed Mummy"
+}
 
-    local SCAN_DISTANCE = 5000
-    local SpawnIndex = 1
+local BoneBringPos = {
+    ["Reborn Skeleton"] = CFrame.new(-8769.58984, 142.13063, 6055.27637),
+    ["Living Zombie"]   = CFrame.new(-10156.4531, 138.65248, 5964.5752),
+    ["Demonic Soul"]    = CFrame.new(-9525.17188, 172.13063, 6152.30566),
+    ["Posessed Mummy"]  = CFrame.new(-9570.88281, 5.8183188, 6187.86279)
+}
 
-    while task.wait(0.15) do
-        if not _G.AutoFarm_Bone then
-            bringmob = false
-            StartBring = false
-            continue
-        end
+_G.Bone = _G.Bone or false
+BonesBring = false
 
-        local plr = game.Players.LocalPlayer
-        local char = plr.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then continue end
+--------------------------------------------------
+-- 1️⃣ BRING MOB LOOP (LUÔN CHẠY)
+--------------------------------------------------
+spawn(function()
+    while task.wait(0.1) do
+        if _G.Bone and BonesBring then
+            pcall(function()
+                for _, mob in pairs(workspace.Enemies:GetChildren()) do
+                    if BoneBringPos[mob.Name]
+                    and mob:FindFirstChild("Humanoid")
+                    and mob:FindFirstChild("HumanoidRootPart")
+                    and mob.Humanoid.Health > 0 then
 
-        -- 🔁 LUÔN BAY QUA LẠI CÁC SPAWN
-        local currentSpawn = BoneSpawns[SpawnIndex]
-        _tp(currentSpawn * CFrame.new(0, 30, 0))
+                        mob.HumanoidRootPart.CFrame = BoneBringPos[mob.Name]
+                        mob.HumanoidRootPart.CanCollide = false
+                        mob.Humanoid.WalkSpeed = 0
+                        mob.Humanoid.JumpPower = 0
+                        mob.Head.CanCollide = false
+                        mob.Humanoid:ChangeState(14)
 
-        local foundMob = false
+                        if mob.Humanoid:FindFirstChild("Animator") then
+                            mob.Humanoid.Animator:Destroy()
+                        end
 
-        -- 🔍 QUÉT MOB TRONG PHẠM VI
-        for _, v in pairs(workspace.Enemies:GetChildren()) do
-            if BoneMobs[v.Name]
-            and v:FindFirstChild("Humanoid")
-            and v:FindFirstChild("HumanoidRootPart")
-            and v.Humanoid.Health > 0 then
-
-                local dist = (v.HumanoidRootPart.Position - hrp.Position).Magnitude
-                if dist <= SCAN_DISTANCE then
-                    foundMob = true
-                    MonFarm = v.Name
-
-                    repeat task.wait(_G.Fast_Delay or 0.1)
-
-                        AutoHaki()
-                        EquipWeapon(_G.SelectWeapon)
-
-                        _tp(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-
-                        v.HumanoidRootPart.Size = Vector3.new(60,60,60)
-                        v.HumanoidRootPart.Transparency = 1
-                        v.HumanoidRootPart.CanCollide = false
-                        v.Humanoid.WalkSpeed = 0
-
-                        bringmob = true
-                        StartBring = true
-                        FarmPos = v.HumanoidRootPart.CFrame
-
-                    until not _G.AutoFarm_Bone
-                    or not v.Parent
-                    or v.Humanoid.Health <= 0
-
-                    bringmob = false
-                    StartBring = false
+                        sethiddenproperty(
+                            game.Players.LocalPlayer,
+                            "SimulationRadius",
+                            math.huge
+                        )
+                    end
                 end
-            end
+            end)
         end
+    end
+end)
 
-        -- ❗ KHÔNG CÓ MOB Ở SPAWN NÀY → SANG SPAWN KHÁC
-        if not foundMob then
-            SpawnIndex += 1
-            if SpawnIndex > #BoneSpawns then
-                SpawnIndex = 1
-            end
+--------------------------------------------------
+-- 2️⃣ MAIN AUTO FARM BONE
+--------------------------------------------------
+spawn(function()
+    while task.wait() do
+        if _G.Bone and World3 then
+            pcall(function()
+                local foundMob = false
+
+                -- 🔥 CÓ MOB → FARM NGAY
+                for _, mob in pairs(workspace.Enemies:GetChildren()) do
+                    if BoneBringPos[mob.Name]
+                    and mob:FindFirstChild("Humanoid")
+                    and mob:FindFirstChild("HumanoidRootPart")
+                    and mob.Humanoid.Health > 0 then
+
+                        foundMob = true
+                        BonesBring = true
+
+                        repeat
+                            task.wait()
+                            EquipWeapon(_G.SelectWeapon)
+                            TP2(mob.HumanoidRootPart.CFrame * Pos)
+                        until not _G.Bone
+                           or mob.Humanoid.Health <= 0
+                           or not mob.Parent
+                    end
+                end
+
+                -- 🚀 KHÔNG CÓ MOB → ÉP SPAWN
+                if not foundMob then
+                    BonesBring = false
+                    for _, mob in pairs(game:GetService("ReplicatedStorage"):GetChildren()) do
+                        if BoneBringPos[mob.Name]
+                        and mob:FindFirstChild("HumanoidRootPart") then
+                            TP2(mob.HumanoidRootPart.CFrame * CFrame.new(2, 20, 2))
+                        end
+                    end
+                end
+            end)
         end
+    end
+end)
+
+--------------------------------------------------
+-- 3️⃣ UI: TOTAL BONE
+--------------------------------------------------
+spawn(function()
+    while task.wait(2) do
+        pcall(function()
+            if BoneLabel then
+                BoneLabel:Set(
+                    "Total Bone: " ..
+                    game:GetService("ReplicatedStorage")
+                        .Remotes.CommF_:InvokeServer("Bones", "Check")
+                )
+            end
+        end)
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
