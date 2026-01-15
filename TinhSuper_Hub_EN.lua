@@ -2385,7 +2385,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [23/5/15/1/";
+		"Release Date [31/5/15/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -4848,116 +4848,83 @@ L_1_[93]["Main"]:AddToggle({
         _G.AutoFarm_Bone = state
     end
 })
-task.spawn(function()
-    local Players = game:GetService("Players")
-    local plr = Players.LocalPlayer
+-- CONFIG
+local BoneFarmPos = CFrame.new(-9508.5673828125, 142.1398468017578, 5737.3603515625)
 
-    local FarmCFrame = CFrame.new(-9508.567, 142.14, 5737.36)
+local BoneMobs = {
+    ["Reborn Skeleton"] = true,
+    ["Living Zombie"] = true,
+    ["Demonic Soul"] = true,
+    ["Posessed Mummy"] = true,
+    ["Possessed Mummy"] = true
+}
 
-    local SCAN_RADIUS = 100000
-    local BRING_RADIUS = 10000
-
-    local BoneMobs = {
-        ["Reborn Skeleton"] = true,
-        ["Living Zombie"] = true,
-        ["Demonic Soul"] = true,
-        ["Posessed Mummy"] = true
-    }
-
-    local State = "Travel" -- Travel | Farm
-
-    while task.wait(0.15) do
+spawn(function()
+    while task.wait(0.2) do
         if not _G.AutoFarm_Bone then
-            State = "Travel"
             StartBring = false
+            bringmob = false
             continue
         end
 
-        local char = plr.Character
-        local Root = char and char:FindFirstChild("HumanoidRootPart")
-        if not Root then continue end
+        pcall(function()
+            local plr = game.Players.LocalPlayer
+            local char = plr.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
 
-        ----------------------------------------------------------------
-        -- STATE: TRAVEL TỚI KHU FARM
-        ----------------------------------------------------------------
-        if State == "Travel" then
-            _tp(FarmCFrame * CFrame.new(0, 30, 0))
-
-            if (Root.Position - FarmCFrame.Position).Magnitude < 20 then
-                State = "Farm"
+            -- 1️⃣ ÉP VỀ KHU FARM TRƯỚC
+            if (hrp.Position - BoneFarmPos.Position).Magnitude > 200 then
+                TP1(BoneFarmPos)
+                return
             end
-            continue
-        end
 
-        ----------------------------------------------------------------
-        -- STATE: FARM
-        ----------------------------------------------------------------
-        local mobs = {}
+            -- 2️⃣ TÌM MOB HỢP LỆ
+            local foundMob = false
 
-        for _, mob in pairs(workspace.Enemies:GetChildren()) do
-            if BoneMobs[mob.Name]
-            and mob:FindFirstChild("Humanoid")
-            and mob:FindFirstChild("HumanoidRootPart")
-            and mob.Humanoid.Health > 0 then
+            for _, v in pairs(workspace.Enemies:GetChildren()) do
+                if BoneMobs[v.Name]
+                and v:FindFirstChild("Humanoid")
+                and v:FindFirstChild("HumanoidRootPart")
+                and v.Humanoid.Health > 0 then
 
-                local dist = (mob.HumanoidRootPart.Position - Root.Position).Magnitude
-                if dist <= SCAN_RADIUS then
-                    table.insert(mobs, mob)
+                    foundMob = true
+                    MonFarm = v.Name
+
+                    -- 3️⃣ BAY LÊN ĐẦU MOB (CƯỠNG)
+                    repeat task.wait(_G.Fast_Delay or 0.1)
+
+                        AutoHaki()
+                        EquipWeapon(_G.SelectWeapon)
+
+                        topos(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+
+                        -- KHÓA MOB
+                        v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                        v.HumanoidRootPart.Transparency = 1
+                        v.HumanoidRootPart.CanCollide = false
+                        v.Humanoid.WalkSpeed = 0
+
+                        -- BẬT BRING
+                        bringmob = true
+                        StartBring = true
+                        FarmPos = v.HumanoidRootPart.CFrame
+
+                    until not _G.AutoFarm_Bone
+                    or not v.Parent
+                    or v.Humanoid.Health <= 0
+
+                    -- reset
+                    bringmob = false
+                    StartBring = false
                 end
             end
-        end
 
-        -- ❌ Không có mob → quay lại Travel (chờ spawn)
-        if #mobs == 0 then
-            StartBring = false
-            State = "Travel"
-            continue
-        end
-
-        ----------------------------------------------------------------
-        -- CHỌN MOB GẦN NHẤT
-        ----------------------------------------------------------------
-        local target, nearest = nil, math.huge
-        for _, mob in ipairs(mobs) do
-            local d = (mob.HumanoidRootPart.Position - Root.Position).Magnitude
-            if d < nearest then
-                nearest = d
-                target = mob
+            -- 4️⃣ KHÔNG CÓ MOB → QUAY VỀ ĐIỂM FARM ĐỨNG CHỜ
+            if not foundMob then
+                TP1(BoneFarmPos)
             end
-        end
-        if not target then
-            State = "Travel"
-            continue
-        end
-
-        ----------------------------------------------------------------
-        -- BAY LÊN ĐẦU MOB
-        ----------------------------------------------------------------
-        _tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 100, 0))
-
-        ----------------------------------------------------------------
-        -- GOM MOB
-        ----------------------------------------------------------------
-        StartBring = true
-        EquipWeapon(_G.SelectWeapon)
-        AutoHaki()
-
-        for _, mob in ipairs(mobs) do
-            local hrp = mob.HumanoidRootPart
-            if (hrp.Position - Root.Position).Magnitude <= BRING_RADIUS then
-                hrp.CFrame = Root.CFrame * CFrame.new(0, -100, 0)
-                hrp.Velocity = Vector3.zero
-                hrp.RotVelocity = Vector3.zero
-                hrp.CanCollide = false
-                mob.Humanoid.WalkSpeed = 0
-
-                for _, p in ipairs(mob:GetDescendants()) do
-                    if p:IsA("BasePart") then
-                        p.CanCollide = false
-                    end
-                end
-            end
-        end
+        end)
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
