@@ -2385,7 +2385,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [22/33/15/1/";
+		"Release Date [22/38/15/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -4896,33 +4896,6 @@ FarmPos = nil
 -- BRING CORE (AOE THẬT)
 -- =========================
 spawn(function()
-	while task.wait(0.1) do
-		if BonesBring and _G.Bone and FarmPos then
-			pcall(function()
-				for _,v in pairs(Enemies:GetChildren()) do
-					if BoneMob[v.Name]
-					and v:FindFirstChild("Humanoid")
-					and v:FindFirstChild("HumanoidRootPart")
-					and v.Humanoid.Health > 0 then
-						v.HumanoidRootPart.CFrame = FarmPos * MobOffset
-						v.HumanoidRootPart.CanCollide = false
-						v.Humanoid.WalkSpeed = 0
-						v.Humanoid.JumpPower = 0
-						if v:FindFirstChild("Head") then
-							v.Head.CanCollide = false
-						end
-					end
-				end
-				sethiddenproperty(LocalPlayer,"SimulationRadius",math.huge)
-			end)
-		end
-	end
-end)
-
--- =========================
--- MAIN FARM (QUEST CENTER)
--- =========================
-spawn(function()
 	while task.wait(0.2) do
 		if not _G.Bone or not World3 then
 			BonesBring = false
@@ -4930,23 +4903,33 @@ spawn(function()
 		end
 
 		pcall(function()
-			local QuestGui = LocalPlayer.PlayerGui.Main.Quest
-			local QuestText = QuestGui.Container.QuestTitle.Title.Text
+			local player = LocalPlayer
+			local char = player.Character
+			if not char or not char:FindFirstChild("HumanoidRootPart") then return end
 
-			-- ===== KHÔNG ĐÚNG QUEST → BỎ =====
-			if QuestGui.Visible and not string.find(QuestText,"Demonic Soul") then
+			local QuestGui = player.PlayerGui:FindFirstChild("Main")
+				and player.PlayerGui.Main:FindFirstChild("Quest")
+
+			-- ===== CHƯA CÓ QUEST → BAY NPC =====
+			if not QuestGui or QuestGui.Visible == false then
 				BonesBring = false
-				CommF:InvokeServer("AbandonQuest")
+				_tp(QuestPos)
+
+				if (QuestPos.Position - char.HumanoidRootPart.Position).Magnitude < 4 then
+					CommF:InvokeServer("StartQuest","HauntedQuest2",1)
+				end
 				return
 			end
 
-			-- ===== CHƯA CÓ QUEST → NHẬN =====
-			if not QuestGui.Visible then
+			-- ===== CÓ QUEST → CHECK TÊN =====
+			local titleObj =
+				QuestGui:FindFirstChild("Container")
+				and QuestGui.Container:FindFirstChild("QuestTitle")
+				and QuestGui.Container.QuestTitle:FindFirstChild("Title")
+
+			if titleObj and not string.find(titleObj.Text,"Demonic Soul") then
 				BonesBring = false
-				_tp(QuestPos)
-				if (QuestPos.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 4 then
-					CommF:InvokeServer("StartQuest","HauntedQuest2",1)
-				end
+				CommF:InvokeServer("AbandonQuest")
 				return
 			end
 
@@ -4967,7 +4950,7 @@ spawn(function()
 					until not _G.Bone
 					   or not v.Parent
 					   or v.Humanoid.Health <= 0
-					   or not QuestGui.Visible
+					   or QuestGui.Visible == false
 				end
 			end
 		end)
