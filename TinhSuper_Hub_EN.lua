@@ -2385,7 +2385,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [31/5/15/1/";
+		"Release Date [56/21/15/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
