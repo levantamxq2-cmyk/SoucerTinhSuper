@@ -4852,7 +4852,8 @@ task.spawn(function()
     local Players = game:GetService("Players")
     local plr = Players.LocalPlayer
 
-    local FarmPos = CFrame.new(-9508.567, 142.14, 5737.36) -- vị trí farm bone
+    local FarmPos = CFrame.new(-9508.567, 142.14, 5737.36)
+    local ReachedBoneFarm = false
 
     local BoneMobs = {
         ["Reborn Skeleton"] = true,
@@ -4863,6 +4864,7 @@ task.spawn(function()
 
     while task.wait(0.15) do
         if not _G.AutoFarm_Bone then
+            ReachedBoneFarm = false
             StartBring = false
             continue
         end
@@ -4871,14 +4873,23 @@ task.spawn(function()
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then continue end
 
-        -- 1️⃣ LUÔN TP TỚI KHU FARM (khi bật)
-        if (hrp.Position - FarmPos.Position).Magnitude > 1200 then
-            TP1(FarmPos)
-            continue
+        ----------------------------------------------------------------
+        -- 1️⃣ CHƯA TỚI FARM → DI CHUYỂN TRƯỚC (GIỐNG TWEEN-TP)
+        ----------------------------------------------------------------
+        if not ReachedBoneFarm then
+            if (hrp.Position - FarmPos.Position).Magnitude > 50 then
+                TP1(FarmPos) -- hoặc topos(FarmPos)
+                continue
+            else
+                ReachedBoneFarm = true
+            end
         end
 
-        -- 2️⃣ TÌM MOB BONE GẦN NHẤT
+        ----------------------------------------------------------------
+        -- 2️⃣ ĐÃ TỚI FARM → BẮT ĐẦU LOGIC FARM
+        ----------------------------------------------------------------
         local mobs = {}
+
         for _, mob in ipairs(workspace.Enemies:GetChildren()) do
             if BoneMobs[mob.Name]
             and mob:FindFirstChild("Humanoid")
@@ -4888,7 +4899,7 @@ task.spawn(function()
             end
         end
 
-        -- 3️⃣ KHÔNG CÓ MOB → BAY LÊN CAO + CHỜ
+        -- 3️⃣ KHÔNG CÓ MOB → BAY LÊN + CHỜ
         if #mobs == 0 then
             StartBring = false
             hrp.CFrame = FarmPos * CFrame.new(0, 100, 0)
@@ -4909,7 +4920,7 @@ task.spawn(function()
         -- 5️⃣ BAY LÊN ĐẦU MOB
         hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 100, 0)
 
-        -- 6️⃣ GOM MOB TRONG BÁN KÍNH 1000 STUDS
+        -- 6️⃣ GOM MOB 1000 STUDS
         StartBring = true
         EquipWeapon(_G.SelectWeapon)
         AutoHaki()
@@ -4918,20 +4929,12 @@ task.spawn(function()
             local mhrp = mob.HumanoidRootPart
             if (mhrp.Position - hrp.Position).Magnitude <= 1000 then
                 mhrp.CFrame = hrp.CFrame * CFrame.new(0, -100, 0)
-                mhrp.Velocity = Vector3.zero
-                mhrp.RotVelocity = Vector3.zero
                 mhrp.CanCollide = false
                 mob.Humanoid.WalkSpeed = 0
-
-                for _, part in ipairs(mob:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
             end
         end
 
-        -- 7️⃣ ĐÁNH CHO TỚI KHI MOB CHẾT HẾT
+        -- 7️⃣ ĐÁNH THƯỜNG TỚI CHẾT
         repeat task.wait(0.1)
             EquipWeapon(_G.SelectWeapon)
         until not _G.AutoFarm_Bone
