@@ -4830,283 +4830,147 @@ end)
 L_1_[93]["Main"]:AddSection({
 	"Farming Bone"
 })
+
 CheckingBone = L_1_[93]["Main"]:AddParagraph({
 	["Title"] = " Bones :",
 	["Content"] = ""
 })
+
 spawn(function()
-	while wait(.2) do
+	while task.wait(0.2) do
 		pcall(function()
 			CheckingBone:SetDesc(" Bones : " .. GetM("Bones"))
 		end)
 	end
 end)
+
 L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Farm Bone",
-    ["Description"] = "",
-    ["Default"] = false,
-    ["Callback"] = function(state)
-        _G.Bone = state
-    end
-})
--- =========================
--- AUTO FARM BONE - FULL REPLACE (synchronized variables, uses _tp/topos, preserves UI & bring)
--- Replaces existing Bone farm blocks. Keep in file as-is.
--- =========================
-
--- Ensure toggle variables exist (matching UI)
-_G.Bone = _G.Bone or false
-_G.QuestBone = _G.QuestBone or true
-
--- Offset to stand above mob (safe, fixed)
-local Pos = CFrame.new(0, 50, 0)
-
--- Bring target positions (kept from original)
-local vu427 = {
-    ["Reborn Skeleton"] = CFrame.new(-8769.58984, 142.13063, 6055.27637),
-    ["Living Zombie"] = CFrame.new(-10156.4531, 138.65248, 5964.5752),
-    ["Demonic Soul"] = CFrame.new(-9525.17188, 172.13063, 6152.30566),
-    ["Posessed Mummy"] = CFrame.new(-9570.88281, 5.8183188, 6187.86279)
-}
-
--- Main farm spawn points (player should teleport here to force spawning)
-local vu439 = CFrame.new(-9506.234375, 172.130615234375, 6117.0771484375)
-local vu448 = CFrame.new(-9515.75, 174.8521728515625, 6079.40625)
-
--- BonesBring flag used elsewhere in UI/bring loop
-BonesBring = BonesBring or false
-PosMonBone = PosMonBone or CFrame.new()
-
--- Helper: safe call to player's simulation radius setter (some environments restrict sethiddenproperty)
-local function safe_set_simradius()
-    pcall(function()
-        sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
-    end)
-end
-
--- =========================
--- BRING LOOP: when BonesBring true, move bone mobs to their bring positions
--- =========================
-spawn(function()
-    while task.wait(0.1) do
-        if BonesBring then
-            pcall(function()
-                for _, mob in pairs(workspace:FindFirstChild("Enemies") and workspace.Enemies:GetChildren() or {}) do
-                    local name = mob.Name or ""
-                    if (name == "Reborn Skeleton" or name == "Living Zombie" or name == "Demonic Soul" or name == "Posessed Mummy") then
-                        local targetC = vu427[name]
-                        if targetC and mob:FindFirstChild("HumanoidRootPart") then
-                            -- Move mob to its bring position
-                            mob.HumanoidRootPart.CFrame = targetC
-                        end
-
-                        -- Disable collision / movement / animations to keep mob at position
-                        pcall(function()
-                            if mob:FindFirstChild("Head") then mob.Head.CanCollide = false end
-                            if mob:FindFirstChildOfClass("Humanoid") then
-                                local h = mob:FindFirstChildOfClass("Humanoid")
-                                h.Sit = false
-                                h:ChangeState(14)
-                                if h:FindFirstChild("Animator") then
-                                    h:FindFirstChild("Animator"):Destroy()
-                                end
-                                h.JumpPower = 0
-                                h.WalkSpeed = 0
-                            end
-                            if mob:FindFirstChild("HumanoidRootPart") then
-                                mob.HumanoidRootPart.CanCollide = false
-                            end
-                        end)
-                    end
-                end
-                safe_set_simradius()
-            end)
-        else
-            task.wait(0.2)
-        end
-    end
-end)
-
--- =========================
--- TOTAL BONE UI UPDATER (keeps existing UI paragraph updated if present)
--- Attempts multiple common UI object patterns (CheckingBone or a paragraph object named vu433)
--- =========================
-spawn(function()
-    while task.wait(2) do
-        pcall(function()
-            local ok, total = pcall(function()
-                return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Bones", "Check")
-            end)
-            if ok and total ~= nil then
-                -- If CheckingBone variable exists and has Set or SetDesc style
-                if type(CheckingBone) == "table" and CheckingBone.Set then
-                    pcall(function()
-                        CheckingBone:Set({["Description"] = "Total Bone: " .. tostring(total)})
-                    end)
-                else
-                    -- fallback: try common named ui object
-                    pcall(function()
-                        local gui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("Main")
-                        if gui and gui:FindFirstChild("SomeBoneLabel") then
-                            -- if user has a specific label, update it (best-effort, non-destructive)
-                            gui.SomeBoneLabel.Text = "Total Bone: " .. tostring(total)
-                        end
-                    end)
-                end
-            end
-        end)
-    end
-end)
-
--- =========================
--- MAIN NO-QUEST FARM LOOP (always teleport to farm point first to force spawn)
--- Uses _tp(...) and topos(...) according to core functions present in file
--- =========================
-spawn(function()
-    while task.wait(0.15) do
-        if _G.Bone and (not _G.QuestBone) and World3 then
-            pcall(function()
-                -- Ensure player goes to farm spawn to trigger mob spawns
-                pcall(function() _tp(vu439) end)
-
-                -- small delay to allow server to spawn enemies when player arrives
-                task.wait(0.25)
-
-                -- Scan current enemies and farm them
-                for _, v in pairs(workspace:FindFirstChild("Enemies") and workspace.Enemies:GetChildren() or {}) do
-                    local name = v.Name or ""
-                    if (name == "Reborn Skeleton" or name == "Living Zombie" or name == "Demonic Soul" or name == "Posessed Mummy")
-                        and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart")
-                        and v.Humanoid.Health > 0 then
-
-                        repeat
-                            task.wait()
-                            -- equip chosen weapon (preserve existing EquipWeapon function behavior)
-                            pcall(function() EquipWeapon(_G.SelectWeapon) end)
-
-                            -- start bringing and mark position
-                            BonesBring = true
-                            PosMonBone = v.HumanoidRootPart.CFrame
-
-                            -- teleport player above the mob using file's TP func
-                            pcall(function() _tp(v.HumanoidRootPart.CFrame * Pos) end)
-
-                            -- lock mob physics locally
-                            pcall(function()
-                                v.HumanoidRootPart.CanCollide = false
-                                v.Humanoid.WalkSpeed = 0
-                                if v:FindFirstChild("Head") then v.Head.CanCollide = false end
-                            end)
-                        until (not _G.Bone) or (not v.Parent) or (v.Humanoid.Health <= 0)
-                    end
-                end
-            end)
-        else
-            -- if toggle off or not in world3, ensure bring is off
-            BonesBring = false
-            task.wait(0.25)
-        end
-    end
-end)
-
--- =========================
--- QUEST-AWARE FARM LOOP (handles Accept Quest Bone flow using same TP & Pos)
--- =========================
-spawn(function()
-    while task.wait(0.15) do
-        if _G.Bone and _G.QuestBone and World3 then
-            pcall(function()
-                local player = game.Players.LocalPlayer
-                local guiQuest = player and player.PlayerGui and player.PlayerGui.Main and player.PlayerGui.Main.Quest
-                local questTitle = nil
-                if guiQuest and guiQuest.Container and guiQuest.Container.QuestTitle and guiQuest.Container.QuestTitle.Title then
-                    questTitle = tostring(guiQuest.Container.QuestTitle.Title.Text or "")
-                end
-
-                -- If quest UI is not visible, go to quest giver spawn and start quest
-                if not guiQuest or guiQuest.Visible == false then
-                    BonesBring = false
-                    pcall(function() _tp(vu448) end)
-                    -- if near quest start position, try to start quest (best-effort)
-                    pcall(function()
-                        local char = player.Character
-                        if char and char:FindFirstChild("HumanoidRootPart") then
-                            if (vu448.Position - char.HumanoidRootPart.Position).Magnitude <= 4 then
-                                pcall(function()
-                                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", "HauntedQuest2", 1)
-                                end)
-                            end
-                        end
-                    end)
-                    -- wait a bit for quest UI to appear then continue loop
-                    task.wait(0.6)
-                else
-                    -- If quest is visible but not the correct one, abandon it so script can take correct one
-                    if questTitle and not string.find(questTitle, "Demonic Soul") then
-                        BonesBring = false
-                        pcall(function()
-                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
-                        end)
-                        task.wait(0.4)
-                    else
-                        -- Farm quest mobs when quest is active
-                        local found = false
-                        for _, v in pairs(workspace:FindFirstChild("Enemies") and workspace.Enemies:GetChildren() or {}) do
-                            local name = v.Name or ""
-                            if (name == "Reborn Skeleton" or name == "Living Zombie" or name == "Demonic Soul" or name == "Posessed Mummy")
-                                and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart")
-                                and v.Humanoid.Health > 0 then
-
-                                found = true
-                                repeat
-                                    task.wait()
-                                    pcall(function() EquipWeapon(_G.SelectWeapon) end)
-
-                                    PosMonBone = v.HumanoidRootPart.CFrame
-                                    pcall(function() _tp(v.HumanoidRootPart.CFrame * Pos) end)
-
-                                    pcall(function()
-                                        v.HumanoidRootPart.CanCollide = false
-                                        v.Humanoid.WalkSpeed = 0
-                                        if v:FindFirstChild("Head") then v.Head.CanCollide = false end
-                                    end)
-
-                                    BonesBring = true
-                                until (not _G.Bone) or (not v.Parent) or (v.Humanoid.Health <= 0) or (not guiQuest or guiQuest.Visible == false)
-                            end
-                        end
-
-                        -- If no mobs found for quest, try to teleport to known replicated storage spawn (best-effort)
-                        if not found then
-                            pcall(function()
-                                local rs = game:GetService("ReplicatedStorage")
-                                local candidate = rs:FindFirstChild("Demonic Soul [Lv. 2025]") or rs:FindFirstChild("Demonic Soul")
-                                if candidate and candidate:FindFirstChild("HumanoidRootPart") then
-                                    _tp(candidate.HumanoidRootPart.CFrame * CFrame.new(15, 10, 2))
-                                else
-                                    _tp(vu448)
-                                end
-                            end)
-                            task.wait(0.5)
-                        end
-                    end
-                end
-            end)
-        else
-            task.wait(0.25)
-        end
-    end
-end)
-BoneQ = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Accept Quests",
+	["Name"] = "Auto Farm Bone",
 	["Description"] = "",
 	["Default"] = false,
-	["Callback"] = function(L_517_arg0)
-		local L_518_ = {}
-		L_518_[1] = L_517_arg0
-		_G["QuestBone"] = L_518_[1]
+	["Callback"] = function(state)
+		_G.Bone = state
 	end
 })
+
+L_1_[93]["Main"]:AddToggle({
+	["Name"] = "Accept Quest Bone",
+	["Description"] = "",
+	["Default"] = true,
+	["Callback"] = function(state)
+		_G.QuestBone = state
+	end
+})
+
+_G.Bone = _G.Bone or false
+_G.QuestBone = _G.QuestBone or true
+BonesBring = false
+PosMonBone = CFrame.new()
+
+local Pos = CFrame.new(0, 50, 0)
+
+local BoneMobs = {
+	["Reborn Skeleton"] = true,
+	["Living Zombie"] = true,
+	["Demonic Soul"] = true,
+	["Posessed Mummy"] = true
+}
+
+local BringPos = {
+	["Reborn Skeleton"] = CFrame.new(-8769.58984, 142.13063, 6055.27637),
+	["Living Zombie"] = CFrame.new(-10156.4531, 138.65248, 5964.5752),
+	["Demonic Soul"] = CFrame.new(-9525.17188, 172.13063, 6152.30566),
+	["Posessed Mummy"] = CFrame.new(-9570.88281, 5.8183188, 6187.86279)
+}
+
+local FarmPos = CFrame.new(-9506.234375, 172.130615234375, 6117.0771484375)
+local QuestPos = CFrame.new(-9515.75, 174.8521728515625, 6079.40625)
+
+spawn(function()
+	while task.wait(0.1) do
+		if BonesBring then
+			pcall(function()
+				for _, v in pairs(workspace.Enemies:GetChildren()) do
+					if BoneMobs[v.Name] and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") then
+						local cf = BringPos[v.Name]
+						if cf then
+							v.HumanoidRootPart.CFrame = cf
+						end
+						v.HumanoidRootPart.CanCollide = false
+						if v:FindFirstChild("Head") then
+							v.Head.CanCollide = false
+						end
+						v.Humanoid.WalkSpeed = 0
+						v.Humanoid.JumpPower = 0
+						v.Humanoid:ChangeState(14)
+						if v.Humanoid:FindFirstChild("Animator") then
+							v.Humanoid.Animator:Destroy()
+						end
+					end
+				end
+				sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
+			end)
+		end
+	end
+end)
+
+spawn(function()
+	while task.wait(0.2) do
+		if _G.Bone and World3 and not _G.QuestBone then
+			pcall(function()
+				_tp(FarmPos)
+				task.wait(0.3)
+				for _, v in pairs(workspace.Enemies:GetChildren()) do
+					if BoneMobs[v.Name] and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+						repeat
+							task.wait()
+							EquipWeapon(_G.SelectWeapon)
+							BonesBring = true
+							PosMonBone = v.HumanoidRootPart.CFrame
+							_tp(v.HumanoidRootPart.CFrame * Pos)
+						until not _G.Bone or not v.Parent or v.Humanoid.Health <= 0
+					end
+				end
+			end)
+		else
+			BonesBring = false
+		end
+	end
+end)
+
+spawn(function()
+	while task.wait(0.2) do
+		if _G.Bone and World3 and _G.QuestBone then
+			pcall(function()
+				local plr = game.Players.LocalPlayer
+				local QuestGui = plr.PlayerGui.Main.Quest
+				if not QuestGui.Visible then
+					BonesBring = false
+					_tp(QuestPos)
+					task.wait(0.4)
+					game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", "HauntedQuest2", 1)
+				else
+					if not string.find(QuestGui.Container.QuestTitle.Title.Text, "Demonic Soul") then
+						BonesBring = false
+						game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+					else
+						for _, v in pairs(workspace.Enemies:GetChildren()) do
+							if BoneMobs[v.Name] and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+								repeat
+									task.wait()
+									EquipWeapon(_G.SelectWeapon)
+									BonesBring = true
+									PosMonBone = v.HumanoidRootPart.CFrame
+									_tp(v.HumanoidRootPart.CFrame * Pos)
+								until not _G.Bone or not v.Parent or v.Humanoid.Health <= 0 or not QuestGui.Visible
+							end
+						end
+					end
+				end
+			end)
+		end
+	end
+end)
 L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Auto Soul Reaper",
 	["Description"] = "";
