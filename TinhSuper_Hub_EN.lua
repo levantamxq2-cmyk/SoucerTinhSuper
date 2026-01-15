@@ -4408,91 +4408,92 @@ Cake = L_1_[93]["Main"]:AddToggle({
 		_G["Auto_Cake_Prince"] = L_481_[2]
 	end
 })
-spawn(function()
-	while task["wait"]() do
-		if _G["Auto_Cake_Prince"] and not _G["AutoRaidCastle"] then
-			pcall(function()
-				local L_482_ = {}
-				L_482_[4] = game["Players"]["LocalPlayer"]
-				L_482_[6] = L_482_[4]["Character"] and L_482_[4]["Character"]:FindFirstChild("HumanoidRootPart")
-				L_482_[3] = L_482_[4]["PlayerGui"]["Main"]["Quest"]
-				L_482_[5] = workspace["Enemies"]
-				L_482_[1] = workspace["Map"]:FindFirstChild("CakeLoaf")
-				L_482_[7] = L_482_[1] and L_482_[1]:FindFirstChild("BigMirror")
-				if not L_482_[6] then
-					return
-				end
-				if _G["AcceptQuestC"] and (L_482_[3] and not L_482_[3]["Visible"]) then
-					local L_483_ = {}
-					L_483_[4] = CFrame["new"](-1927.92, 37.8, -12842.54)
-					_tp(L_483_[4])
-					while (L_483_[4]["Position"] - L_482_[6]["Position"])["Magnitude"] > 50 do
-						task["wait"](.2)
-					end
-					L_483_[1] = math["random"](1, 4)
-					L_483_[3] = {
-						[1] = {
-							"StartQuest",
-							"CakeQuest2",
-							2
-						};
-						[2] = {
-							"StartQuest";
-							"CakeQuest2";
-							1
-						};
-						[3] = {
-							"StartQuest";
-							"CakeQuest1",
-							1
-						};
-						[4] = {
-							"StartQuest";
-							"CakeQuest1";
-							2
-						}
-					}
-					pcall(function()
-						game["ReplicatedStorage"]["Remotes"]["CommF_"]:InvokeServer(unpack(L_483_[3][L_483_[1]]))
-					end)
-				end
-				if not L_482_[1] then
-					_tp(CFrame["new"](-2077, 252, -12373))
-					task["wait"](2)
-					return
-				end
-				if L_482_[7] and (L_482_[7]["Other"]["Transparency"] == 0 or L_482_[5]:FindFirstChild("Cake Prince")) then
-					local L_484_ = {}
-					L_484_[1] = GetConnectionEnemies("Cake Prince")
-					if L_484_[1] then
-						repeat
-							task["wait"]()
-							L_1_[4]["Kill2"](L_484_[1], _G["Auto_Cake_Prince"])
-						until not _G["Auto_Cake_Prince"] or not L_484_[1]["Parent"] or L_484_[1]["Humanoid"]["Health"] <= 0
-					else
-						_tp(CFrame["new"](-2151.82, 149.32, -12404.91))
-					end
-				else
-					local L_485_ = {}
-					L_485_[3] = {
-						"Cookie Crafter",
-						"Cake Guard",
-						"Baking Staff";
-						"Head Baker"
-					}
-					L_485_[2] = GetConnectionEnemies(L_485_[3])
-					if L_485_[2] then
-						repeat
-							task["wait"]()
-							L_1_[4]["Kill"](L_485_[2], _G["Auto_Cake_Prince"])
-						until not _G["Auto_Cake_Prince"] or not L_485_[2]["Parent"] or L_485_[2]["Humanoid"]["Health"] <= 0 or L_482_[7] and L_482_[7]["Other"]["Transparency"] == 0
-					else
-						_tp(CFrame["new"](-2077, 252, -12373))
-					end
-				end
-			end)
-		end
-	end
+-- ===== CONFIG =====
+local CakeFarmPos = CFrame.new(-2130.80712890625, 69.95634460449219, -12327.83984375)
+
+local CakeMobs = {
+    ["Cookie Crafter"] = true,
+    ["Cake Guard"] = true,
+    ["Baking Staff"] = true,
+    ["Head Baker"] = true
+}
+
+local SCAN_DISTANCE = 5000 -- bán kính quét mob
+
+-- ===== FARM LOGIC =====
+task.spawn(function()
+    while task.wait(0.15) do
+        if not (_G.AutoFarmFruits and _G.selectFruitFarm == "Farm Cake Mastery") then
+            bringmob = false
+            StartBring = false
+            continue
+        end
+
+        local plr = game.Players.LocalPlayer
+        local char = plr.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
+
+        -- 1️⃣ ÉP TỚI KHU FARM TRƯỚC (FIX ĐỨNG YÊN)
+        if (hrp.Position - CakeFarmPos.Position).Magnitude > 150 then
+            _tp(CakeFarmPos * CFrame.new(0, 30, 0))
+            continue
+        end
+
+        local foundMob = false
+        local nearestMob
+        local nearestDist = math.huge
+
+        -- 2️⃣ SCAN MOB TRONG BÁN KÍNH LỚN
+        for _, v in pairs(workspace.Enemies:GetChildren()) do
+            if CakeMobs[v.Name]
+            and v:FindFirstChild("Humanoid")
+            and v:FindFirstChild("HumanoidRootPart")
+            and v.Humanoid.Health > 0 then
+
+                local dist = (v.HumanoidRootPart.Position - hrp.Position).Magnitude
+                if dist < nearestDist and dist <= SCAN_DISTANCE then
+                    nearestDist = dist
+                    nearestMob = v
+                end
+            end
+        end
+
+        -- 3️⃣ KHÔNG CÓ MOB → ĐỨNG CHỜ Ở FARM
+        if not nearestMob then
+            _tp(CakeFarmPos * CFrame.new(0, 30, 0))
+            continue
+        end
+
+        -- 4️⃣ FARM MOB
+        foundMob = true
+        MonFarm = nearestMob.Name
+
+        repeat task.wait(_G.Fast_Delay or 0.1)
+
+            AutoHaki()
+            EquipWeapon(_G.SelectWeapon)
+
+            -- BAY LÊN ĐẦU MOB
+            _tp(nearestMob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+
+            -- KHÓA + GOM MOB
+            nearestMob.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+            nearestMob.HumanoidRootPart.Transparency = 1
+            nearestMob.HumanoidRootPart.CanCollide = false
+            nearestMob.Humanoid.WalkSpeed = 0
+
+            bringmob = true
+            StartBring = true
+            FarmPos = nearestMob.HumanoidRootPart.CFrame
+
+        until not (_G.AutoFarmFruits and _G.selectFruitFarm == "Farm Cake Mastery")
+        or not nearestMob.Parent
+        or nearestMob.Humanoid.Health <= 0
+
+        bringmob = false
+        StartBring = false
+    end
 end)
 CakeQ = L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Accept Quests";
@@ -4848,7 +4849,7 @@ L_1_[93]["Main"]:AddToggle({
         _G.AutoFarm_Bone = state
     end
 })
--- CONFIG
+-- ===== CONFIG =====
 local BoneFarmPos = CFrame.new(-9508.5673828125, 142.1398468017578, 5737.3603515625)
 
 local BoneMobs = {
@@ -4859,72 +4860,69 @@ local BoneMobs = {
     ["Possessed Mummy"] = true
 }
 
-spawn(function()
-    while task.wait(0.2) do
+-- ===== FARM LOGIC =====
+task.spawn(function()
+    while task.wait(0.15) do
         if not _G.AutoFarm_Bone then
-            StartBring = false
             bringmob = false
+            StartBring = false
             continue
         end
 
-        pcall(function()
-            local plr = game.Players.LocalPlayer
-            local char = plr.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
+        local plr = game.Players.LocalPlayer
+        local char = plr.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
 
-            -- 1️⃣ ÉP VỀ KHU FARM TRƯỚC
-            if (hrp.Position - BoneFarmPos.Position).Magnitude > 200 then
-                TP1(BoneFarmPos)
-                return
+        -- 1️⃣ LUÔN TWEEN TỚI KHU FARM TRƯỚC
+        if (hrp.Position - BoneFarmPos.Position).Magnitude > 150 then
+            _tp(BoneFarmPos * CFrame.new(0, 30, 0))
+            continue
+        end
+
+        local foundMob = false
+
+        -- 2️⃣ TÌM MOB BONE
+        for _, v in pairs(workspace.Enemies:GetChildren()) do
+            if BoneMobs[v.Name]
+            and v:FindFirstChild("Humanoid")
+            and v:FindFirstChild("HumanoidRootPart")
+            and v.Humanoid.Health > 0 then
+
+                foundMob = true
+                MonFarm = v.Name
+
+                repeat task.wait(_G.Fast_Delay or 0.1)
+
+                    AutoHaki()
+                    EquipWeapon(_G.SelectWeapon)
+
+                    -- 3️⃣ BAY LÊN ĐẦU MOB
+                    _tp(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+
+                    -- 4️⃣ KHÓA + GOM MOB
+                    v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                    v.HumanoidRootPart.Transparency = 1
+                    v.HumanoidRootPart.CanCollide = false
+                    v.Humanoid.WalkSpeed = 0
+
+                    bringmob = true
+                    StartBring = true
+                    FarmPos = v.HumanoidRootPart.CFrame
+
+                until not _G.AutoFarm_Bone
+                or not v.Parent
+                or v.Humanoid.Health <= 0
+
+                bringmob = false
+                StartBring = false
             end
+        end
 
-            -- 2️⃣ TÌM MOB HỢP LỆ
-            local foundMob = false
-
-            for _, v in pairs(workspace.Enemies:GetChildren()) do
-                if BoneMobs[v.Name]
-                and v:FindFirstChild("Humanoid")
-                and v:FindFirstChild("HumanoidRootPart")
-                and v.Humanoid.Health > 0 then
-
-                    foundMob = true
-                    MonFarm = v.Name
-
-                    -- 3️⃣ BAY LÊN ĐẦU MOB (CƯỠNG)
-                    repeat task.wait(_G.Fast_Delay or 0.1)
-
-                        AutoHaki()
-                        EquipWeapon(_G.SelectWeapon)
-
-                        topos(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-
-                        -- KHÓA MOB
-                        v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                        v.HumanoidRootPart.Transparency = 1
-                        v.HumanoidRootPart.CanCollide = false
-                        v.Humanoid.WalkSpeed = 0
-
-                        -- BẬT BRING
-                        bringmob = true
-                        StartBring = true
-                        FarmPos = v.HumanoidRootPart.CFrame
-
-                    until not _G.AutoFarm_Bone
-                    or not v.Parent
-                    or v.Humanoid.Health <= 0
-
-                    -- reset
-                    bringmob = false
-                    StartBring = false
-                end
-            end
-
-            -- 4️⃣ KHÔNG CÓ MOB → QUAY VỀ ĐIỂM FARM ĐỨNG CHỜ
-            if not foundMob then
-                TP1(BoneFarmPos)
-            end
-        end)
+        -- 5️⃣ KHÔNG CÓ MOB → BAY VỀ ĐIỂM FARM ĐỨNG CHỜ
+        if not foundMob then
+            _tp(BoneFarmPos * CFrame.new(0, 30, 0))
+        end
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
