@@ -4849,7 +4849,10 @@ L_1_[93]["Main"]:AddToggle({
     end
 })
 task.spawn(function()
-    local boneFrame = CFrame.new(-9508.5673828125, 142.1398468017578, 5737.3603515625)
+    local Players = game:GetService("Players")
+    local plr = Players.LocalPlayer
+
+    local FarmPos = CFrame.new(-9508.567, 142.14, 5737.36) -- vị trí farm bone
 
     local BoneMobs = {
         ["Reborn Skeleton"] = true,
@@ -4860,57 +4863,81 @@ task.spawn(function()
 
     while task.wait(0.15) do
         if not _G.AutoFarm_Bone then
-            bringmob = false
+            StartBring = false
             continue
         end
 
-        local plr = game.Players.LocalPlayer
         local char = plr.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then continue end
 
-        -- TP về khu Bone (an toàn)
-        pcall(function()
-            TP1(boneFrame)
-        end)
+        -- 1️⃣ LUÔN TP TỚI KHU FARM (khi bật)
+        if (hrp.Position - FarmPos.Position).Magnitude > 1200 then
+            TP1(FarmPos)
+            continue
+        end
 
+        -- 2️⃣ TÌM MOB BONE GẦN NHẤT
+        local mobs = {}
         for _, mob in ipairs(workspace.Enemies:GetChildren()) do
-            if not _G.AutoFarm_Bone then break end
-
             if BoneMobs[mob.Name]
             and mob:FindFirstChild("Humanoid")
             and mob:FindFirstChild("HumanoidRootPart")
             and mob.Humanoid.Health > 0 then
-
-                repeat task.wait(_G.Fast_Delay or 0.1)
-                    if not _G.AutoFarm_Bone then break end
-                    if not mob.Parent then break end
-                    if mob.Humanoid.Health <= 0 then break end
-
-                    -- set target
-                    MonFarm = mob.Name
-                    bringmob = true
-
-                    -- đánh thường
-                    AutoHaki()
-                    EquipWeapon(_G.SelectWeapon)
-                    topos(mob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-
-                    -- khóa mob
-                    mob.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                    mob.HumanoidRootPart.Transparency = 1
-                    mob.Humanoid.WalkSpeed = 0
-                    mob.HumanoidRootPart.CanCollide = false
-
-                    FarmPos = mob.HumanoidRootPart.CFrame
-
-                until not _G.AutoFarm_Bone
-                or not mob.Parent
-                or mob.Humanoid.Health <= 0
-
-                bringmob = false
+                table.insert(mobs, mob)
             end
         end
+
+        -- 3️⃣ KHÔNG CÓ MOB → BAY LÊN CAO + CHỜ
+        if #mobs == 0 then
+            StartBring = false
+            hrp.CFrame = FarmPos * CFrame.new(0, 100, 0)
+            continue
+        end
+
+        -- 4️⃣ CHỌN MOB GẦN NHẤT
+        local target, dist = nil, math.huge
+        for _, mob in ipairs(mobs) do
+            local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
+            if d < dist then
+                dist = d
+                target = mob
+            end
+        end
+        if not target then continue end
+
+        -- 5️⃣ BAY LÊN ĐẦU MOB
+        hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 100, 0)
+
+        -- 6️⃣ GOM MOB TRONG BÁN KÍNH 1000 STUDS
+        StartBring = true
+        EquipWeapon(_G.SelectWeapon)
+        AutoHaki()
+
+        for _, mob in ipairs(mobs) do
+            local mhrp = mob.HumanoidRootPart
+            if (mhrp.Position - hrp.Position).Magnitude <= 1000 then
+                mhrp.CFrame = hrp.CFrame * CFrame.new(0, -100, 0)
+                mhrp.Velocity = Vector3.zero
+                mhrp.RotVelocity = Vector3.zero
+                mhrp.CanCollide = false
+                mob.Humanoid.WalkSpeed = 0
+
+                for _, part in ipairs(mob:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+
+        -- 7️⃣ ĐÁNH CHO TỚI KHI MOB CHẾT HẾT
+        repeat task.wait(0.1)
+            EquipWeapon(_G.SelectWeapon)
+        until not _G.AutoFarm_Bone
+        or #workspace.Enemies:GetChildren() == 0
+
+        StartBring = false
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
