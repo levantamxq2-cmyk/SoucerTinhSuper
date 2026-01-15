@@ -2385,7 +2385,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [23/15/15/1/";
+		"Release Date [15/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -4849,22 +4849,18 @@ spawn(function()
 		end)
 	end
 end)
--- =====================================
--- AUTO FARM BONE – FULL FINAL (STABLE)
--- TP lên đầu quái
--- Đánh bằng WEAPON
--- Auto Buso
--- Bring nhẹ AOE (gom gần)
--- Không đứng yên – không kẹt 1 con
--- =====================================
+-- =========================
+-- FIX AUTO FARM BONE
+-- Đánh liên tục + bật Buso
+-- Giữ nguyên logic cũ, CHỈ SỬA LỖI
+-- =========================
 
--- ===== UI TOGGLE =====
 L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Farm Bone",
+	["Name"] = "Auto Farm Bone";
 	["Description"] = "",
-	["Default"] = false,
+	["Default"] = false;
 	["Callback"] = function(v)
-		_G.Bone = v
+		_G.AutoFarm_Bone = v
 	end
 })
 
@@ -4873,131 +4869,72 @@ BoneQ = L_1_[93]["Main"]:AddToggle({
 	["Description"] = "",
 	["Default"] = false,
 	["Callback"] = function(v)
-		_G.QuestBone = v
+		_G.AcceptQuestB = v
 	end
 })
 
--- ===== SERVICES =====
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HRP = Character:WaitForChild("HumanoidRootPart")
-local Enemies = workspace:WaitForChild("Enemies")
-
--- ===== GLOBAL FLAGS =====
-_G.Bone = _G.Bone or false
-_G.QuestBone = _G.QuestBone or false
-BonesBring = false
-BringPos = CFrame.new()
-
--- ===== MOB LIST =====
-local BoneMob = {
-	["Reborn Skeleton"] = true,
-	["Living Zombie"] = true,
-	["Demonic Soul"] = true,
-	["Possessed Mummy"] = true
-}
-
--- ===== POSITION =====
-local PlayerOffset = CFrame.new(0, 15, 0)
-local QuestPos = CFrame.new(-9515.75, 174.85, 6079.4)
-
--- =====================================
--- AUTO BUSO LOOP
--- =====================================
 spawn(function()
-	while task.wait(0.3) do
-		pcall(function()
-			if Boud and _G.Bone then
-				if not Character:FindFirstChild("HasBuso") then
-					ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
-				end
-			end
-		end)
-	end
-end)
+	local Player = game.Players.LocalPlayer
+	local Enemies = workspace.Enemies
+	local BoneMobs = {
+		["Reborn Skeleton"] = true,
+		["Living Zombie"] = true,
+		["Demonic Soul"] = true,
+		["Possessed Mummy"] = true
+	}
 
--- =====================================
--- BRING NHẸ LOOP (AOE GẦN)
--- =====================================
-spawn(function()
-	while task.wait(0.15) do
-		if BonesBring and _G.Bone then
-			pcall(function()
-				for _,v in pairs(Enemies:GetChildren()) do
-					if BoneMob[v.Name]
-					and v:FindFirstChild("HumanoidRootPart")
-					and v:FindFirstChild("Humanoid")
-					and v.Humanoid.Health > 0 then
-
-						v.HumanoidRootPart.CFrame =
-							BringPos * CFrame.new(math.random(-3,3), 0, math.random(-3,3))
-
-						v.HumanoidRootPart.CanCollide = false
-						v.Humanoid.WalkSpeed = 0
-						v.Humanoid.JumpPower = 0
-						if v:FindFirstChild("Head") then
-							v.Head.CanCollide = false
-						end
-					end
-				end
-				sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-			end)
-		end
-	end
-end)
-
--- =====================================
--- MAIN FARM LOOP
--- =====================================
-spawn(function()
 	while task.wait(0.2) do
-		if not _G.Bone or not World3 then
-			BonesBring = false
+		if not _G.AutoFarm_Bone then
 			continue
 		end
 
 		pcall(function()
-			-- ===== QUEST HANDLER =====
-			if _G.QuestBone then
-				local QuestGui = LocalPlayer.PlayerGui.Main.Quest
-				if not QuestGui.Visible then
-					_tp(QuestPos)
-					task.wait(0.6)
-					ReplicatedStorage.Remotes.CommF_:InvokeServer(
-						"StartQuest","HauntedQuest2",1
-					)
-					return
-				end
+			local Char = Player.Character
+			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
+			if not HRP then return end
+
+			-- AUTO BUSO
+			if Boud and not Char:FindFirstChild("HasBuso") then
+				game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
 			end
 
-			-- ===== FIND & FARM =====
+			-- QUEST
+			local QuestGui = Player.PlayerGui.Main.Quest
+			if _G.AcceptQuestB and QuestGui and not QuestGui.Visible then
+				_tp(CFrame.new(-9516.99,172.01,6078.46))
+				task.wait(1)
+				game.ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest","HauntedQuest2",1)
+			end
+
+			-- FARM LOOP (KHÔNG DỪNG SAU 1 CON)
 			for _,mob in pairs(Enemies:GetChildren()) do
-				if BoneMob[mob.Name]
+				if BoneMobs[mob.Name]
 				and mob:FindFirstChild("Humanoid")
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob.Humanoid.Health > 0 then
 
 					repeat
 						task.wait()
-
 						EquipWeapon(_G.SelectWeapon)
 
-						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
+						-- luôn bật buso khi đánh
+						if Boud and not Char:FindFirstChild("HasBuso") then
+							game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
+						end
 
-						BonesBring = true
-						BringPos = mob.HumanoidRootPart.CFrame
+						-- TP lên đầu quái
+						_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,15,0))
 
+						-- khóa quái
 						mob.HumanoidRootPart.CanCollide = false
 						mob.Humanoid.WalkSpeed = 0
 						mob.Humanoid.JumpPower = 0
-
-					until not _G.Bone
-						or not mob.Parent
-						or mob.Humanoid.Health <= 0
-
-					BonesBring = false
+						if mob:FindFirstChild("Head") then
+							mob.Head.CanCollide = false
+						end
+					until not _G.AutoFarm_Bone
+					   or not mob.Parent
+					   or mob.Humanoid.Health <= 0
 				end
 			end
 		end)
