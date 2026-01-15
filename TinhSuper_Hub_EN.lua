@@ -4849,7 +4849,7 @@ L_1_[93]["Main"]:AddToggle({
     end
 })
 task.spawn(function()
-    local BoneSpawn = CFrame.new(-9508.5673828125, 142.1398468017578, 5737.3603515625)
+    local boneFrame = CFrame.new(-9508.5673828125, 142.1398468017578, 5737.3603515625)
 
     local BoneMobs = {
         ["Reborn Skeleton"] = true,
@@ -4861,57 +4861,56 @@ task.spawn(function()
     while task.wait(0.15) do
         if not _G.AutoFarm_Bone then
             bringmob = false
-            _G.UseSkill = false
             continue
         end
 
-        -- TP 1 lần / vòng -> an toàn với pcall
-        pcall(function() TP1(BoneSpawn) end)
+        local plr = game.Players.LocalPlayer
+        local char = plr.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
 
-        for _, v in pairs(workspace.Enemies:GetChildren()) do
+        -- TP về khu Bone (an toàn)
+        pcall(function()
+            TP1(boneFrame)
+        end)
+
+        for _, mob in ipairs(workspace.Enemies:GetChildren()) do
             if not _G.AutoFarm_Bone then break end
 
-            if BoneMobs[v.Name]
-            and v:FindFirstChild("Humanoid")
-            and v:FindFirstChild("HumanoidRootPart") then
+            if BoneMobs[mob.Name]
+            and mob:FindFirstChild("Humanoid")
+            and mob:FindFirstChild("HumanoidRootPart")
+            and mob.Humanoid.Health > 0 then
 
-                repeat task.wait(_G.Fast_Delay)
+                repeat task.wait(_G.Fast_Delay or 0.1)
+                    if not _G.AutoFarm_Bone then break end
+                    if not mob.Parent then break end
+                    if mob.Humanoid.Health <= 0 then break end
 
-                    if not _G.AutoFarm_Bone
-                    or not v.Parent
-                    or v.Humanoid.Health <= 0 then
-                        break
-                    end
-
-                    -- LUÔN KÉO + ĐÁNH THƯỜNG — KHÔNG BAO GIỜ BẬT SKILL
-                    MonFarm = v.Name
-                    _G.UseSkill = false           -- <--- đảm bảo không bật skill
+                    -- set target
+                    MonFarm = mob.Name
                     bringmob = true
 
+                    -- đánh thường
                     AutoHaki()
                     EquipWeapon(_G.SelectWeapon)
-                    pcall(topos, v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                    topos(mob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
 
-                    -- chỉnh mob an toàn
-                    pcall(function()
-                        v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                        v.HumanoidRootPart.Transparency = 1
-                        v.Humanoid.WalkSpeed = 0
-                        v.HumanoidRootPart.CanCollide = false
-                    end)
+                    -- khóa mob
+                    mob.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                    mob.HumanoidRootPart.Transparency = 1
+                    mob.Humanoid.WalkSpeed = 0
+                    mob.HumanoidRootPart.CanCollide = false
 
-                    FarmPos = v.HumanoidRootPart.CFrame
+                    FarmPos = mob.HumanoidRootPart.CFrame
 
                 until not _G.AutoFarm_Bone
-                or not v.Parent
-                or v.Humanoid.Health <= 0
+                or not mob.Parent
+                or mob.Humanoid.Health <= 0
 
                 bringmob = false
-                _G.UseSkill = false
             end
         end
-
-        -- (Xóa / bỏ qua phần kéo mob từ ReplicatedStorage — mob không nằm đó)
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
