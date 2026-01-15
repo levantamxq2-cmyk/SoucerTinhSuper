@@ -4849,19 +4849,18 @@ L_1_[93]["Main"]:AddToggle({
         _G.AutoFarm_Bone = state
     end
 })
--- ===== CONFIG =====
-local BoneFarmPos = CFrame.new(-9508.5673828125, 142.1398468017578, 5737.3603515625)
-
-local BoneMobs = {
-    ["Reborn Skeleton"] = true,
-    ["Living Zombie"] = true,
-    ["Demonic Soul"] = true,
-    ["Posessed Mummy"] = true,
-    ["Possessed Mummy"] = true
-}
-
--- ===== FARM LOGIC =====
 task.spawn(function()
+    local BoneFarmPos = CFrame.new(-9508.5673828125, 142.1398468017578, 5737.3603515625)
+
+    local BoneMobs = {
+        ["Reborn Skeleton"] = true,
+        ["Living Zombie"] = true,
+        ["Demonic Soul"] = true,
+        ["Posessed Mummy"] = true
+    }
+
+    local SCAN_DISTANCE = 5000
+
     while task.wait(0.15) do
         if not _G.AutoFarm_Bone then
             bringmob = false
@@ -4874,55 +4873,61 @@ task.spawn(function()
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then continue end
 
-        -- 1️⃣ LUÔN TWEEN TỚI KHU FARM TRƯỚC
+        -- 1️⃣ ÉP TỚI KHU FARM TRƯỚC
         if (hrp.Position - BoneFarmPos.Position).Magnitude > 150 then
             _tp(BoneFarmPos * CFrame.new(0, 30, 0))
             continue
         end
 
-        local foundMob = false
+        local nearestMob
+        local nearestDist = math.huge
 
-        -- 2️⃣ TÌM MOB BONE
+        -- 2️⃣ SCAN MOB XA
         for _, v in pairs(workspace.Enemies:GetChildren()) do
             if BoneMobs[v.Name]
             and v:FindFirstChild("Humanoid")
             and v:FindFirstChild("HumanoidRootPart")
             and v.Humanoid.Health > 0 then
 
-                foundMob = true
-                MonFarm = v.Name
-
-                repeat task.wait(_G.Fast_Delay or 0.1)
-
-                    AutoHaki()
-                    EquipWeapon(_G.SelectWeapon)
-
-                    -- 3️⃣ BAY LÊN ĐẦU MOB
-                    _tp(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-
-                    -- 4️⃣ KHÓA + GOM MOB
-                    v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                    v.HumanoidRootPart.Transparency = 1
-                    v.HumanoidRootPart.CanCollide = false
-                    v.Humanoid.WalkSpeed = 0
-
-                    bringmob = true
-                    StartBring = true
-                    FarmPos = v.HumanoidRootPart.CFrame
-
-                until not _G.AutoFarm_Bone
-                or not v.Parent
-                or v.Humanoid.Health <= 0
-
-                bringmob = false
-                StartBring = false
+                local dist = (v.HumanoidRootPart.Position - hrp.Position).Magnitude
+                if dist < nearestDist and dist <= SCAN_DISTANCE then
+                    nearestDist = dist
+                    nearestMob = v
+                end
             end
         end
 
-        -- 5️⃣ KHÔNG CÓ MOB → BAY VỀ ĐIỂM FARM ĐỨNG CHỜ
-        if not foundMob then
+        -- 3️⃣ KHÔNG CÓ MOB → ĐỨNG CHỜ
+        if not nearestMob then
             _tp(BoneFarmPos * CFrame.new(0, 30, 0))
+            continue
         end
+
+        -- 4️⃣ FARM
+        MonFarm = nearestMob.Name
+
+        repeat task.wait(_G.Fast_Delay or 0.1)
+
+            AutoHaki()
+            EquipWeapon(_G.SelectWeapon)
+
+            _tp(nearestMob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+
+            nearestMob.HumanoidRootPart.Size = Vector3.new(60,60,60)
+            nearestMob.HumanoidRootPart.Transparency = 1
+            nearestMob.HumanoidRootPart.CanCollide = false
+            nearestMob.Humanoid.WalkSpeed = 0
+
+            bringmob = true
+            StartBring = true
+            FarmPos = nearestMob.HumanoidRootPart.CFrame
+
+        until not _G.AutoFarm_Bone
+        or not nearestMob.Parent
+        or nearestMob.Humanoid.Health <= 0
+
+        bringmob = false
+        StartBring = false
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
