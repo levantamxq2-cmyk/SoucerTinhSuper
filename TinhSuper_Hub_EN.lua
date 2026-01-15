@@ -4846,87 +4846,72 @@ L_1_[93]["Main"]:AddToggle({
     ["Default"] = false,
     ["Callback"] = function(state)
         _G.AutoFarm_Bone = state
-        _G.BringMobs = state
-        _G.FastAttack = state
     end
 })
-
 task.spawn(function()
-    local plr = game.Players.LocalPlayer
-    local BoneSpawn = CFrame.new(-9495.6807, 453.5862, 5977.3486)
+    local BoneSpawn = CFrame.new(-9508.5673828125, 142.1398468017578, 5737.3603515625)
 
     local BoneMobs = {
         ["Reborn Skeleton"] = true,
         ["Living Zombie"] = true,
         ["Demonic Soul"] = true,
-        ["Possessed Mummy"] = true
+        ["Posessed Mummy"] = true
     }
 
     while task.wait(0.15) do
-        if not _G.AutoFarm_Bone then continue end
-
-        local char = plr.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then continue end
-
-        -- luôn cầm vũ khí (để có EXP)
-        EquipWeapon(_G.SelectWeapon)
-
-        local mobs = {}
-
-        for _, mob in ipairs(workspace.Enemies:GetChildren()) do
-            if BoneMobs[mob.Name] then
-                local hum = mob:FindFirstChild("Humanoid")
-                local mhrp = mob:FindFirstChild("HumanoidRootPart")
-                if hum and mhrp and hum.Health > 0 then
-                    table.insert(mobs, mob)
-                end
-            end
-        end
-
-        -- không có mob → bay thẳng về khu farm (1 lần, không chờ)
-        if #mobs == 0 then
-            hrp.CFrame = BoneSpawn
+        if not _G.AutoFarm_Bone then
+            bringmob = false
+            _G.UseSkill = false
             continue
         end
 
-        -- chọn mob gần nhất
-        local target, dist = nil, math.huge
-        for _, mob in ipairs(mobs) do
-            local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
-            if d < dist then
-                dist = d
-                target = mob
-            end
-        end
-        if not target then continue end
+        -- TP 1 lần / vòng -> an toàn với pcall
+        pcall(function() TP1(BoneSpawn) end)
 
-        -- đứng trên đầu mob
-        hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0)
+        for _, v in pairs(workspace.Enemies:GetChildren()) do
+            if not _G.AutoFarm_Bone then break end
 
-        -- bring TẤT CẢ mob xuống dưới chân
-        if _G.BringMobs then
-            for _, mob in ipairs(mobs) do
-                local mhrp = mob.HumanoidRootPart
-                mhrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
-                mhrp.Velocity = Vector3.zero
-                mhrp.RotVelocity = Vector3.zero
-                mhrp.CanCollide = false
+            if BoneMobs[v.Name]
+            and v:FindFirstChild("Humanoid")
+            and v:FindFirstChild("HumanoidRootPart") then
 
-                for _, p in ipairs(mob:GetDescendants()) do
-                    if p:IsA("BasePart") then
-                        p.CanCollide = false
+                repeat task.wait(_G.Fast_Delay)
+
+                    if not _G.AutoFarm_Bone
+                    or not v.Parent
+                    or v.Humanoid.Health <= 0 then
+                        break
                     end
-                end
+
+                    -- LUÔN KÉO + ĐÁNH THƯỜNG — KHÔNG BAO GIỜ BẬT SKILL
+                    MonFarm = v.Name
+                    _G.UseSkill = false           -- <--- đảm bảo không bật skill
+                    bringmob = true
+
+                    AutoHaki()
+                    EquipWeapon(_G.SelectWeapon)
+                    pcall(topos, v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+
+                    -- chỉnh mob an toàn
+                    pcall(function()
+                        v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                        v.HumanoidRootPart.Transparency = 1
+                        v.Humanoid.WalkSpeed = 0
+                        v.HumanoidRootPart.CanCollide = false
+                    end)
+
+                    FarmPos = v.HumanoidRootPart.CFrame
+
+                until not _G.AutoFarm_Bone
+                or not v.Parent
+                or v.Humanoid.Health <= 0
+
+                bringmob = false
+                _G.UseSkill = false
             end
         end
 
-        -- đánh AOE tất cả mob
-        for _, mob in ipairs(mobs) do
-            if mob.Humanoid.Health > 0 then
-                L_1_[4]["Kill"](mob, true)
-            end
-        end
+        -- (Xóa / bỏ qua phần kéo mob từ ReplicatedStorage — mob không nằm đó)
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
