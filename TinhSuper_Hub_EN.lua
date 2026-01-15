@@ -2385,7 +2385,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [15/5/15/1/";
+		"Release Date [18/5/15/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -4849,10 +4849,13 @@ L_1_[93]["Main"]:AddToggle({
     end
 })
 task.spawn(function()
-    local plr = game.Players.LocalPlayer
-    local Root
+    local Players = game:GetService("Players")
+    local plr = Players.LocalPlayer
 
     local FarmCFrame = CFrame.new(-9508.567, 142.14, 5737.36)
+
+    local SCAN_RADIUS = 5000
+    local BRING_RADIUS = 1000
 
     local BoneMobs = {
         ["Reborn Skeleton"] = true,
@@ -4871,24 +4874,24 @@ task.spawn(function()
         end
 
         local char = plr.Character
-        Root = char and char:FindFirstChild("HumanoidRootPart")
+        local Root = char and char:FindFirstChild("HumanoidRootPart")
         if not Root then continue end
 
-        --------------------------------------------------
-        -- STATE 1: TRAVEL TỚI FARM
-        --------------------------------------------------
+        ----------------------------------------------------------------
+        -- STATE: TRAVEL TỚI KHU FARM
+        ----------------------------------------------------------------
         if State == "Travel" then
             _tp(FarmCFrame * CFrame.new(0, 30, 0))
 
-            if (Root.Position - FarmCFrame.Position).Magnitude < 15 then
+            if (Root.Position - FarmCFrame.Position).Magnitude < 20 then
                 State = "Farm"
             end
             continue
         end
 
-        --------------------------------------------------
-        -- STATE 2: FARM MOB
-        --------------------------------------------------
+        ----------------------------------------------------------------
+        -- STATE: FARM
+        ----------------------------------------------------------------
         local mobs = {}
 
         for _, mob in pairs(workspace.Enemies:GetChildren()) do
@@ -4896,46 +4899,63 @@ task.spawn(function()
             and mob:FindFirstChild("Humanoid")
             and mob:FindFirstChild("HumanoidRootPart")
             and mob.Humanoid.Health > 0 then
-                table.insert(mobs, mob)
+
+                local dist = (mob.HumanoidRootPart.Position - Root.Position).Magnitude
+                if dist <= SCAN_RADIUS then
+                    table.insert(mobs, mob)
+                end
             end
         end
 
-        -- Không có mob → quay về Travel (chờ spawn)
+        -- ❌ Không có mob → quay lại Travel (chờ spawn)
         if #mobs == 0 then
             StartBring = false
             State = "Travel"
             continue
         end
 
-        -- Chọn mob gần nhất
-        local target, dist = nil, math.huge
+        ----------------------------------------------------------------
+        -- CHỌN MOB GẦN NHẤT
+        ----------------------------------------------------------------
+        local target, nearest = nil, math.huge
         for _, mob in ipairs(mobs) do
             local d = (mob.HumanoidRootPart.Position - Root.Position).Magnitude
-            if d < dist then
-                dist = d
+            if d < nearest then
+                nearest = d
                 target = mob
             end
         end
-        if not target then continue end
+        if not target then
+            State = "Travel"
+            continue
+        end
 
-        --------------------------------------------------
-        -- LÊN ĐẦU MOB
-        --------------------------------------------------
+        ----------------------------------------------------------------
+        -- BAY LÊN ĐẦU MOB
+        ----------------------------------------------------------------
         _tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 100, 0))
 
-        --------------------------------------------------
+        ----------------------------------------------------------------
         -- GOM MOB
-        --------------------------------------------------
+        ----------------------------------------------------------------
         StartBring = true
         EquipWeapon(_G.SelectWeapon)
         AutoHaki()
 
         for _, mob in ipairs(mobs) do
             local hrp = mob.HumanoidRootPart
-            if (hrp.Position - Root.Position).Magnitude <= 1000 then
+            if (hrp.Position - Root.Position).Magnitude <= BRING_RADIUS then
                 hrp.CFrame = Root.CFrame * CFrame.new(0, -100, 0)
+                hrp.Velocity = Vector3.zero
+                hrp.RotVelocity = Vector3.zero
                 hrp.CanCollide = false
                 mob.Humanoid.WalkSpeed = 0
+
+                for _, p in ipairs(mob:GetDescendants()) do
+                    if p:IsA("BasePart") then
+                        p.CanCollide = false
+                    end
+                end
             end
         end
     end
