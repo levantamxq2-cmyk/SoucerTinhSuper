@@ -2385,7 +2385,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [15/1/";
+		"Release Date [07/5/15/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -4849,11 +4849,10 @@ L_1_[93]["Main"]:AddToggle({
     end
 })
 task.spawn(function()
-    local Players = game:GetService("Players")
-    local plr = Players.LocalPlayer
+    local plr = game.Players.LocalPlayer
+    local Root
 
-    local FarmPos = CFrame.new(-9508.567, 142.14, 5737.36)
-    local ReachedBoneFarm = false
+    local FarmCFrame = CFrame.new(-9508.567, 142.14, 5737.36)
 
     local BoneMobs = {
         ["Reborn Skeleton"] = true,
@@ -4862,35 +4861,37 @@ task.spawn(function()
         ["Posessed Mummy"] = true
     }
 
-    while task.wait(0.15) do
+    local ReachedFarm = false
+
+    while task.wait() do
         if not _G.AutoFarm_Bone then
-            ReachedBoneFarm = false
+            ReachedFarm = false
             StartBring = false
             continue
         end
 
         local char = plr.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then continue end
+        Root = char and char:FindFirstChild("HumanoidRootPart")
+        if not Root then continue end
 
-        ----------------------------------------------------------------
-        -- 1️⃣ CHƯA TỚI FARM → DI CHUYỂN TRƯỚC (GIỐNG TWEEN-TP)
-        ----------------------------------------------------------------
-        if not ReachedBoneFarm then
-            if (hrp.Position - FarmPos.Position).Magnitude > 50 then
-                TP1(FarmPos) -- hoặc topos(FarmPos)
-                continue
-            else
-                ReachedBoneFarm = true
-            end
+        -------------------------------------------------
+        -- 1️⃣ TWEEN TỚI ĐIỂM FARM (GIỐNG AUTO TRAVEL)
+        -------------------------------------------------
+        if not ReachedFarm then
+            repeat
+                wait()
+                _tp(FarmCFrame * CFrame.new(0, 30, 0))
+            until not _G.AutoFarm_Bone
+            or (Root.Position - FarmCFrame.Position).Magnitude < 10
+
+            ReachedFarm = true
         end
 
-        ----------------------------------------------------------------
-        -- 2️⃣ ĐÃ TỚI FARM → BẮT ĐẦU LOGIC FARM
-        ----------------------------------------------------------------
+        -------------------------------------------------
+        -- 2️⃣ TÌM MOB BONE
+        -------------------------------------------------
         local mobs = {}
-
-        for _, mob in ipairs(workspace.Enemies:GetChildren()) do
+        for _, mob in pairs(workspace.Enemies:GetChildren()) do
             if BoneMobs[mob.Name]
             and mob:FindFirstChild("Humanoid")
             and mob:FindFirstChild("HumanoidRootPart")
@@ -4899,17 +4900,22 @@ task.spawn(function()
             end
         end
 
+        -------------------------------------------------
         -- 3️⃣ KHÔNG CÓ MOB → BAY LÊN + CHỜ
+        -------------------------------------------------
         if #mobs == 0 then
             StartBring = false
-            hrp.CFrame = FarmPos * CFrame.new(0, 100, 0)
+            _tp(FarmCFrame * CFrame.new(0, 100, 0))
+            wait(1)
             continue
         end
 
+        -------------------------------------------------
         -- 4️⃣ CHỌN MOB GẦN NHẤT
+        -------------------------------------------------
         local target, dist = nil, math.huge
         for _, mob in ipairs(mobs) do
-            local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
+            local d = (mob.HumanoidRootPart.Position - Root.Position).Magnitude
             if d < dist then
                 dist = d
                 target = mob
@@ -4917,30 +4923,28 @@ task.spawn(function()
         end
         if not target then continue end
 
+        -------------------------------------------------
         -- 5️⃣ BAY LÊN ĐẦU MOB
-        hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 100, 0)
+        -------------------------------------------------
+        _tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 100, 0))
 
+        -------------------------------------------------
         -- 6️⃣ GOM MOB 1000 STUDS
+        -------------------------------------------------
         StartBring = true
         EquipWeapon(_G.SelectWeapon)
         AutoHaki()
 
         for _, mob in ipairs(mobs) do
-            local mhrp = mob.HumanoidRootPart
-            if (mhrp.Position - hrp.Position).Magnitude <= 1000 then
-                mhrp.CFrame = hrp.CFrame * CFrame.new(0, -100, 0)
-                mhrp.CanCollide = false
+            local hrp = mob.HumanoidRootPart
+            if (hrp.Position - Root.Position).Magnitude <= 1000 then
+                hrp.CFrame = Root.CFrame * CFrame.new(0, -100, 0)
+                hrp.CanCollide = false
                 mob.Humanoid.WalkSpeed = 0
             end
         end
 
-        -- 7️⃣ ĐÁNH THƯỜNG TỚI CHẾT
-        repeat task.wait(0.1)
-            EquipWeapon(_G.SelectWeapon)
-        until not _G.AutoFarm_Bone
-        or #workspace.Enemies:GetChildren() == 0
-
-        StartBring = false
+        wait(0.3)
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
@@ -16842,5 +16846,4 @@ pcall(function()
 		["Headers"] = L_1_[37];
 		["Body"] = L_1_[114]
 	})
-
 end)
