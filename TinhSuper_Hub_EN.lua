@@ -2385,7 +2385,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [07/5/15/1/";
+		"Release Date [15/5/15/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -4861,11 +4861,11 @@ task.spawn(function()
         ["Posessed Mummy"] = true
     }
 
-    local ReachedFarm = false
+    local State = "Travel" -- Travel | Farm
 
-    while task.wait() do
+    while task.wait(0.15) do
         if not _G.AutoFarm_Bone then
-            ReachedFarm = false
+            State = "Travel"
             StartBring = false
             continue
         end
@@ -4874,23 +4874,23 @@ task.spawn(function()
         Root = char and char:FindFirstChild("HumanoidRootPart")
         if not Root then continue end
 
-        -------------------------------------------------
-        -- 1️⃣ TWEEN TỚI ĐIỂM FARM (GIỐNG AUTO TRAVEL)
-        -------------------------------------------------
-        if not ReachedFarm then
-            repeat
-                wait()
-                _tp(FarmCFrame * CFrame.new(0, 30, 0))
-            until not _G.AutoFarm_Bone
-            or (Root.Position - FarmCFrame.Position).Magnitude < 10
+        --------------------------------------------------
+        -- STATE 1: TRAVEL TỚI FARM
+        --------------------------------------------------
+        if State == "Travel" then
+            _tp(FarmCFrame * CFrame.new(0, 30, 0))
 
-            ReachedFarm = true
+            if (Root.Position - FarmCFrame.Position).Magnitude < 15 then
+                State = "Farm"
+            end
+            continue
         end
 
-        -------------------------------------------------
-        -- 2️⃣ TÌM MOB BONE
-        -------------------------------------------------
+        --------------------------------------------------
+        -- STATE 2: FARM MOB
+        --------------------------------------------------
         local mobs = {}
+
         for _, mob in pairs(workspace.Enemies:GetChildren()) do
             if BoneMobs[mob.Name]
             and mob:FindFirstChild("Humanoid")
@@ -4900,19 +4900,14 @@ task.spawn(function()
             end
         end
 
-        -------------------------------------------------
-        -- 3️⃣ KHÔNG CÓ MOB → BAY LÊN + CHỜ
-        -------------------------------------------------
+        -- Không có mob → quay về Travel (chờ spawn)
         if #mobs == 0 then
             StartBring = false
-            _tp(FarmCFrame * CFrame.new(0, 100, 0))
-            wait(1)
+            State = "Travel"
             continue
         end
 
-        -------------------------------------------------
-        -- 4️⃣ CHỌN MOB GẦN NHẤT
-        -------------------------------------------------
+        -- Chọn mob gần nhất
         local target, dist = nil, math.huge
         for _, mob in ipairs(mobs) do
             local d = (mob.HumanoidRootPart.Position - Root.Position).Magnitude
@@ -4923,14 +4918,14 @@ task.spawn(function()
         end
         if not target then continue end
 
-        -------------------------------------------------
-        -- 5️⃣ BAY LÊN ĐẦU MOB
-        -------------------------------------------------
+        --------------------------------------------------
+        -- LÊN ĐẦU MOB
+        --------------------------------------------------
         _tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 100, 0))
 
-        -------------------------------------------------
-        -- 6️⃣ GOM MOB 1000 STUDS
-        -------------------------------------------------
+        --------------------------------------------------
+        -- GOM MOB
+        --------------------------------------------------
         StartBring = true
         EquipWeapon(_G.SelectWeapon)
         AutoHaki()
@@ -4943,8 +4938,6 @@ task.spawn(function()
                 mob.Humanoid.WalkSpeed = 0
             end
         end
-
-        wait(0.3)
     end
 end)
 BoneQ = L_1_[93]["Main"]:AddToggle({
