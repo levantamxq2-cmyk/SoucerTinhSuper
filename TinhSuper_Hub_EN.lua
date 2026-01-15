@@ -2385,7 +2385,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [18/5/15/1/";
+		"Release Date [23/5/15/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -4854,8 +4854,8 @@ task.spawn(function()
 
     local FarmCFrame = CFrame.new(-9508.567, 142.14, 5737.36)
 
-    local SCAN_RADIUS = 5000
-    local BRING_RADIUS = 1000
+    local SCAN_RADIUS = 100000
+    local BRING_RADIUS = 10000
 
     local BoneMobs = {
         ["Reborn Skeleton"] = true,
