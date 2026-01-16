@@ -5034,74 +5034,162 @@ FarmTyrant = L_1_[93]["Main"]:AddToggle({
 		_G.FarmTyrant = v
 	end
 })
+local TyrantSpawnPos = CFrame.new(-16268.287, 152.616, 1390.773)
+local TyrantFarmPos  = CFrame.new(-16000, 160, 1400) -- fallback nếu ko có mob
+local PlayerOffset   = CFrame.new(0, 20, 0)
 
-local MobList = {
-	"Serpent Hunter",
-	"Skull Slayer",
-	"Isle Champion",
-	"Sun-kissed Warrior"
+local TyrantMobs = {
+	["Serpent Hunter"] = true,
+	["Skull Slayer"] = true,
+	["Isle Champion"] = true,
+	["Sun-kissed Warrior"] = true
 }
+local function Check_Eye()
+	local ok, Island = pcall(function() return workspace.Map.TikiOutpost.IslandModel end)
+	if not ok or not Island then return 0, false end
 
-spawn(function()
-	while wait(Sec) do
-		if not _G.FarmTyrant then continue end
+	local Eyes = {
+		Island:FindFirstChild("Eye1"),
+		Island:FindFirstChild("Eye2"),
+		(Island:FindFirstChild("IslandChunks") and Island.IslandChunks:FindFirstChild("E")) and Island.IslandChunks.E:FindFirstChild("Eye3"),
+		(Island:FindFirstChild("IslandChunks") and Island.IslandChunks:FindFirstChild("E")) and Island.IslandChunks.E:FindFirstChild("Eye4")
+	}
+
+	local count = 0
+	for _,e in pairs(Eyes) do
+		if e and e.Transparency ~= 1 then
+			count += 1
+		end
+	end
+	return count, count == 4
+end
+local function SpamSpawnSkillOnce()
+	for _,key in ipairs({"Z","X","C","V","F"}) do
 		pcall(function()
+			vim1:SendKeyEvent(true, key, false, game)
+			task.wait(0.05)
+			vim1:SendKeyEvent(false, key, false, game)
+		end)
+	end
+end
+local function GetHRP()
+	local c = plr.Character
+	return (c and c:FindFirstChild("HumanoidRootPart")) and c.HumanoidRootPart or nil
+end
+local function FindTyrantMob()
+	for _,mob in pairs(Enemies:GetChildren()) do
+		if TyrantMobs[mob.Name]
+		and mob:FindFirstChild("Humanoid")
+		and mob:FindFirstChild("HumanoidRootPart")
+		and mob.Humanoid.Health > 0 then
+			return mob
+		end
+	end
+	return nil
+end
+task.spawn(function()
+	while task.wait(0.15) do
+		if not _G.FarmTyrant then
+			continue
+		end
 
-			local Char = L_1_[136].Character
-			if not Char then return end
-			local HRP = Char:FindFirstChild("HumanoidRootPart")
-			if not HRP then return end
+		pcall(function()
+			local hrp = GetHRP()
+			if hrp then
+				pcall(function() hrp.Anchored = false end)
+			end
 
-			local Boss = workspace.Enemies:FindFirstChild("Tyrant of the Skies")
-			if Boss and Boss:FindFirstChild("Humanoid") and Boss.Humanoid.Health > 0 then
+			local char = plr.Character
+			if char and Boud and not char:FindFirstChild("HasBuso") then
+				pcall(function() replicated.Remotes.CommF_:InvokeServer("Buso") end)
+			end
+
+			local Boss = Enemies:FindFirstChild("Tyrant of the Skies")
+			if Boss and Boss:FindFirstChild("HumanoidRootPart") and Boss:FindFirstChild("Humanoid") and Boss.Humanoid.Health > 0 then
 				repeat
-					wait()
-					HRP.CFrame = Boss.HumanoidRootPart.CFrame * CFrame.new(0,30,0)
-					if L_1_[4] and L_1_[4].Kill then
-						L_1_[4].Kill(Boss, _G.FarmTyrant)
-					end
-				until not _G.FarmTyrant or not Boss.Parent or Boss.Humanoid.Health <= 0
-				return
-			end
-
-			local EyeCount, FullEye = Check_Eye()
-			if FullEye then
-				local SpawnPos = Vector3.new(-16268.287,152.616,1390.773)
-				if (HRP.Position - SpawnPos).Magnitude > 5 then
-					_tp(CFrame.new(SpawnPos))
-				end
-				for i = 1,6 do
+					task.wait()
 					if not _G.FarmTyrant then break end
-					for _,k in pairs({"Z","X","C","V","F"}) do
-						vim1:SendKeyEvent(true,k,false,game)
-						task.wait(.05)
-						vim1:SendKeyEvent(false,k,false,game)
+					if not Boss.Parent or Boss.Humanoid.Health <= 0 then break end
+
+					pcall(function() EquipWeapon(_G.SelectWeapon) end)
+					if char and Boud and not char:FindFirstChild("HasBuso") then
+						pcall(function() replicated.Remotes.CommF_:InvokeServer("Buso") end)
 					end
-					wait(.25)
-				end
+
+					if Boss:FindFirstChild("HumanoidRootPart") then
+						_tp(Boss.HumanoidRootPart.CFrame * PlayerOffset)
+					end
+
+					pcall(function()
+						if Boss:FindFirstChild("HumanoidRootPart") then
+							Boss.HumanoidRootPart.CanCollide = false
+							Boss.HumanoidRootPart.Size = Vector3.new(80,80,80)
+						end
+						Boss.Humanoid.WalkSpeed = 0
+						Boss.Humanoid.JumpPower = 0
+					end)
+				until false
+
 				return
 			end
 
-			for _,mobName in pairs(MobList) do
-				for _,mob in pairs(workspace.Enemies:GetChildren()) do
-					if mob.Name == mobName
-					and mob:FindFirstChild("HumanoidRootPart")
-					and mob:FindFirstChild("Humanoid")
-					and mob.Humanoid.Health > 0 then
-
-						repeat
-							wait()
-							HRP.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0,25,0)
-							if L_1_[4] and L_1_[4].Kill then
-								L_1_[4].Kill(mob, _G.FarmTyrant)
-							end
-						until not _G.FarmTyrant or not mob.Parent or mob.Humanoid.Health <= 0
-
-						return
+			local eyeCount, fullEye = Check_Eye()
+			if fullEye then
+				repeat
+					if not _G.FarmTyrant then break end
+					local hrp2 = GetHRP()
+					if hrp2 then
+						_tp(TyrantSpawnPos * PlayerOffset)
 					end
+
+					pcall(function() EquipWeapon(_G.SelectWeapon) end)
+					SpamSpawnSkillOnce()
+
+					task.wait(0.25)
+				until Enemies:FindFirstChild("Tyrant of the Skies") or not _G.FarmTyrant
+
+				return
+			end
+
+			local FoundMob = false
+			for _,mob in pairs(Enemies:GetChildren()) do
+				if TyrantMobs[mob.Name]
+				and mob:FindFirstChild("HumanoidRootPart")
+				and mob:FindFirstChild("Humanoid")
+				and mob.Humanoid.Health > 0 then
+
+					FoundMob = true
+
+					repeat
+						task.wait()
+
+						if Enemies:FindFirstChild("Tyrant of the Skies") then
+							return
+						end
+
+						if not _G.FarmTyrant then break end
+						if not mob.Parent or mob.Humanoid.Health <= 0 then break end
+
+						pcall(function() EquipWeapon(_G.SelectWeapon) end)
+						if char and Boud and not char:FindFirstChild("HasBuso") then
+							pcall(function() replicated.Remotes.CommF_:InvokeServer("Buso") end)
+						end
+
+						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
+
+						pcall(function()
+							mob.HumanoidRootPart.CanCollide = false
+							mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
+							mob.Humanoid.WalkSpeed = 0
+							mob.Humanoid.JumpPower = 0
+						end)
+					until false
 				end
 			end
 
+			if not FoundMob then
+				_tp(TyrantFarmPos * PlayerOffset)
+			end
 		end)
 	end
 end)
