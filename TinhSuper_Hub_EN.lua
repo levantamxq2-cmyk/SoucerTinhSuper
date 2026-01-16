@@ -4395,13 +4395,6 @@ spawn(function()
 		end)
 	end
 end)
--- =========================
--- AUTO FARM CAKE – FULL (UPGRADED, CORE-COMPATIBLE)
--- Farm mob thường + Auto Quest + Auto Summon + Auto Kill Cake Prince
--- Logic giống farm Bone, KHÔNG đứng yên, KHÔNG kẹt
--- =========================
-
--- ===== TOGGLE =====
 Cake = L_1_[93]["Main"]:AddToggle({
 	["Name"] = L_1_[2]({"Auto Farm Cake Princ","e"}),
 	["Description"] = "",
@@ -4440,10 +4433,6 @@ local CakeMobs = {
 	["Baking Staff"] = true,
 	["Head Baker"] = true
 }
-
--- =========================
--- MAIN LOOP
--- =========================
 spawn(function()
 	while task.wait(0.2) do
 		if not _G.Auto_Cake_Prince then
@@ -4456,16 +4445,16 @@ spawn(function()
 			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
 			if not HRP then return end
 
-			-- ===== AUTO BUSO =====
+			-- AUTO BUSO (LUÔN KIỂM TRA)
 			if Boud and not Char:FindFirstChild("HasBuso") then
 				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
 
-			-- =========================
-			-- 1️⃣ CAKE PRINCE ƯU TIÊN
-			-- =========================
 			local Boss = Enemies:FindFirstChild("Cake Prince")
 			if Boss and Boss:FindFirstChild("Humanoid") and Boss.Humanoid.Health > 0 then
+				bringmob = false
+				MonFarm = "Cake Prince"
+
 				repeat
 					task.wait()
 					EquipWeapon(_G.SelectWeapon)
@@ -4474,9 +4463,10 @@ spawn(function()
 						replicated.Remotes.CommF_:InvokeServer("Buso")
 					end
 
-					_tp(Boss.HumanoidRootPart.CFrame * PlayerOffset)
+					_tp(Boss.HumanoidRootPart.CFrame * CFrame.new(0,20,0))
 
 					Boss.HumanoidRootPart.CanCollide = false
+					Boss.HumanoidRootPart.Size = Vector3.new(80,80,80)
 					Boss.Humanoid.WalkSpeed = 0
 					Boss.Humanoid.JumpPower = 0
 					if Boss:FindFirstChild("Head") then
@@ -4486,13 +4476,9 @@ spawn(function()
 				   or not Boss.Parent
 				   or Boss.Humanoid.Health <= 0
 
-				task.wait(1)
-				return
+				task.wait(1) 
 			end
 
-			-- =========================
-			-- 2️⃣ AUTO SUMMON CAKE PRINCE
-			-- =========================
 			if _G.AutoSpawnCP then
 				local CakeLoaf = workspace.Map:FindFirstChild("CakeLoaf")
 				local BigMirror = CakeLoaf and CakeLoaf:FindFirstChild("BigMirror")
@@ -4503,19 +4489,13 @@ spawn(function()
 				end
 			end
 
-			-- =========================
-			-- 3️⃣ AUTO QUEST
-			-- =========================
 			local QuestGui = plr.PlayerGui.Main.Quest
 			if _G.AcceptQuestC and QuestGui and not QuestGui.Visible then
-				_tp(CakeQuestPos)
+				_tp(CFrame.new(-1927.92, 37.8, -12842.54))
 				task.wait(1)
 				replicated.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",2)
 			end
 
-			-- =========================
-			-- 4️⃣ FARM MOB THƯỜNG
-			-- =========================
 			local FoundMob = false
 			for _,mob in pairs(Enemies:GetChildren()) do
 				if CakeMobs[mob.Name]
@@ -4525,8 +4505,8 @@ spawn(function()
 
 					FoundMob = true
 					bringmob = true
-					FarmPos = mob.HumanoidRootPart.CFrame
 					MonFarm = mob.Name
+					FarmPos = mob.HumanoidRootPart.CFrame
 
 					repeat
 						task.wait()
@@ -4536,7 +4516,7 @@ spawn(function()
 							replicated.Remotes.CommF_:InvokeServer("Buso")
 						end
 
-						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
+						_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,20,0))
 
 						mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
 						mob.HumanoidRootPart.Transparency = 1
@@ -4550,13 +4530,8 @@ spawn(function()
 					bringmob = false
 				end
 			end
-
-			-- =========================
-			-- 5️⃣ KHÔNG CÓ MOB → BAY VỀ FARM
-			-- =========================
 			if not FoundMob then
-				_tp(CakeFarmPos * PlayerOffset)
-				task.wait(1)
+				_tp(CFrame.new(-2130.8, 70, -12327.8) * CFrame.new(0,20,0))
 			end
 		end)
 	end
