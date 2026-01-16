@@ -2789,250 +2789,322 @@ task.spawn(function()
 	end
 end)
 L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Farm Nearest",
-    ["Description"] = "",
+	["Name"] = "Auto Farm Nearest",
+	["Description"] = "",
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G.AutoFarmNear = v
+		_G.FastAttack = v
+	end
+})
+
+task.spawn(function()
+	local RUN_DELAY = 0.15
+	local OFFSET = Vector3.new(0, 15, 0) 
+	local lastTarget = nil
+
+	local function getNearestEnemy(hrp)
+		local nearest, dist = nil, math.huge
+		for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+			local hum = enemy:FindFirstChild("Humanoid")
+			local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+			if hum and eHrp and hum.Health > 0 then
+				local d = (eHrp.Position - hrp.Position).Magnitude
+				if d < dist then
+					dist = d
+					nearest = enemy
+				end
+			end
+		end
+		return nearest
+	end
+
+	while task.wait(RUN_DELAY) do
+		if not _G.AutoFarmNear then
+			lastTarget = nil
+			task.wait(0.3)
+			continue
+		end
+
+		pcall(function()
+			local char = plr.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
+
+			if Boud and not char:FindFirstChild("HasBuso") then
+				replicated.Remotes.CommF_:InvokeServer("Buso")
+			end
+
+			if not lastTarget
+			or not lastTarget.Parent
+			or lastTarget.Humanoid.Health <= 0 then
+				lastTarget = getNearestEnemy(hrp)
+			end
+
+			local mob = lastTarget
+			if not mob then return end
+
+			local hum = mob:FindFirstChild("Humanoid")
+			local mhrp = mob:FindFirstChild("HumanoidRootPart")
+			if not hum or not mhrp or hum.Health <= 0 then
+				lastTarget = nil
+				return
+			end
+
+			local lookCF = CFrame.new(
+				hrp.Position,
+				Vector3.new(mhrp.Position.X, hrp.Position.Y, mhrp.Position.Z)
+			)
+
+			local moveTo = CFrame.new(mhrp.Position + lookCF.LookVector * OFFSET.Z)
+
+			TW:Create(
+				hrp,
+				TweenInfo.new(0.15, Enum.EasingStyle.Linear),
+				{CFrame = moveTo}
+			):Play()
+
+			mhrp.CanCollide = false
+			hum.WalkSpeed = 0
+			hum.JumpPower = 0
+			EquipWeapon(_G.SelectWeapon)
+			L_1_[4]["Kill"](mob, true)
+		end)
+	end
+end)
+FactoryRaids = L_1_[93]["Main"]:AddToggle({ 
+	["Name"] = "Auto Factory Raid",
+	["Description"] = "",
+	["Default"] = false,
+	["Callback"] = function(state)
+		_G.AutoFactory = state
+	end
+})
+
+task.spawn(function()
+	local lastCore = nil
+	local factoryPos = CFrame.new(448.46756, 199.356781, -441.389252)
+
+	local HIT_DELAY = 0.2
+	local lastHit = 0
+
+	local function FactoryHit(core)
+		if tick() - lastHit < HIT_DELAY then
+			return
+		end
+		lastHit = tick()
+
+		EquipWeapon(_G.SelectWeapon)
+
+		local char = plr.Character
+		if Boud and char and not char:FindFirstChild("HasBuso") then
+			replicated.Remotes.CommF_:InvokeServer("Buso")
+		end
+
+		L_1_[4]["Kill"](core, true)
+
+		vim2:CaptureController()
+		vim2:ClickButton1(Vector2.new(0, 0))
+	end
+
+	while true do
+		if not _G.AutoFactory then
+			lastCore = nil
+			task.wait(0.5)
+			continue
+		end
+
+		pcall(function()
+			local core = GetConnectionEnemies("Core")
+			if not core or not core.Parent or core.Humanoid.Health <= 0 then
+				lastCore = nil
+				task.wait(1)
+				return
+			end
+
+			if core ~= lastCore then
+				lastCore = core
+				_tp(factoryPos)
+				task.wait(0.3)
+			end
+
+			repeat
+				if not _G.AutoFactory then break end
+				if not core.Parent then break end
+				if core.Humanoid.Health <= 0 then break end
+
+				FactoryHit(core)
+				task.wait(0.05)
+			until false
+
+			lastCore = nil
+		end)
+
+		task.wait(0.1)
+	end
+end)
+AutoRaidCastle = L_1_[93]["Main"]:AddToggle({
+    ["Name"] = "Auto Pirate Castle",
     ["Default"] = false,
-    ["Callback"] = function(state)
-        _G.AutoFarmNear = state
-        _G.FastAttack = state
+    ["Callback"] = function(v)
+        _G.AutoRaidCastle = v
     end
 })
 
 task.spawn(function()
-    local plr = game.Players.LocalPlayer
-    local RUN_DELAY = 0.15
+    local CastleCF = CFrame.new(-5496.17432, 313.768921, -2841.53027)
+    local WaitCF = CastleCF * CFrame.new(0, 80, 0)
+    local AttackOffset = CFrame.new(0, 20, 0)
 
-    local function getNearestEnemy(hrp)
+    local PirateMobs = {
+        ["Galley Pirate"] = true,
+        ["Galley Captain"] = true,
+        ["Raider"] = true,
+        ["Mercenary"] = true,
+        ["Vampire"] = true,
+        ["Zombie"] = true,
+        ["Snow Trooper"] = true,
+        ["Winter Warrior"] = true,
+        ["Lab Subordinate"] = true,
+        ["Horned Warrior"] = true,
+        ["Magma Ninja"] = true,
+        ["Lava Pirate"] = true,
+        ["Ship Deckhand"] = true,
+        ["Ship Engineer"] = true,
+        ["Ship Steward"] = true,
+        ["Ship Officer"] = true,
+        ["Arctic Warrior"] = true,
+        ["Snow Lurker"] = true,
+        ["Sea Soldier"] = true,
+        ["Water Fighter"] = true
+    }
+
+    local function AutoBuso()
+        if not plr.Character or plr.Character:FindFirstChild("HasBuso") then return end
+        pcall(function()
+            replicated.Remotes.CommF_:InvokeServer("Buso")
+        end)
+    end
+
+    local function GetNearestPirate()
         local nearest, dist = nil, math.huge
-        for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-            local hum = enemy:FindFirstChild("Humanoid")
-            local eHrp = enemy:FindFirstChild("HumanoidRootPart")
-            if hum and eHrp and hum.Health > 0 then
-                local d = (eHrp.Position - hrp.Position).Magnitude
+        for _, v in pairs(workspace.Enemies:GetChildren()) do
+            if PirateMobs[v.Name]
+            and v:FindFirstChild("Humanoid")
+            and v:FindFirstChild("HumanoidRootPart")
+            and v.Humanoid.Health > 0 then
+                local d = (v.HumanoidRootPart.Position - Root.Position).Magnitude
                 if d < dist then
                     dist = d
-                    nearest = enemy
+                    nearest = v
                 end
             end
         end
         return nearest
     end
 
-    while task.wait(RUN_DELAY) do
-        if not _G.AutoFarmNear then
-            task.wait(0.4)
-            continue
-        end
-
-        pcall(function()
-            local char = plr.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-
-            local target = getNearestEnemy(hrp)
-            if not target then return end
-
-            local hum = target:FindFirstChild("Humanoid")
-            local eHrp = target:FindFirstChild("HumanoidRootPart")
-            if not hum or not eHrp or hum.Health <= 0 then return end
-
-            --// Luôn đứng trên đầu quái (không spam TP)
-            hrp.CFrame = eHrp.CFrame * CFrame.new(0, 12, 0)
-
-            --// Kill liên tục
-            L_1_[4]["Kill"](target, _G.FastAttack)
-        end)
-    end
-end)
-FactoryRaids = L_1_[93]["Main"]:AddToggle({ 
-    ["Name"] = "Auto Factory Raid",
-    ["Description"] = "",
-    ["Default"] = false,
-    ["Callback"] = function(state)
-        _G["AutoFactory"] = state
-        _G["FastAttack"] = state
-        _G["BringMobs"] = state
-    end
-})
-
-task.spawn(function()
-    local lastCore -- lưu core hiện tại để tránh spam
-    local factoryPos = CFrame.new(448.46756, 199.356781, -441.389252)
-
-    while true do
-        if not _G["AutoFactory"] then
-            lastCore = nil
+    while task.wait(0.15) do
+        if not _G.AutoRaidCastle then
             task.wait(0.5)
             continue
         end
 
         pcall(function()
-            local core = GetConnectionEnemies("Core")
-
-            -- ===== TRẠNG THÁI CHỜ FACTORY (KHÔNG GIẬT) =====
-            if not core or not core.Parent or core.Humanoid.Health <= 0 then
-                lastCore = nil
-                task.wait(1)
+            if (Root.Position - CastleCF.Position).Magnitude > 300 then
+                _tp(CastleCF)
+                task.wait(0.4)
+                Root.CFrame = WaitCF
                 return
             end
 
-            -- ===== FACTORY XUẤT HIỆN =====
-            if core ~= lastCore then
-                lastCore = core
-                _tp(factoryPos) -- TP 1 lần duy nhất
-                task.wait(0.3)
-            end
-
-            repeat
-                if not _G["AutoFactory"] then break end
-                if not core.Parent then break end
-                task.wait()
-                EquipWeapon(_G["SelectWeapon"])
-                L_1_[4]["Kill"](core, true)
-            until core.Humanoid.Health <= 0
-
-            lastCore = nil
-        end)
-
-        task.wait(0.15)
-    end
-end)
-CastleRaids = L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Pirate Raid",
-    ["Default"] = false,
-    ["Callback"] = function(state)
-        _G["AutoRaidCastle"] = state
-        _G["FastAttack"] = state
-        _G["BringMobs"] = state
-    end
-})
-
-task.spawn(function()
-    local lastTarget = nil
-    local waitPos = CFrame.new(
-        -5496.17432, 313.768921, -2841.53027,
-        .924894512, 0, .380223751,
-        0, 1, 0,
-        -.380223751, 0, .924894512
-    )
-
-    while true do
-        if not _G["AutoRaidCastle"] then
-            lastTarget = nil
-            task.wait(0.5)
-            continue
-        end
-
-        pcall(function()
-            local target
-
-            -- 🔍 tìm quái gần
-            for _, mob in pairs(workspace.Enemies:GetChildren()) do
-                if mob:FindFirstChild("HumanoidRootPart")
-                and mob:FindFirstChild("Humanoid")
-                and mob.Humanoid.Health > 0
-                and (mob.HumanoidRootPart.Position - Root.Position).Magnitude < 2000 then
-                    target = mob
-                    break
-                end
-            end
-
-            -- ⏳ KHÔNG CÓ QUÁI → CHỜ (KHÔNG TP)
-            if not target then
-                lastTarget = nil
-                task.wait(0.6)
+            local mob = GetNearestPirate()
+            if not mob then
+                Root.CFrame = WaitCF
                 return
             end
 
-            -- 🚀 CÓ QUÁI → TP 1 LẦN
-            if target ~= lastTarget then
-                lastTarget = target
-                _tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0))
-                task.wait(0.2)
-            end
-
-            -- ⚔️ ĐÁNH
             repeat
-                if not _G["AutoRaidCastle"] then break end
-                if not target.Parent then break end
+                if not _G.AutoRaidCastle then break end
+                if not mob.Parent then break end
+
+                AutoBuso()
+                EquipWeapon(_G.SelectWeapon)
+
+                Root.CFrame = mob.HumanoidRootPart.CFrame * AttackOffset
+                L_1_[4]["Kill"](mob, true)
+
                 task.wait()
-                L_1_[4]["Kill"](target, true)
-            until target.Humanoid.Health <= 0
-
-            lastTarget = nil
+            until mob.Humanoid.Health <= 0
         end)
-
-        task.wait(0.15)
     end
 end)
 Ecto = L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Auto Farm Ectoplasm",
 	["Default"] = false,
 	["Callback"] = function(state)
-		_G["AutoEctoplasm"] = state
-		_G["FastAttack"] = state
-		_G["BringMobs"] = state
+		_G.AutoEctoplasm = state
 	end
 })
-
 task.spawn(function()
 	local currentTarget = nil
+	local OFFSET = CFrame.new(0, 20, 0)
 
-	while true do
-		if not _G["AutoEctoplasm"] then
+	while task.wait(0.15) do
+		if not _G.AutoKillMob then
 			currentTarget = nil
-			task.wait(0.5)
+			task.wait(0.4)
 			continue
 		end
 
 		pcall(function()
-			-- danh sách quái ecto
-			local ectoMobs = {
-				"Ship Deckhand",
-				"Ship Engineer",
-				"Ship Steward",
-				"Ship Officer",
-				"Arctic Warrior"
-			}
+			local char = plr.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if not char or not hrp then return end
 
-			-- tìm quái hợp lệ
-			local target
-			for _, mob in pairs(workspace.Enemies:GetChildren()) do
-				if table.find(ectoMobs, mob.Name)
-				and mob:FindFirstChild("Humanoid")
-				and mob:FindFirstChild("HumanoidRootPart")
-				and mob.Humanoid.Health > 0 then
-					target = mob
-					break
-				end
-			end
-
-			-- ⏳ không có quái → đứng yên chờ (KHÔNG TP, KHÔNG GIẬT)
-			if not target then
+			local selectName = getgenv().SelectMob
+			if not selectName then
 				currentTarget = nil
-				task.wait(0.6)
 				return
 			end
 
-			-- 🚀 đổi mục tiêu → TP 1 lần
-			if target ~= currentTarget then
-				currentTarget = target
-				_tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0))
-				task.wait(0.2)
+			local target, dist = nil, math.huge
+			for _, mob in pairs(workspace.Enemies:GetChildren()) do
+				local hum = mob:FindFirstChild("Humanoid")
+				local mhrp = mob:FindFirstChild("HumanoidRootPart")
+				if mob.Name == selectName and hum and mhrp and hum.Health > 0 then
+					local d = (mhrp.Position - hrp.Position).Magnitude
+					if d < dist then
+						dist = d
+						target = mob
+					end
+				end
+			end
+			if not target then
+				currentTarget = nil
+				task.wait(0.3)
+				return
 			end
 
-			-- ⚔️ đánh liên tục
+			if target ~= currentTarget then
+				currentTarget = target
+				_tp(target.HumanoidRootPart.CFrame * OFFSET)
+				task.wait(0.15)
+			end
+
 			repeat
-				if not _G["AutoEctoplasm"] then break end
+				if not _G.AutoKillMob then break end
 				if not target.Parent then break end
-				task.wait()
+				if target.Humanoid.Health <= 0 then break end
+
+				hrp.CFrame = target.HumanoidRootPart.CFrame * OFFSET
+
 				L_1_[4]["Kill"](target, true)
-			until target.Humanoid.Health <= 0
+
+				task.wait()
+			until false
 
 			currentTarget = nil
 		end)
-
-		task.wait(0.15)
 	end
 end)
 L_1_[93]["Main"]:AddSection({
@@ -3442,63 +3514,67 @@ L_1_[93]["Main"]:AddToggle({
 		_G["BringMobs"] = state
 	end
 })
-
 task.spawn(function()
 	local currentTarget = nil
+	local OFFSET = CFrame.new(0, 20, 0)
 
-	while true do
-		-- ⛔ tắt → không làm gì cả
-		if not _G["AutoKillMob"] then
+	while task.wait(0.15) do
+		if not _G.AutoKillMob then
 			currentTarget = nil
-			task.wait(0.5)
+			task.wait(0.4)
 			continue
 		end
 
 		pcall(function()
+			local char = plr.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
+
 			local selectName = getgenv().SelectMob
 			if not selectName then
-				task.wait(0.5)
+				currentTarget = nil
 				return
 			end
 
-			-- 🔍 tìm quái hợp lệ
-			local target
+			local target, dist = nil, math.huge
 			for _, mob in pairs(workspace.Enemies:GetChildren()) do
-				if mob.Name == selectName
-				and mob:FindFirstChild("Humanoid")
-				and mob:FindFirstChild("HumanoidRootPart")
-				and mob.Humanoid.Health > 0 then
-					target = mob
-					break
+				local hum = mob:FindFirstChild("Humanoid")
+				local mhrp = mob:FindFirstChild("HumanoidRootPart")
+				if mob.Name == selectName and hum and mhrp and hum.Health > 0 then
+					local d = (mhrp.Position - hrp.Position).Magnitude
+					if d < dist then
+						dist = d
+						target = mob
+					end
 				end
 			end
 
-			-- ⏳ không có quái → CHỜ (KHÔNG TP)
 			if not target then
 				currentTarget = nil
-				task.wait(0.6)
+				task.wait(0.3)
 				return
 			end
 
-			-- 🚀 đổi mục tiêu → TP 1 lần
 			if target ~= currentTarget then
 				currentTarget = target
-				_tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0))
-				task.wait(0.2)
+				_tp(target.HumanoidRootPart.CFrame * OFFSET)
+				task.wait(0.15)
 			end
 
-			-- ⚔️ đánh liên tục
 			repeat
-				if not _G["AutoKillMob"] then break end
+				if not _G.AutoKillMob then break end
 				if not target.Parent then break end
-				task.wait()
+				if target.Humanoid.Health <= 0 then break end
+
+				hrp.CFrame = target.HumanoidRootPart.CFrame * OFFSET
+
 				L_1_[4]["Kill"](target, true)
-			until target.Humanoid.Health <= 0
+
+				task.wait()
+			until false
 
 			currentTarget = nil
 		end)
-
-		task.wait(0.15)
 	end
 end)
 L_1_[93]["Main"]:AddSection({
@@ -3831,71 +3907,83 @@ L_1_[93]["Main"]:AddToggle({
 		_G["BringMobs"] = state
 	end
 })
-
 task.spawn(function()
 	local currentTarget = nil
+	local OFFSET = CFrame.new(0, 20, 0)
 
-	while true do
-		if not _G["AutoFarmIsland"] then
+	while task.wait(0.15) do
+		if not _G.AutoFarmIsland then
 			currentTarget = nil
-			task.wait(0.5)
+			task.wait(0.4)
 			continue
 		end
 
 		pcall(function()
-			if not _G["SelectIsland"] or not L_1_[60] then
-				task.wait(0.5)
+			if not _G.SelectIsland or not L_1_[60] then
+				currentTarget = nil
 				return
 			end
 
-			local islandData = L_1_[60][_G["SelectIsland"]]
+			local islandData = L_1_[60][_G.SelectIsland]
 			if not islandData then
-				task.wait(0.5)
+				currentTarget = nil
 				return
 			end
+
+			local char = plr.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
 
 			local waitCFrame = islandData.CFrame
 			local mobList = islandData.Mobs
-			local mobMap = {}
 
+			local mobMap = {}
 			for _, name in ipairs(mobList) do
 				mobMap[name] = true
 			end
 
-			local target
+			local target, dist = nil, math.huge
 			for _, mob in pairs(workspace.Enemies:GetChildren()) do
-				if mobMap[mob.Name]
-				and mob:FindFirstChild("Humanoid")
-				and mob:FindFirstChild("HumanoidRootPart")
-				and mob.Humanoid.Health > 0 then
-					target = mob
-					break
+				local hum = mob:FindFirstChild("Humanoid")
+				local mhrp = mob:FindFirstChild("HumanoidRootPart")
+				if mobMap[mob.Name] and hum and mhrp and hum.Health > 0 then
+					local d = (mhrp.Position - hrp.Position).Magnitude
+					if d < dist then
+						dist = d
+						target = mob
+					end
 				end
 			end
 
 			if not target then
 				currentTarget = nil
-				task.wait(0.5)
+				if (hrp.Position - waitCFrame.Position).Magnitude > 10 then
+					_tp(waitCFrame)
+				end
+				task.wait(0.3)
 				return
 			end
 
 			if target ~= currentTarget then
 				currentTarget = target
-				_tp(target.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0))
-				task.wait(0.2)
+				_tp(target.HumanoidRootPart.CFrame * OFFSET)
+				task.wait(0.15)
 			end
 
 			repeat
-				if not _G["AutoFarmIsland"] then break end
+				if not _G.AutoFarmIsland then break end
 				if not target.Parent then break end
-				task.wait()
+				if target.Humanoid.Health <= 0 then break end
+
+				hrp.CFrame = target.HumanoidRootPart.CFrame * OFFSET
+
 				L_1_[4]["Kill"](target, true)
-			until target.Humanoid.Health <= 0
+
+				task.wait()
+			until false
 
 			currentTarget = nil
 		end)
-
-		task.wait(0.15)
 	end
 end)
 L_1_[93]["Main"]:AddSection({
@@ -3936,57 +4024,55 @@ EliteQ = L_1_[93]["Main"]:AddToggle({
 		_G["FarmEliteHunt"] = v
 	end
 })
-
 task.spawn(function()
 	local currentBoss = nil
 	local waitingQuest = false
+	local OFFSET = CFrame.new(0, 25, 0)
 
-	while true do
-		-- 🔴 OFF = ngủ hoàn toàn
-		if not _G["FarmEliteHunt"] then
+	while task.wait(0.3) do
+		if not _G.FarmEliteHunt then
 			currentBoss = nil
 			waitingQuest = false
-			task.wait(1)
+			task.wait(0.8)
 			continue
 		end
 
-		task.wait(0.5)
 		pcall(function()
-			local player = game.Players.LocalPlayer
-			local questGui = player.PlayerGui.Main.Quest
+			local plr = game.Players.LocalPlayer
+			local char = plr.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
 
-			-- 🟡 CHƯA CÓ QUEST → xin 1 lần
+			local questGui = plr.PlayerGui:FindFirstChild("Main")
+				and plr.PlayerGui.Main:FindFirstChild("Quest")
+			if not questGui then return end
+
 			if not questGui.Visible then
 				if not waitingQuest then
 					waitingQuest = true
 					local res = game.ReplicatedStorage.Remotes.CommF_:InvokeServer("EliteHunter")
-					if not res or string.find(res, "Cooldown") then
+					if not res or tostring(res):find("Cooldown") then
 						task.wait(5)
-						waitingQuest = false
 					end
+					waitingQuest = false
 				end
 				return
 			end
 
 			waitingQuest = false
 
-			-- 🟢 XÁC ĐỊNH TÊN BOSS
-			local questText = questGui.Container.QuestTitle.Title.Text
+			local title = questGui.Container.QuestTitle.Title.Text
 			local bossName
 
-			for _, name in ipairs({"Diablo","Urban","Deandre"}) do
-				if string.find(questText, name) then
-					bossName = name
+			for _, n in ipairs({ "Diablo", "Urban", "Deandre" }) do
+				if title:find(n) then
+					bossName = n
 					break
 				end
 			end
 
-			if not bossName then
-				task.wait(2)
-				return
-			end
+			if not bossName then return end
 
-			-- 🔍 TÌM BOSS
 			local boss
 			for _, e in pairs(workspace.Enemies:GetChildren()) do
 				if e.Name == bossName
@@ -3998,26 +4084,27 @@ task.spawn(function()
 				end
 			end
 
-			-- 🟡 CHƯA SPAWN → CHỜ (KHÔNG TELEPORT)
 			if not boss then
-				task.wait(1)
+				currentBoss = nil
 				return
 			end
-
-			-- 🟢 CHỈ TELEPORT 1 LẦN KHI ĐỔI TARGET
 			if boss ~= currentBoss then
 				currentBoss = boss
-				_tp(boss.HumanoidRootPart.CFrame * CFrame.new(0, 25, 0))
-				task.wait(0.2)
+				_tp(boss.HumanoidRootPart.CFrame * OFFSET)
+				task.wait(0.15)
 			end
 
-			-- ⚔️ ĐÁNH
 			repeat
-				if not _G["FarmEliteHunt"] then break end
+				if not _G.FarmEliteHunt then break end
 				if not boss.Parent then break end
-				task.wait()
+				if boss.Humanoid.Health <= 0 then break end
+
+				hrp.CFrame = boss.HumanoidRootPart.CFrame * OFFSET
+
 				L_1_[4].Kill(boss, true)
-			until boss.Humanoid.Health <= 0
+
+				task.wait()
+			until false
 
 			currentBoss = nil
 		end)
@@ -4787,16 +4874,6 @@ spawn(function()
 		end)
 	end
 end)
-
--- =========================
--- FULL AUTO FARM BONE + AUTO SUMMON & KILL SOUL REAPER
--- CORE ƯU TIÊN:
--- 1. Có Soul Reaper -> ĐÁNH NGAY
--- 2. Có Hallow Essence -> TRIỆU HỒI
--- 3. Không có boss -> FARM BONE
--- =========================
-
--- ===== UI =====
 L_1_[93]["Main"]:AddSection({"Farming Bone"})
 
 CheckingBone = L_1_[93]["Main"]:AddParagraph({
