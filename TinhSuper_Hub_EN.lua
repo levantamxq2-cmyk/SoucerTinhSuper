@@ -2696,91 +2696,98 @@ end)
 L_1_[93]["Main"]:AddSection({
 	"Farming"
 })
+_G.Level = false
+
 FarmLevel = L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Farm Level",
-    ["Description"] = "",
-    ["Default"] = false,
-    ["Callback"] = function(state)
-        _G["Level"] = state
-        _G["BringMobs"] = state
-        _G["FastAttack"] = state
-    end
+	["Name"] = "Auto Farm Level",
+	["Description"] = "",
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G.Level = v
+		_G.B = v
+		_G.FastAttack = v
+	end
 })
 
 task.spawn(function()
-    local lastTP = 0
+	local PlayerOffset = CFrame.new(0, 20, 0)
+	local lastMove = 0
 
-    while true do
-        if not _G["Level"] then
-            task.wait(0.5)
-            continue
-        end
+	while task.wait(0.15) do
+		if not _G.Level then
+			task.wait(0.3)
+			continue
+		end
 
-        pcall(function()
-            local plr = game.Players.LocalPlayer
-            local char = plr.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
+		pcall(function()
+			local Char = plr.Character
+			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
+			if not HRP then return end
 
-            local questGui = plr.PlayerGui.Main.Quest
+			QuestCheck()
+			if not Qname or not PosQ or not PosM or not NameMon then return end
 
-            local NameMon = "Grand Devotee"
-            local Qname = "SubmergedQuest3"
-            local Qdata = 2
+			if Boud and not Char:FindFirstChild("HasBuso") then
+				replicated.Remotes.CommF_:InvokeServer("Buso")
+			end
 
-            local PosQ = CFrame.new(9636.52, -1992.19, 9609.52)
-            local PosM = CFrame.new(9557.58, -1928.04, 9859.18)
+			local QuestGui = plr.PlayerGui.Main.Quest
 
-            -- Nhận quest
-            if not questGui.Visible then
-                if tick() - lastTP > 2 then
-                    _tp(PosQ)
-                    lastTP = tick()
-                end
+			if not QuestGui.Visible then
+				if tick() - lastMove > 1.5 then
+					_tp(PosQ)
+					lastMove = tick()
+				end
 
-                if (hrp.Position - PosQ.Position).Magnitude <= 10 then
-                    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                        "StartQuest",
-                        Qname,
-                        Qdata
-                    )
-                end
-                return
-            end
+				if (HRP.Position - PosQ.Position).Magnitude <= 10 then
+					replicated.Remotes.CommF_:InvokeServer("StartQuest", Qname, Qdata)
+				end
+				return
+			end
 
-            local target = nil
+			local FoundMob = false
 
-            for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-                if enemy.Name == NameMon
-                and enemy:FindFirstChild("Humanoid")
-                and enemy:FindFirstChild("HumanoidRootPart")
-                and enemy.Humanoid.Health > 0 then
-                    target = enemy
-                    break
-                end
-            end
+			for _, mob in pairs(Enemies:GetChildren()) do
+				if not _G.Level then break end
 
-            if target then
-                repeat
-                    if not _G["Level"] then break end
-                    task.wait()
-                    L_1_[4]["Kill"](target, true)
-                until not target.Parent
-                    or target.Humanoid.Health <= 0
-            else
-                -- KHÔNG GIẬT – chỉ TP mỗi 2s
-                if tick() - lastTP > 2 then
-                    _tp(PosM)
-                    lastTP = tick()
-                end
-            end
-        end)
+				if mob.Name == NameMon
+				and mob:FindFirstChild("Humanoid")
+				and mob:FindFirstChild("HumanoidRootPart")
+				and mob.Humanoid.Health > 0 then
 
-        task.wait(0.15)
-    end
+					FoundMob = true
+
+					repeat
+						if not _G.Level then break end
+						task.wait()
+
+						EquipWeapon(_G.SelectWeapon)
+
+						if Boud and not Char:FindFirstChild("HasBuso") then
+							replicated.Remotes.CommF_:InvokeServer("Buso")
+						end
+
+						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
+
+						mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
+						mob.HumanoidRootPart.Transparency = 1
+						mob.HumanoidRootPart.CanCollide = false
+						mob.Humanoid.WalkSpeed = 0
+						mob.Humanoid.JumpPower = 0
+					until not mob.Parent
+						or mob.Humanoid.Health <= 0
+						or not _G.Level
+				end
+			end
+			if not FoundMob then
+				if tick() - lastMove > 1.5 then
+					_tp(PosM * PlayerOffset)
+					lastMove = tick()
+				end
+			end
+		end)
+	end
 end)
---// AUTO FARM NEAREST (FIX GIẬT – CHỌN QUÁI GẦN NHẤT – BAY TRÊN ĐẦU LIÊN TỤC)
-
 L_1_[93]["Main"]:AddToggle({
     ["Name"] = "Auto Farm Nearest",
     ["Description"] = "",
@@ -4781,6 +4788,31 @@ spawn(function()
 	end
 end)
 
+-- =========================
+-- FULL AUTO FARM BONE + AUTO SUMMON & KILL SOUL REAPER
+-- CORE ƯU TIÊN:
+-- 1. Có Soul Reaper -> ĐÁNH NGAY
+-- 2. Có Hallow Essence -> TRIỆU HỒI
+-- 3. Không có boss -> FARM BONE
+-- =========================
+
+-- ===== UI =====
+L_1_[93]["Main"]:AddSection({"Farming Bone"})
+
+CheckingBone = L_1_[93]["Main"]:AddParagraph({
+	["Title"] = "Bones :",
+	["Content"] = ""
+})
+
+spawn(function()
+	while task.wait(0.5) do
+		pcall(function()
+			local bone = game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Bones","Check")
+			CheckingBone:SetDesc(" Bones : "..tostring(bone))
+		end)
+	end
+end)
+
 L_1_[93]["Main"]:AddToggle({
 	Name = "Auto Farm Bone + Soul Reaper",
 	Description = "",
@@ -4798,7 +4830,6 @@ L_1_[93]["Main"]:AddToggle({
 		_G.AcceptQuestB = v
 	end
 })
-
 local BoneQuestPos = CFrame.new(-9516.99,172.01,6078.46)
 local SoulSummonPos = CFrame.new(-8932.3223,146.8315,6062.5508)
 local BoneOffset = CFrame.new(0,15,0)
@@ -4809,7 +4840,6 @@ local BoneMobs = {
 	["Demonic Soul"] = true,
 	["Possessed Mummy"] = true
 }
-
 spawn(function()
 	while task.wait(0.2) do
 		if not _G.AutoFarm_Bone then
@@ -4852,14 +4882,12 @@ spawn(function()
 
 				return
 			end
-
 			if GetBP("Hallow Essence") then
 				_tp(SoulSummonPos)
 				if (HRP.Position - SoulSummonPos.Position).Magnitude <= 6 then
 					EquipWeapon("Hallow Essence")
 				end
 			end
-
 			local QuestGui = plr.PlayerGui.Main:FindFirstChild("Quest")
 			if _G.AcceptQuestB and QuestGui and not QuestGui.Visible then
 				_tp(BoneQuestPos)
@@ -4868,7 +4896,6 @@ spawn(function()
 					"StartQuest","HauntedQuest2",1
 				)
 			end
-
 			for _,mob in pairs(Enemies:GetChildren()) do
 				if BoneMobs[mob.Name]
 				and mob:FindFirstChild("Humanoid")
