@@ -4461,39 +4461,38 @@ spawn(function()
 		MobCakePrince:SetDesc(L_199_[3])
 	end
 end)
--- ===== AUTO CAKE PRINCE (SEPARATE & FIX OFF) =====
-
-L_1_[93]["Main"]:AddToggle({
-	Name = "Auto Farm Cake Prince",
-	Default = false,
-	Callback = function(v)
-		_G.AutoCakePrince = v
+Cake = L_1_[93]["Main"]:AddToggle({
+	["Name"] = L_1_[2]({"Auto Farm Cake Princ","e"}),
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G.Auto_Cake_Prince = v
 		if not v then
-			StopTween()
 			bringmob = false
+			MonFarm = nil
+			StopTween(true)
 		end
 	end
 })
 
-L_1_[93]["Main"]:AddToggle({
-	Name = "Accept Cake Quest",
-	Default = true,
-	Callback = function(v)
+CakeQ = L_1_[93]["Main"]:AddToggle({
+	["Name"] = "Accept Quests",
+	["Default"] = true,
+	["Callback"] = function(v)
 		_G.AcceptQuestC = v
 	end
 })
 
-L_1_[93]["Main"]:AddToggle({
-	Name = "Auto Summon Cake Prince",
-	Default = false,
-	Callback = function(v)
+CakeSM = L_1_[93]["Main"]:AddToggle({
+	["Name"] = L_1_[2]({"Auto Summon Cake Pri","nce"}),
+	["Default"] = false,
+	["Callback"] = function(v)
 		_G.AutoSpawnCP = v
 	end
 })
 
 local CakeQuestPos = CFrame.new(-1927.92, 37.8, -12842.54)
 local CakeFarmPos  = CFrame.new(-2130.8071, 69.9563, -12327.8398)
-local CakeOffset   = CFrame.new(0, 20, 0)
+local PlayerOffset = CFrame.new(0, 20, 0)
 
 local CakeMobs = {
 	["Cookie Crafter"] = true,
@@ -4501,53 +4500,58 @@ local CakeMobs = {
 	["Baking Staff"] = true,
 	["Head Baker"] = true
 }
+
+local CakeRunning = false
+
 task.spawn(function()
-	while task.wait(0.15) do
+	while task.wait(0.2) do
 		if not _G.Auto_Cake_Prince then
-			bringmob = false
+			CakeRunning = false
 			continue
 		end
+		if CakeRunning then continue end
+		CakeRunning = true
 
 		pcall(function()
 			local Char = plr.Character
 			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
 			if not HRP then return end
 
-			-- AUTO BUSO
 			if Boud and not Char:FindFirstChild("HasBuso") then
 				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
 
-			-- ===== CAKE PRINCE =====
 			local Boss = Enemies:FindFirstChild("Cake Prince")
 			if Boss and Boss:FindFirstChild("HumanoidRootPart") and Boss.Humanoid.Health > 0 then
-				bringmob = false
 				MonFarm = "Cake Prince"
+				bringmob = false
 
 				while _G.Auto_Cake_Prince
 				and Boss.Parent
 				and Boss.Humanoid.Health > 0 do
-
-					task.wait()
 					EquipWeapon(_G.SelectWeapon)
 					_tp(Boss.HumanoidRootPart.CFrame * PlayerOffset)
 
 					Boss.HumanoidRootPart.CanCollide = false
+					Boss.HumanoidRootPart.Size = Vector3.new(80,80,80)
 					Boss.Humanoid.WalkSpeed = 0
 					Boss.Humanoid.JumpPower = 0
+					task.wait()
 				end
 				return
 			end
-			-- AUTO SUMMON
+
 			if _G.AutoSpawnCP then
 				local CakeLoaf = workspace.Map:FindFirstChild("CakeLoaf")
 				local BigMirror = CakeLoaf and CakeLoaf:FindFirstChild("BigMirror")
-				if BigMirror and BigMirror.Other.Transparency ~= 0 then
+				if BigMirror
+				and not Enemies:FindFirstChild("Cake Prince")
+				and BigMirror.Other.Transparency ~= 0 then
 					replicated.Remotes.CommF_:InvokeServer("CakePrinceSpawner", true)
+					return
 				end
 			end
 
-			-- QUEST
 			local QuestGui = plr.PlayerGui.Main.Quest
 			if _G.AcceptQuestC and QuestGui and not QuestGui.Visible then
 				_tp(CakeQuestPos)
@@ -4556,33 +4560,42 @@ task.spawn(function()
 				return
 			end
 
-			-- FARM MOB
 			for _,mob in pairs(Enemies:GetChildren()) do
-				if not _G.AutoCakePrince then break end
+				if not _G.Auto_Cake_Prince then break end
 
 				if CakeMobs[mob.Name]
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob.Humanoid.Health > 0 then
 
-					repeat
-						if not _G.AutoCakePrince then break end
-						if not mob.Parent then break end
+					MonFarm = mob.Name
+					bringmob = true
 
-						task.wait()
+					while _G.Auto_Cake_Prince
+					and mob.Parent
+					and mob.Humanoid.Health > 0
+					and not Enemies:FindFirstChild("Cake Prince") do
+
 						EquipWeapon(_G.SelectWeapon)
-						_tp(mob.HumanoidRootPart.CFrame * CakeOffset)
+						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
 
+						mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
 						mob.HumanoidRootPart.CanCollide = false
 						mob.Humanoid.WalkSpeed = 0
 						mob.Humanoid.JumpPower = 0
-					until mob.Humanoid.Health <= 0
+						task.wait()
+					end
+
+					bringmob = false
+					return
 				end
 			end
 
-			_tp(CakeFarmPos)
+			if _G.Auto_Cake_Prince then
+				_tp(CakeFarmPos * PlayerOffset)
+			end
 		end)
 
-		task.wait(0.3)
+		CakeRunning = false
 	end
 end)
 L_1_[93]["Main"]:AddToggle({
@@ -4895,38 +4908,30 @@ spawn(function()
 		end)
 	end
 end)
-local BoneRunning = false
-local BoneThread = nil
-
 L_1_[93]["Main"]:AddToggle({
 	Name = "Auto Farm Bone + Soul Reaper",
+	Description = "",
 	Default = false,
 	Callback = function(v)
 		_G.AutoFarm_Bone = v
-
 		if not v then
-			BoneRunning = false
-			CurrentBoneTarget = nil
 			StopTween(true)
-		else
-			if not BoneThread then
-				BoneThread = task.spawn(BoneMainLoop)
-			end
 		end
 	end
 })
 
 L_1_[93]["Main"]:AddToggle({
-	Name = "Auto Quest Bone",
+	Name = "Accept Quest Bone",
+	Description = "",
 	Default = true,
 	Callback = function(v)
 		_G.AcceptQuestB = v
 	end
 })
 
-local BoneQuestPos  = CFrame.new(-9516.99,172.01,6078.46)
-local SoulSummonPos = CFrame.new(-8932.3223,146.8315,6062.5508)
-local BoneOffset    = CFrame.new(0,15,0)
+local BoneQuestPos   = CFrame.new(-9516.99,172.01,6078.46)
+local SoulSummonPos  = CFrame.new(-8932.3223,146.8315,6062.5508)
+local BoneOffset     = CFrame.new(0,15,0)
 
 local BoneMobs = {
 	["Reborn Skeleton"] = true,
@@ -4935,31 +4940,26 @@ local BoneMobs = {
 	["Possessed Mummy"] = true
 }
 
-function BoneMainLoop()
-	while true do
-		task.wait(0.25)
+local SoulCooldown = false
 
-		if not _G.AutoFarm_Bone then
-			BoneRunning = false
-			StopTween(true)
-			continue
-		end
-
-		if BoneRunning then continue end
-		BoneRunning = true
+spawn(function()
+	while task.wait(0.25) do
+		if not _G.AutoFarm_Bone then continue end
 
 		pcall(function()
 			local Char = plr.Character
 			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
-			if not HRP or not _G.AutoFarm_Bone then return end
+			if not HRP then return end
 
-			-- AUTO BUSO
 			if Boud and not Char:FindFirstChild("HasBuso") then
 				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
-
 			local SoulReaper = GetConnectionEnemies("Soul Reaper")
-			if SoulReaper and SoulReaper:FindFirstChild("HumanoidRootPart") and SoulReaper.Humanoid.Health > 0 then
+			if SoulReaper
+			and SoulReaper:FindFirstChild("HumanoidRootPart")
+			and SoulReaper.Humanoid.Health > 0 then
+
+				MonFarm = "Soul Reaper"
 				repeat
 					if not _G.AutoFarm_Bone then break end
 					if not SoulReaper.Parent then break end
@@ -4975,10 +4975,19 @@ function BoneMainLoop()
 				return
 			end
 
-			if GetBP("Hallow Essence") then
+			if GetBP("Hallow Essence") and not SoulCooldown then
+				SoulCooldown = true
 				_tp(SoulSummonPos)
 				task.wait(0.8)
-				EquipWeapon("Hallow Essence")
+
+				if (HRP.Position - SoulSummonPos.Position).Magnitude <= 8 then
+					EquipWeapon("Hallow Essence")
+				end
+
+				task.delay(8, function()
+					SoulCooldown = false
+				end)
+
 				return
 			end
 
@@ -4986,7 +4995,9 @@ function BoneMainLoop()
 			if _G.AcceptQuestB and QuestGui and not QuestGui.Visible then
 				_tp(BoneQuestPos)
 				task.wait(1)
-				replicated.Remotes.CommF_:InvokeServer("StartQuest","HauntedQuest2",1)
+				replicated.Remotes.CommF_:InvokeServer(
+					"StartQuest","HauntedQuest2",1
+				)
 				return
 			end
 
@@ -4997,6 +5008,7 @@ function BoneMainLoop()
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob.Humanoid.Health > 0 then
 
+					MonFarm = mob.Name
 					repeat
 						if not _G.AutoFarm_Bone then break end
 						if not mob.Parent then break end
@@ -5006,15 +5018,16 @@ function BoneMainLoop()
 						mob.HumanoidRootPart.CanCollide = false
 						mob.Humanoid.WalkSpeed = 0
 						mob.Humanoid.JumpPower = 0
+						if mob:FindFirstChild("Head") then
+							mob.Head.CanCollide = false
+						end
 						task.wait()
 					until mob.Humanoid.Health <= 0
 				end
 			end
 		end)
-
-		BoneRunning = false
 	end
-end
+end)
 RanBone = L_1_[93]["Main"]:AddToggle({
 	Name = "Auto Random Bones",
 	Description = "",
@@ -5112,36 +5125,50 @@ spawn(function()
 		end
 	end
 end)
-
 EyeStatus = L_1_[93]["Main"]:AddParagraph({
 	["Title"] = "Check Status Eyes",
-	["Content"] = ""
+	["Content"] = "Eyes: 0/4"
 })
 
-function Check_Eye()
-	local Island = workspace.Map.TikiOutpost.IslandModel
+local function Check_Eye()
+	local Map = workspace:FindFirstChild("Map")
+	if not Map then return 0, false end
+
+	local Tiki = Map:FindFirstChild("TikiOutpost")
+	if not Tiki then return 0, false end
+
+	local Island = Tiki:FindFirstChild("IslandModel")
+	if not Island then return 0, false end
+
 	local Eyes = {
-		Island.Eye1,
-		Island.Eye2,
-		Island.IslandChunks.E.Eye3,
-		Island.IslandChunks.E.Eye4
+		Island:FindFirstChild("Eye1"),
+		Island:FindFirstChild("Eye2"),
+		Island:IslandChunks
+			and Island.IslandChunks:FindFirstChild("E")
+			and Island.IslandChunks.E:FindFirstChild("Eye3"),
+		Island:IslandChunks
+			and Island.IslandChunks:FindFirstChild("E")
+			and Island.IslandChunks.E:FindFirstChild("Eye4")
 	}
+
 	local Count = 0
 	for _,v in pairs(Eyes) do
-		if v and v.Transparency ~= 1 then
+		if v and v:IsA("BasePart") and v.Transparency ~= 1 then
 			Count += 1
 		end
 	end
+
 	return Count, Count == 4
 end
 
 task.spawn(function()
 	while task.wait(1) do
-		local c = Check_Eye()
-		EyeStatus:SetDesc("Eyes: "..c.."/4")
+		pcall(function()
+			local Count, Full = Check_Eye()
+			EyeStatus:SetDesc("Eyes: "..Count.."/4"..(Full and " (FULL)" or ""))
+		end)
 	end
 end)
-
 FarmTyrant = L_1_[93]["Main"]:AddToggle({
 	Name = "Auto Farm Boss",
 	Default = false,
