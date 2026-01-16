@@ -5063,13 +5063,50 @@ local function Check_Eye()
 	end
 	return count, count == 4
 end
-local function SpamSpawnSkillOnce()
-	for _,key in ipairs({"Z","X","C","V","F"}) do
-		pcall(function()
-			vim1:SendKeyEvent(true, key, false, game)
-			task.wait(0.05)
-			vim1:SendKeyEvent(false, key, false, game)
-		end)
+local function GetAllWeapons()
+	local list = {}
+
+	if plr.Character then
+		for _,v in pairs(plr.Character:GetChildren()) do
+			if v:IsA("Tool") then
+				table.insert(list, v)
+			end
+		end
+	end
+	for _,v in pairs(plr.Backpack:GetChildren()) do
+		if v:IsA("Tool") then
+			table.insert(list, v)
+		end
+	end
+
+	return list
+end
+
+local function EquipTool(tool)
+	if not tool or not tool.Parent then return end
+	pcall(function()
+		plr.Character.Humanoid:EquipTool(tool)
+	end)
+end
+local function SpamAllWeaponSkills()
+	local weapons = GetAllWeapons()
+
+	for _,tool in pairs(weapons) do
+		if not _G.FarmTyrant then break end
+
+		EquipTool(tool)
+		task.wait(0.05)
+
+		-- spam phím skill
+		for _,key in ipairs({"Z","X","C","F"}) do
+			pcall(function()
+				vim1:SendKeyEvent(true, key, false, game)
+				task.wait(0.03)
+				vim1:SendKeyEvent(false, key, false, game)
+			end)
+		end
+
+		task.wait(0.05)
 	end
 end
 local function GetHRP()
@@ -5143,7 +5180,7 @@ task.spawn(function()
 					end
 
 					pcall(function() EquipWeapon(_G.SelectWeapon) end)
-					SpamSpawnSkillOnce()
+					SpamAllWeaponSkills()
 
 					task.wait(0.25)
 				until Enemies:FindFirstChild("Tyrant of the Skies") or not _G.FarmTyrant
