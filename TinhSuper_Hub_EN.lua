@@ -4396,10 +4396,7 @@ spawn(function()
 	end
 end)
 Cake = L_1_[93]["Main"]:AddToggle({
-	["Name"] = L_1_[2]({
-		"Auto Farm Cake Princ",
-		"e"
-	}),
+	["Name"] = L_1_[2]({"Auto Farm Cake Princ","e"}),
 	["Description"] = "",
 	["Default"] = false,
 	["Callback"] = function(v)
@@ -4415,101 +4412,69 @@ CakeQ = L_1_[93]["Main"]:AddToggle({
 		_G.AcceptQuestC = v
 	end
 })
--- =========================
--- AUTO FARM CAKE (BONE CORE)
--- =========================
 
-_G.Auto_Cake_Prince = _G.Auto_Cake_Prince or false
-_G.AcceptQuestC = _G.AcceptQuestC or false
-
-local PlayerOffset = CFrame.new(0,30,0)
-
--- ===== POSITIONS =====
-local CakeFarmPos  = CFrame.new(-2130.8071, 69.9563, -12327.8398)
-local CakeQuestPos = CFrame.new(-1927.92, 37.8, -12842.54)
-
--- ===== CAKE MOBS =====
-local CakeMobs = {
-	["Cookie Crafter"] = true,
-	["Cake Guard"] = true,
-	["Baking Staff"] = true,
-	["Head Baker"] = true
-}
-
--- =========================
--- MAIN FARM LOOP (BONE STYLE)
--- =========================
 spawn(function()
-	while task.wait(0.15) do
-		if not _G.Auto_Cake_Prince or not World3 then
-			bringmob = false
-			StartBring = false
+	-- dùng core có sẵn
+	local CakeMobs = {
+		["Cookie Crafter"] = true,
+		["Cake Guard"] = true,
+		["Baking Staff"] = true,
+		["Head Baker"] = true
+	}
+
+	local QuestPos = CFrame.new(-1927.92, 37.8, -12842.54)
+
+	while task.wait(0.2) do
+		if not _G.Auto_Cake_Prince then
 			continue
 		end
 
 		pcall(function()
-			local char = plr.Character
-			local hrp = char and char:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
+			if not Root then return end
 
-			-- ===== AUTO QUEST (GIỐNG BONE) =====
-			if _G.AcceptQuestC then
-				local QuestGui = plr.PlayerGui.Main.Quest
-				if not QuestGui.Visible then
-					_tp(CakeQuestPos)
-					repeat task.wait(.2)
-					until (hrp.Position - CakeQuestPos.Position).Magnitude < 40
-						or not _G.Auto_Cake_Prince
-					if not _G.Auto_Cake_Prince then return end
-					replicated.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",2)
-					task.wait(.3)
-				end
+			-- AUTO BUSO (DÙNG CORE BẠN)
+			if Boud and not plr.Character:FindFirstChild("HasBuso") then
+				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
 
-			-- ===== ÉP LUÔN Ở KHU FARM (BONE CORE) =====
-			if (hrp.Position - CakeFarmPos.Position).Magnitude > 200 then
-				_tp(CakeFarmPos * PlayerOffset)
-				return
+			-- AUTO NHẬN QUEST (VĨNH VIỄN)
+			local QuestGui = plr.PlayerGui.Main.Quest
+			if _G.AcceptQuestC and QuestGui and not QuestGui.Visible then
+				_tp(QuestPos)
+				task.wait(1)
+				replicated.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",1)
 			end
 
-			local FoundMob = false
-
+			-- FARM LOOP (Y HỆT FARM BONE)
 			for _, mob in pairs(Enemies:GetChildren()) do
 				if CakeMobs[mob.Name]
 				and mob:FindFirstChild("Humanoid")
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob.Humanoid.Health > 0 then
 
-					FoundMob = true
-					MonFarm = mob.Name
-					FarmPos = mob.HumanoidRootPart.CFrame
-					bringmob = true
-					StartBring = true
-
 					repeat
-						task.wait(_G.Fast_Delay or 0.1)
-
-						AutoHaki()
+						task.wait()
 						EquipWeapon(_G.SelectWeapon)
 
-						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
+						-- bật buso liên tục
+						if Boud and not plr.Character:FindFirstChild("HasBuso") then
+							replicated.Remotes.CommF_:InvokeServer("Buso")
+						end
 
-						mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
-						mob.HumanoidRootPart.Transparency = 1
+						-- TP lên đầu quái (GIỐNG BONE)
+						_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,15,0))
+
+						-- khóa quái
 						mob.HumanoidRootPart.CanCollide = false
 						mob.Humanoid.WalkSpeed = 0
 						mob.Humanoid.JumpPower = 0
+						if mob:FindFirstChild("Head") then
+							mob.Head.CanCollide = false
+						end
 					until not _G.Auto_Cake_Prince
-						or not mob.Parent
-						or mob.Humanoid.Health <= 0
+					   or not mob.Parent
+					   or mob.Humanoid.Health <= 0
 				end
-			end
-
-			-- ===== KHÔNG CÓ MOB → BAY CHỜ (Y BONE) =====
-			if not FoundMob then
-				bringmob = false
-				StartBring = false
-				_tp(CakeFarmPos * PlayerOffset)
 			end
 		end)
 	end
