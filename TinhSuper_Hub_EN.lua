@@ -4429,6 +4429,7 @@ local CakeMobs = {
 }
 
 -- ===== FARM LOGIC (GIỐNG BONE) =====
+-- ===== FARM LOGIC (FIX TP + VĨNH VIỄN) =====
 task.spawn(function()
 	while task.wait(0.15) do
 		if not _G.Auto_Cake_Prince or not World3 then
@@ -4438,39 +4439,39 @@ task.spawn(function()
 		end
 
 		pcall(function()
-			local plr = game.Players.LocalPlayer
 			local char = plr.Character
 			local hrp = char and char:FindFirstChild("HumanoidRootPart")
 			if not hrp then return end
 
-			-- AUTO QUEST (VĨNH VIỄN)
+			-- ===== AUTO QUEST (LUÔN NHẬN LẠI) =====
 			if _G.AcceptQuestC then
 				local QuestGui = plr.PlayerGui.Main.Quest
 				if not QuestGui.Visible then
 					_tp(CakeQuestPos)
 					repeat task.wait(.2)
-					until (hrp.Position - CakeQuestPos.Position).Magnitude < 30 or not _G.Auto_Cake_Prince
+					until (hrp.Position - CakeQuestPos.Position).Magnitude < 30
+						or not _G.Auto_Cake_Prince
 					if not _G.Auto_Cake_Prince then return end
-					game.ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",2)
+					replicated.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",2)
 					task.wait(.3)
 				end
 			end
 
-			-- ÉP VỀ KHU FARM
+			-- ===== LUÔN ÉP Ở KHU FARM (KHÔNG RETURN) =====
 			if (hrp.Position - CakeFarmPos.Position).Magnitude > 200 then
 				_tp(CakeFarmPos * PlayerOffset)
 				return
 			end
 
-			local Found = false
+			local FoundMob = false
 
-			for _, mob in pairs(workspace.Enemies:GetChildren()) do
+			for _, mob in pairs(Enemies:GetChildren()) do
 				if CakeMobs[mob.Name]
 				and mob:FindFirstChild("Humanoid")
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob.Humanoid.Health > 0 then
 
-					Found = true
+					FoundMob = true
 					MonFarm = mob.Name
 					FarmPos = mob.HumanoidRootPart.CFrame
 					bringmob = true
@@ -4480,6 +4481,7 @@ task.spawn(function()
 						task.wait(_G.Fast_Delay or 0.1)
 						AutoHaki()
 						EquipWeapon(_G.SelectWeapon)
+
 						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
 
 						mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
@@ -4488,13 +4490,13 @@ task.spawn(function()
 						mob.Humanoid.WalkSpeed = 0
 						mob.Humanoid.JumpPower = 0
 					until not _G.Auto_Cake_Prince
-					or not mob.Parent
-					or mob.Humanoid.Health <= 0
+						or not mob.Parent
+						or mob.Humanoid.Health <= 0
 				end
 			end
 
-			-- KHÔNG CÓ MOB → ĐỨNG CHỜ SPAWN
-			if not Found then
+			-- ===== KHÔNG CÓ MOB → VẪN BAY CHỜ SPAWN =====
+			if not FoundMob then
 				bringmob = false
 				StartBring = false
 				_tp(CakeFarmPos * PlayerOffset)
