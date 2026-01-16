@@ -4584,96 +4584,88 @@ L_1_[93]["Main"]:AddToggle({
 		_G["AutoDoughKing"] = L_492_[1]
 	end
 })
-spawn(function()
-	while wait() do
-		if _G["AutoDoughKing"] then
-			pcall(function()
-				if not workspace["Map"]["CakeLoaf"]:FindFirstChild("RedDoor") then
-					if GetBP("Red Key") then
-						L_1_[18]["Remotes"]["CommF_"]:InvokeServer("CakeScientist", "Check")
-						L_1_[18]["Remotes"]["CommF_"]:InvokeServer("RaidsNpc", "Check")
-					end
-				elseif workspace["Map"]["CakeLoaf"]:FindFirstChild("RedDoor") then
-					if GetBP("Red Key") then
-						repeat
-							task["wait"]()
-							_tp(CFrame["new"](-2681.97998, 64.3921585, -12853.7363, .149007782, -1.87902192e-08, .98883605, 3.60619588e-08, 1, 1.35681812e-08, -0.98883605, 3.36376011e-08, .149007782))
-						until not(getgenv())["AutoDoughKing"] or (L_1_[136]["Character"]["HumanoidRootPart"]["CFrame"] - CFrame["new"](-2681.97998, 64.3921585, -12853.7363, .149007782, -1.87902192e-08, .98883605, 3.60619588e-08, 1, 1.35681812e-08, -0.98883605, 3.36376011e-08, .149007782))["Magnitude"] <= 5
-						EquipWeapon("Red Key")
-					end
-				elseif GetConnectionEnemies("Dough King") then
-					local L_493_ = {}
-					L_493_[1] = GetConnectionEnemies("Dough King")
-					if L_493_[1] then
-						repeat
-							task["wait"]()
-							L_1_[4]["Kill"](L_493_[1], _G["AutoDoughKing"])
-						until not _G["AutoDoughKing"] or not L_493_[1]["Parent"] or L_493_[1]["Humanoid"]["Health"] <= 0
-					else
-						_tp(CFrame["new"](-1943.6765136719, 251.50956726074, -12337.880859375))
-					end
-				end
-				if GetBP("Sweet Chalice") then
-					L_1_[18]["Remotes"]["CommF_"]:InvokeServer("CakePrinceSpawner", true)
-					_G["AutoAttackDoughKing"] = true
-				else
-					_G["AutoAttackDoughKing"] = false
-				end
-				if GetBP("God's Chalice") and GetM("Conjured Cocoa") >= 10 then
-					L_1_[18]["Remotes"]["CommF_"]:InvokeServer("SweetChaliceNpc")
-				end
-				if not L_1_[136]["Backpack"]:FindFirstChild("God's Chalice") or L_1_[136]["Character"]:FindFirstChild("God's Chalice") then
-					_G["FarmEliteHunt"] = true
-				else
-					_G["FarmEliteHunt"] = false
-				end
-				if GetM("Conjured Cocoa") <= 10 then
-					local L_494_ = {}
-					L_494_[2] = GetConnectionEnemies({
-						"Cocoa Warrior";
-						L_1_[2]({
-							"Chocolate Bar Battle";
-							"r"
-						})
-					})
-					if L_494_[2] then
-						repeat
-							task["wait"]()
-							L_1_[4]["Kill"](L_494_[2], _G["AutoDoughKing"])
-						until _G["AutoDoughKing"] == false or not L_494_[2]["Parent"] or L_494_[2]["Humanoid"]["Health"] <= 0
-					else
-						_tp(CFrame["new"](402.71890258789, 81.060501098633, -12259.54296875))
-					end
-				end
-			end)
+_G.AutoDoughKing = true
+_G.FastAttack = true
+_G.BringMobs = true
+
+local CocoaMobs = {
+	"Cocoa Warrior",
+	"Chocolate Bar Battler"
+}
+
+local function Have(item)
+	return GetBP(item)
+end
+
+local function CocoaCount()
+	return GetM("Conjured Cocoa") or 0
+end
+
+local function GetMobByList(list)
+	for _,v in pairs(workspace.Enemies:GetChildren()) do
+		if table.find(list, v.Name)
+		and v:FindFirstChild("Humanoid")
+		and v:FindFirstChild("HumanoidRootPart")
+		and v.Humanoid.Health > 0 then
+			return v
 		end
 	end
-end)
-L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Farm Dough King",
-	["Default"] = false;
-	["Callback"] = function(L_495_arg0)
-		local L_496_ = {}
-		L_496_[2] = L_495_arg0
-		_G["AutoAttackDoughKing"] = L_496_[2]
-	end
-})
-spawn(function()
-	while wait() do
-		if _G["AutoAttackDoughKing"] then
-			pcall(function()
-				local L_497_ = {}
-				L_497_[1] = GetConnectionEnemies("Dough King")
-				if L_497_[1] then
+end
+
+task.spawn(function()
+	while task.wait(0.2) do
+		if not _G.AutoDoughKing then continue end
+
+		pcall(function()
+			local DoughKing = GetConnectionEnemies("Dough King")
+			if DoughKing then
+				repeat
+					if not _G.AutoDoughKing then break end
+					_tp(DoughKing.HumanoidRootPart.CFrame * CFrame.new(0,50,0))
+					L_1_[4].Kill(DoughKing, true)
+					task.wait()
+				until not DoughKing.Parent or DoughKing.Humanoid.Health <= 0
+				return
+			end
+
+			if Have("Sweet Chalice") then
+				L_1_[18].Remotes.CommF_:InvokeServer("CakePrinceSpawner", true)
+				local mob = GetConnectionEnemies({
+					"Cake Guard","Baking Staff","Head Baker",
+					"Cocoa Warrior","Chocolate Bar Battler"
+				})
+				if mob then
 					repeat
-						task["wait"]()
-						L_1_[4]["Kill"](L_497_[1], _G["AutoAttackDoughKing"])
-					until not _G["AutoAttackDoughKing"] or not L_497_[1]["Parent"] or L_497_[1]["Humanoid"]["Health"] <= 0
-				else
-					_tp(CFrame["new"](-1943.6765, 251.5095, -12337.8809))
+						if not _G.AutoDoughKing then break end
+						_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,20,0))
+						L_1_[4].Kill(mob, true)
+						task.wait()
+					until not mob.Parent or mob.Humanoid.Health <= 0
 				end
-			end)
-		end
+				return
+			end
+
+			if Have("God's Chalice") then
+				if CocoaCount() >= 10 then
+					L_1_[18].Remotes.CommF_:InvokeServer("SweetChaliceNpc")
+				else
+					local cocoaMob = GetMobByList(CocoaMobs)
+					if cocoaMob then
+						repeat
+							if not _G.AutoDoughKing then break end
+							_tp(cocoaMob.HumanoidRootPart.CFrame * CFrame.new(0,20,0))
+							L_1_[4].Kill(cocoaMob, true)
+							task.wait()
+						until not cocoaMob.Parent or cocoaMob.Humanoid.Health <= 0
+					else
+						_tp(CFrame.new(402.7,81,-12259.5))
+					end
+				end
+				return
+			end
+
+			_G.FarmEliteHunt = true
+		end)
 	end
 end)
 L_1_[93]["Main"]:AddToggle({
@@ -4682,179 +4674,195 @@ L_1_[93]["Main"]:AddToggle({
 		" + Hop"
 	}),
 	["Default"] = false,
-	["Callback"] = function(L_498_arg0)
-		local L_499_ = {}
-		L_499_[2] = L_498_arg0
-		_G["AutoHop_Dough"] = L_499_[2]
+	["Callback"] = function(v)
+		_G["AutoHop_Dough"] = v
 	end
 })
-L_1_[116] = function()
+local function HopServer_Dough()
 	pcall(function()
-		local L_500_ = {}
-		L_500_[3] = game:GetService("HttpService")
-		L_500_[1] = {}
-		L_500_[2] = game:HttpGet(L_1_[2]({
-			"https://games.roblox",
-			".com/v1/games/"
-		}) .. (game["PlaceId"] .. L_1_[2]({
-			"/servers/Public?sort";
-			"Order=Asc&limit=100"
-		})))
-		L_500_[5] = L_500_[3]:JSONDecode(L_500_[2])
-		for L_501_forvar0, L_502_forvar1 in pairs(L_500_[5]["data"]) do
-			local L_503_ = {}
-			L_503_[2], L_503_[3] = L_501_forvar0, L_502_forvar1
-			if L_503_[3]["playing"] < L_503_[3]["maxPlayers"] then
-				table["insert"](L_500_[1], L_503_[3]["id"])
+		local HttpService = game:GetService("HttpService")
+		local TeleportService = game:GetService("TeleportService")
+		local Players = game:GetService("Players")
+
+		local servers = {}
+		local req = game:HttpGet(
+			"https://games.roblox.com/v1/games/" ..
+			game.PlaceId ..
+			"/servers/Public?sortOrder=Asc&limit=100"
+		)
+
+		local data = HttpService:JSONDecode(req)
+
+		for _, s in pairs(data.data) do
+			if s.playing < s.maxPlayers then
+				table.insert(servers, s.id)
 			end
 		end
-		if #L_500_[1] > 0 then
-			(game:GetService("TeleportService")):TeleportToPlaceInstance(game["PlaceId"], L_500_[1][math["random"](1, #L_500_[1])], game["Players"]["LocalPlayer"])
+
+		if #servers > 0 then
+			TeleportService:TeleportToPlaceInstance(
+				game.PlaceId,
+				servers[math.random(1, #servers)],
+				Players.LocalPlayer
+			)
 		end
 	end)
 end
-spawn(function()
-	while task["wait"]() do
-		if _G["AutoHop_Dough"] then
-			pcall(function()
-				local L_504_ = {}
-				L_504_[2] = GetConnectionEnemies("Dough King")
-				if L_504_[2] then
-					repeat
-						task["wait"]()
-						L_1_[4]["Kill"](L_504_[2], _G["AutoHop_Dough"])
-					until not _G["AutoHop_Dough"] or not L_504_[2]["Parent"] or L_504_[2]["Humanoid"]["Health"] <= 0
-				else
-					local L_505_ = {}
-					_tp(CFrame["new"](-1943.6765, 251.5095, -12337.8809))
-					task["wait"](2)
-					L_505_[1] = GetConnectionEnemies("Dough King")
-					if not L_505_[1] and _G["AutoHop_Dough"] then
-						L_1_[116]()
-					end
-				end
-			end)
+task.spawn(function()
+	local checking = false
+
+	while task.wait(0.5) do
+		if not _G["AutoHop_Dough"] then
+			checking = false
+			task.wait(1)
+			continue
 		end
+
+		pcall(function()
+			local boss = GetConnectionEnemies("Dough King")
+
+			if boss and boss:FindFirstChild("Humanoid")
+			and boss.Humanoid.Health > 0 then
+				checking = false
+
+				repeat
+					if not _G["AutoHop_Dough"] then break end
+					task.wait()
+					L_1_[4]["Kill"](boss, true)
+				until not boss.Parent or boss.Humanoid.Health <= 0
+
+				return
+			end
+
+			if not checking then
+				checking = true
+
+				_tp(CFrame.new(-1943.6765, 251.5095, -12337.8809))
+				task.wait(2)
+
+				if not GetConnectionEnemies("Dough King")
+				and _G["AutoHop_Dough"] then
+					task.wait(1)
+					HopServer_Dough()
+				end
+			end
+		end)
 	end
 end)
 L_1_[93]["Main"]:AddSection({
 	"Unlocked Dungeon"
 })
-DouD = L_1_[93]["Main"]:AddToggle({
+L_1_[93]["Main"]:AddToggle({
 	["Name"] = L_1_[2]({
 		"Auto Unlock Dough du";
 		"ngeon"
 	}),
-	["Description"] = "";
-	["Default"] = false;
-	["Callback"] = function(L_506_arg0)
-		local L_507_ = {}
-		L_507_[1] = L_506_arg0
-		_G["Doughv2"] = L_507_[1]
+	["Description"] = "Dough King is currently available.";
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G.Doughv2 = v
 	end
 })
-spawn(function()
-	while wait(Sec) do
-		if _G["Doughv2"] then
-			pcall(function()
-				if not workspace["Map"]["CakeLoaf"]:FindFirstChild("RedDoor") then
-					if GetBP("Red Key") then
-						L_1_[18]["Remotes"]["CommF_"]:InvokeServer("CakeScientist", "Check")
-						L_1_[18]["Remotes"]["CommF_"]:InvokeServer("RaidsNpc", "Check")
-					end
-				elseif workspace["Map"]["CakeLoaf"]:FindFirstChild("RedDoor") then
-					if GetBP("Red Key") then
-						repeat
-							wait()
-							_tp(CFrame["new"](-2681.97998, 64.3921585, -12853.7363, .149007782, -1.87902192e-08, .98883605, 3.60619588e-08, 1, 1.35681812e-08, -0.98883605, 3.36376011e-08, .149007782))
-						until not _G["Doughv2"] or (L_1_[136]["Character"]["HumanoidRootPart"]["CFrame"] - CFrame["new"](-2681.97998, 64.3921585, -12853.7363, .149007782, -1.87902192e-08, .98883605, 3.60619588e-08, 1, 1.35681812e-08, -0.98883605, 3.36376011e-08, .149007782))["Magnitude"] <= 5
-						EquipWeapon("Red Key")
-					end
-				elseif GetConnectionEnemies("Dough King") then
-					local L_508_ = {}
-					L_508_[2] = GetConnectionEnemies("Dough King")
-					if L_508_[2] then
-						repeat
-							wait()
-							L_1_[4]["Kill"](L_508_[2], _G["Doughv2"])
-						until not _G["Doughv2"] or not L_508_[2]["Parent"] or L_508_[2]["Humanoid"]["Health"] <= 0
-					else
-						_tp(CFrame["new"](-1943.6765136719, 251.50956726074, -12337.880859375))
-					end
-				end
-				if GetBP("Sweet Chalice") then
-					L_1_[18]["Remotes"]["CommF_"]:InvokeServer("CakePrinceSpawner", true)
-					_G["AutoMiror"] = true
-				else
-					_G["AutoMiror"] = false
-				end
-				if GetBP("God's Chalice") and GetM("Conjured Cocoa") >= 10 then
-					L_1_[18]["Remotes"]["CommF_"]:InvokeServer("SweetChaliceNpc")
-				end
-				if not L_1_[136]["Backpack"]:FindFirstChild("God's Chalice") or L_1_[136]["Character"]:FindFirstChild("God's Chalice") then
-					_G["FarmEliteHunt"] = true
-				else
-					_G["FarmEliteHunt"] = false
-				end
-				if GetM("Conjured Cocoa") <= 10 then
-					local L_509_ = {}
-					L_509_[2] = {
-						"Cocoa Warrior";
-						L_1_[2]({
-							"Chocolate Bar Battle";
-							"r"
-						})
-					}
-					L_509_[3] = GetConnectionEnemies(L_509_[2])
-					if L_509_[3] then
-						repeat
-							wait()
-							L_1_[4]["Kill"](L_509_[3], _G["Doughv2"])
-						until _G["Doughv2"] == false or not L_509_[3]["Parent"] or L_509_[3]["Humanoid"]["Health"] <= 0
-					else
-						_tp(CFrame["new"](402.71890258789, 81.060501098633, -12259.54296875))
-					end
-				end
-			end)
+
+task.spawn(function()
+	local doorCF = CFrame.new(
+		-2681.97998, 64.3921585, -12853.7363,
+		0.149007782, 0, 0.98883605,
+		0, 1, 0,
+		-0.98883605, 0, 0.149007782
+	)
+
+	while task.wait(0.4) do
+		if not _G.Doughv2 then
+			continue
 		end
+
+		pcall(function()
+			if not workspace.Map.CakeLoaf:FindFirstChild("RedDoor") then
+				_G.Doughv2 = false
+				return
+			end
+
+			if GetBP("Red Key") then
+				repeat
+					if not _G.Doughv2 then return end
+					task.wait()
+					_tp(doorCF)
+				until (L_1_[136].Character.HumanoidRootPart.Position - doorCF.Position).Magnitude <= 5
+
+				EquipWeapon("Red Key")
+				task.wait(1)
+				return
+			end
+
+			local DK = GetConnectionEnemies("Dough King")
+			if not DK then
+				_G.Doughv2 = false
+				return
+			end
+
+			repeat
+				if not _G.Doughv2 then break end
+				task.wait()
+				L_1_[4]["Kill"](DK, true)
+			until not DK.Parent or DK.Humanoid.Health <= 0
+		end)
 	end
 end)
 PhoD = L_1_[93]["Main"]:AddToggle({
 	["Name"] = L_1_[2]({
 		"Auto Unlock Phoenix ";
 		"dungeon"
-	});
+	}),
 	["Description"] = "",
-	["Default"] = false;
-	["Callback"] = function(L_510_arg0)
-		local L_511_ = {}
-		L_511_[2] = L_510_arg0
-		_G["AutoPhoenixF"] = L_511_[2]
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G["AutoPhoenixF"] = v
 	end
 })
+
 spawn(function()
-	while wait(.1) do
+	while wait(0.2) do
 		if _G["AutoPhoenixF"] then
 			pcall(function()
-				if GetBP("Bird-Bird: Phoenix") then
-					if L_1_[136]["Backpack"]:FindFirstChild(L_1_[136]["Data"]["DevilFruit"]["Value"]) then
-						if (L_1_[136]["Backpack"]:FindFirstChild(L_1_[136]["Data"]["DevilFruit"]["Value"]))["Level"]["Value"] >= 400 then
-							_tp(CFrame["new"](-2812.7670898438, 254.80346679688, -12595.560546875))
-							if ((CFrame["new"](-2812.7670898438, 254.80346679688, -12595.560546875))["Position"] - L_1_[136]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] <= 10 then
-								L_1_[18]["Remotes"]["CommF_"]:InvokeServer("SickScientist", "Check")
-								L_1_[18]["Remotes"]["CommF_"]:InvokeServer("SickScientist", "Heal")
-							end
-						end
-					elseif L_1_[136]["Character"]:FindFirstChild(L_1_[136]["Data"]["DevilFruit"]["Value"]) then
-						if (L_1_[136]["Character"]:FindFirstChild(L_1_[136]["Data"]["DevilFruit"]["Value"]))["Level"]["Value"] >= 400 then
-							_tp(CFrame["new"](-2812.7670898438, 254.80346679688, -12595.560546875))
-							if ((CFrame["new"](-2812.7670898438, 254.80346679688, -12595.560546875))["Position"] - L_1_[136]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] <= 10 then
-								L_1_[18]["Remotes"]["CommF_"]:InvokeServer("SickScientist", "Check")
-								L_1_[18]["Remotes"]["CommF_"]:InvokeServer("SickScientist", "Heal")
-							end
-						end
-					end
+
+				if workspace.Map:FindFirstChild("PhoenixDungeon") then
+					_G["AutoPhoenixF"] = false
+					return
 				end
+
+				if not GetBP("Bird-Bird: Phoenix") then
+					_G["AutoPhoenixF"] = false
+					return
+				end
+
+				local FruitName = L_1_[136].Data.DevilFruit.Value
+				local Fruit
+
+				if L_1_[136].Backpack:FindFirstChild(FruitName) then
+					Fruit = L_1_[136].Backpack[FruitName]
+				elseif L_1_[136].Character:FindFirstChild(FruitName) then
+					Fruit = L_1_[136].Character[FruitName]
+				end
+
+				if not Fruit then
+					_G["AutoPhoenixF"] = false
+					return
+				end
+
+				if Fruit.Level.Value < 400 then
+					_G["AutoPhoenixF"] = false
+					return
+				end
+
+				local Pos = CFrame.new(-2812.7670898438, 254.80346679688, -12595.560546875)
+				_tp(Pos)
+
+				if (Pos.Position - L_1_[136].Character.HumanoidRootPart.Position).Magnitude <= 10 then
+					L_1_[18].Remotes.CommF_:InvokeServer("SickScientist", "Check")
+					L_1_[18].Remotes.CommF_:InvokeServer("SickScientist", "Heal")
+				end
+
 			end)
 		end
 	end
@@ -4865,13 +4873,9 @@ CheckingBone = L_1_[93]["Main"]:AddParagraph({
 	["Title"] = "Bones :",
 	["Content"] = ""
 })
-
 spawn(function()
-	while task.wait(0.5) do
-		pcall(function()
-			local bone = game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Bones","Check")
-			CheckingBone:SetDesc(" Bones : "..tostring(bone))
-		end)
+	while wait(1) do
+		StatusBone:SetDesc("You Have: " .. (tostring((game:GetService("ReplicatedStorage"))["Remotes"]["CommF_"]:InvokeServer("Bones", "Check")) .. " Bones"))
 	end
 end)
 L_1_[93]["Main"]:AddSection({"Farming Bone"})
@@ -4889,7 +4893,6 @@ spawn(function()
 		end)
 	end
 end)
-
 L_1_[93]["Main"]:AddToggle({
 	Name = "Auto Farm Bone + Soul Reaper",
 	Description = "",
@@ -4907,6 +4910,7 @@ L_1_[93]["Main"]:AddToggle({
 		_G.AcceptQuestB = v
 	end
 })
+
 local BoneQuestPos = CFrame.new(-9516.99,172.01,6078.46)
 local SoulSummonPos = CFrame.new(-8932.3223,146.8315,6062.5508)
 local BoneOffset = CFrame.new(0,15,0)
@@ -4917,6 +4921,9 @@ local BoneMobs = {
 	["Demonic Soul"] = true,
 	["Possessed Mummy"] = true
 }
+
+local SummonCooldown = false
+
 spawn(function()
 	while task.wait(0.2) do
 		if not _G.AutoFarm_Bone then
@@ -4928,7 +4935,6 @@ spawn(function()
 			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
 			if not HRP then return end
 
-			-- AUTO BUSO
 			if Boud and not Char:FindFirstChild("HasBuso") then
 				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
@@ -4959,12 +4965,23 @@ spawn(function()
 
 				return
 			end
-			if GetBP("Hallow Essence") then
+
+			if GetBP("Hallow Essence") and not SummonCooldown then
 				_tp(SoulSummonPos)
+
 				if (HRP.Position - SoulSummonPos.Position).Magnitude <= 6 then
-					EquipWeapon("Hallow Essence")
+					local Tool = plr.Backpack:FindFirstChild("Hallow Essence")
+					if Tool then
+						SummonCooldown = true
+						Tool.Parent = Char
+						task.wait(0.2)
+						Tool:Activate() -- 🔥 FIX QUAN TRỌNG
+						task.wait(3)
+						SummonCooldown = false
+					end
 				end
 			end
+
 			local QuestGui = plr.PlayerGui.Main:FindFirstChild("Quest")
 			if _G.AcceptQuestB and QuestGui and not QuestGui.Visible then
 				_tp(BoneQuestPos)
@@ -4973,6 +4990,7 @@ spawn(function()
 					"StartQuest","HauntedQuest2",1
 				)
 			end
+
 			for _,mob in pairs(Enemies:GetChildren()) do
 				if BoneMobs[mob.Name]
 				and mob:FindFirstChild("Humanoid")
