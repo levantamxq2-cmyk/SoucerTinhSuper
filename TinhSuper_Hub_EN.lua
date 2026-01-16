@@ -4395,6 +4395,13 @@ spawn(function()
 		end)
 	end
 end)
+-- =========================
+-- AUTO FARM CAKE – FULL (UPGRADED, CORE-COMPATIBLE)
+-- Farm mob thường + Auto Quest + Auto Summon + Auto Kill Cake Prince
+-- Logic giống farm Bone, KHÔNG đứng yên, KHÔNG kẹt
+-- =========================
+
+-- ===== TOGGLE =====
 Cake = L_1_[93]["Main"]:AddToggle({
 	["Name"] = L_1_[2]({"Auto Farm Cake Princ","e"}),
 	["Description"] = "",
@@ -4413,105 +4420,145 @@ CakeQ = L_1_[93]["Main"]:AddToggle({
 	end
 })
 
+CakeSM = L_1_[93]["Main"]:AddToggle({
+	["Name"] = L_1_[2]({"Auto Summon Cake Pri","nce"}),
+	["Description"] = "",
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G.AutoSpawnCP = v
+	end
+})
+
+-- ===== CONFIG =====
+local CakeQuestPos = CFrame.new(-1927.92, 37.8, -12842.54)
+local CakeFarmPos  = CFrame.new(-2130.8071, 69.9563, -12327.8398)
+local PlayerOffset = CFrame.new(0, 20, 0)
+
+local CakeMobs = {
+	["Cookie Crafter"] = true,
+	["Cake Guard"] = true,
+	["Baking Staff"] = true,
+	["Head Baker"] = true
+}
+
+-- =========================
+-- MAIN LOOP
+-- =========================
 spawn(function()
-	-- dùng core có sẵn
-	local CakeMobs = {
-		["Cookie Crafter"] = true,
-		["Cake Guard"] = true,
-		["Baking Staff"] = true,
-		["Head Baker"] = true
-	}
-
-	local QuestPos = CFrame.new(-1927.92, 37.8, -12842.54)
-
 	while task.wait(0.2) do
 		if not _G.Auto_Cake_Prince then
+			bringmob = false
 			continue
 		end
 
 		pcall(function()
-			if not Root then return end
+			local Char = plr.Character
+			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
+			if not HRP then return end
 
-			-- AUTO BUSO (DÙNG CORE BẠN)
-			if Boud and not plr.Character:FindFirstChild("HasBuso") then
+			-- ===== AUTO BUSO =====
+			if Boud and not Char:FindFirstChild("HasBuso") then
 				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
 
-			-- AUTO NHẬN QUEST (VĨNH VIỄN)
-			local QuestGui = plr.PlayerGui.Main.Quest
-			if _G.AcceptQuestC and QuestGui and not QuestGui.Visible then
-				_tp(QuestPos)
+			-- =========================
+			-- 1️⃣ CAKE PRINCE ƯU TIÊN
+			-- =========================
+			local Boss = Enemies:FindFirstChild("Cake Prince")
+			if Boss and Boss:FindFirstChild("Humanoid") and Boss.Humanoid.Health > 0 then
+				repeat
+					task.wait()
+					EquipWeapon(_G.SelectWeapon)
+
+					if Boud and not Char:FindFirstChild("HasBuso") then
+						replicated.Remotes.CommF_:InvokeServer("Buso")
+					end
+
+					_tp(Boss.HumanoidRootPart.CFrame * PlayerOffset)
+
+					Boss.HumanoidRootPart.CanCollide = false
+					Boss.Humanoid.WalkSpeed = 0
+					Boss.Humanoid.JumpPower = 0
+					if Boss:FindFirstChild("Head") then
+						Boss.Head.CanCollide = false
+					end
+				until not _G.Auto_Cake_Prince
+				   or not Boss.Parent
+				   or Boss.Humanoid.Health <= 0
+
 				task.wait(1)
-				replicated.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",1)
+				return
 			end
 
-			-- FARM LOOP (Y HỆT FARM BONE)
-			for _, mob in pairs(Enemies:GetChildren()) do
+			-- =========================
+			-- 2️⃣ AUTO SUMMON CAKE PRINCE
+			-- =========================
+			if _G.AutoSpawnCP then
+				local CakeLoaf = workspace.Map:FindFirstChild("CakeLoaf")
+				local BigMirror = CakeLoaf and CakeLoaf:FindFirstChild("BigMirror")
+				if BigMirror
+				and not Enemies:FindFirstChild("Cake Prince")
+				and BigMirror.Other.Transparency ~= 0 then
+					replicated.Remotes.CommF_:InvokeServer("CakePrinceSpawner", true)
+				end
+			end
+
+			-- =========================
+			-- 3️⃣ AUTO QUEST
+			-- =========================
+			local QuestGui = plr.PlayerGui.Main.Quest
+			if _G.AcceptQuestC and QuestGui and not QuestGui.Visible then
+				_tp(CakeQuestPos)
+				task.wait(1)
+				replicated.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",2)
+			end
+
+			-- =========================
+			-- 4️⃣ FARM MOB THƯỜNG
+			-- =========================
+			local FoundMob = false
+			for _,mob in pairs(Enemies:GetChildren()) do
 				if CakeMobs[mob.Name]
 				and mob:FindFirstChild("Humanoid")
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob.Humanoid.Health > 0 then
 
+					FoundMob = true
+					bringmob = true
+					FarmPos = mob.HumanoidRootPart.CFrame
+					MonFarm = mob.Name
+
 					repeat
 						task.wait()
 						EquipWeapon(_G.SelectWeapon)
 
-						-- bật buso liên tục
-						if Boud and not plr.Character:FindFirstChild("HasBuso") then
+						if Boud and not Char:FindFirstChild("HasBuso") then
 							replicated.Remotes.CommF_:InvokeServer("Buso")
 						end
 
-						-- TP lên đầu quái (GIỐNG BONE)
-						_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,15,0))
+						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
 
-						-- khóa quái
+						mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
+						mob.HumanoidRootPart.Transparency = 1
 						mob.HumanoidRootPart.CanCollide = false
 						mob.Humanoid.WalkSpeed = 0
 						mob.Humanoid.JumpPower = 0
-						if mob:FindFirstChild("Head") then
-							mob.Head.CanCollide = false
-						end
 					until not _G.Auto_Cake_Prince
 					   or not mob.Parent
 					   or mob.Humanoid.Health <= 0
+
+					bringmob = false
 				end
 			end
+
+			-- =========================
+			-- 5️⃣ KHÔNG CÓ MOB → BAY VỀ FARM
+			-- =========================
+			if not FoundMob then
+				_tp(CakeFarmPos * PlayerOffset)
+				task.wait(1)
+			end
 		end)
-	end
-end)
-CakeSM = L_1_[93]["Main"]:AddToggle({
-	["Name"] = L_1_[2]({
-		"Auto Summon Cake Pri",
-		"nce"
-	}),
-	["Description"] = "";
-	["Default"] = false;
-	["Callback"] = function(L_488_arg0)
-		local L_489_ = {}
-		L_489_[1] = L_488_arg0
-		_G["AutoSpawnCP"] = L_489_[1]
-	end
-})
-spawn(function()
-	while task["wait"](2) do
-		if _G["AutoSpawnCP"] then
-			pcall(function()
-				local L_490_ = {}
-				L_490_[3] = game["ReplicatedStorage"]["Remotes"]["CommF_"]
-				L_490_[4] = workspace["Enemies"]
-				L_490_[1] = workspace["Map"]["CakeLoaf"]:FindFirstChild("BigMirror")
-				if not L_490_[1] then
-					return
-				end
-				if L_490_[4]:FindFirstChild("Cake Prince") then
-					return
-				end
-				if L_490_[1]["Other"]["Transparency"] == 0 then
-					return
-				end
-				L_490_[3]:InvokeServer("CakePrinceSpawner", true)
-			end)
-		end
 	end
 end)
 L_1_[93]["Main"]:AddToggle({
