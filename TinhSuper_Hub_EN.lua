@@ -4899,7 +4899,7 @@ local BoneRunning = false
 local BoneThread = nil
 
 L_1_[93]["Main"]:AddToggle({
-	Name = "Tự Động Cày Bone + Soul Reaper",
+	Name = "Auto Farm Bone + Soul Reaper",
 	Default = false,
 	Callback = function(v)
 		_G.AutoFarm_Bone = v
@@ -4917,7 +4917,7 @@ L_1_[93]["Main"]:AddToggle({
 })
 
 L_1_[93]["Main"]:AddToggle({
-	Name = "Nhận Nhiệm Vụ Farm Bone",
+	Name = "Auto Quest Bone",
 	Default = true,
 	Callback = function(v)
 		_G.AcceptQuestB = v
