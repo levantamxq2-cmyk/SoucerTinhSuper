@@ -4380,21 +4380,23 @@ end)
 L_1_[93]["Main"]:AddSection({
 	"Farming Cake"
 })
+
 MobKilled = L_1_[93]["Main"]:AddParagraph({
 	["Title"] = "Cake Princes :";
 	["Content"] = ""
 })
+
 spawn(function()
 	while wait(.2) do
 		pcall(function()
-			local L_479_ = {}
-			L_479_[1] = string["match"](L_1_[18]["Remotes"]["CommF_"]:InvokeServer("CakePrinceSpawner"), "%d+")
-			if L_479_[1] then
-				MobKilled:SetDesc(" Killed : " .. 500 - L_479_[1])
+			local left = string.match(L_1_[18].Remotes.CommF_:InvokeServer("CakePrinceSpawner"), "%d+")
+			if left then
+				MobKilled:SetDesc(" Killed : " .. 500 - left)
 			end
 		end)
 	end
 end)
+
 Cake = L_1_[93]["Main"]:AddToggle({
 	["Name"] = L_1_[2]({"Auto Farm Cake Princ","e"}),
 	["Description"] = "",
@@ -4422,7 +4424,6 @@ CakeSM = L_1_[93]["Main"]:AddToggle({
 	end
 })
 
--- ===== CONFIG =====
 local CakeQuestPos = CFrame.new(-1927.92, 37.8, -12842.54)
 local CakeFarmPos  = CFrame.new(-2130.8071, 69.9563, -12327.8398)
 local PlayerOffset = CFrame.new(0, 20, 0)
@@ -4433,8 +4434,9 @@ local CakeMobs = {
 	["Baking Staff"] = true,
 	["Head Baker"] = true
 }
+
 spawn(function()
-	while task.wait(0.2) do
+	while task.wait(0.15) do
 		if not _G.Auto_Cake_Prince then
 			bringmob = false
 			continue
@@ -4445,38 +4447,37 @@ spawn(function()
 			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
 			if not HRP then return end
 
-			-- AUTO BUSO (LUÔN KIỂM TRA)
+			-- AUTO BUSO
 			if Boud and not Char:FindFirstChild("HasBuso") then
 				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
 
 			local Boss = Enemies:FindFirstChild("Cake Prince")
-			if Boss and Boss:FindFirstChild("Humanoid") and Boss.Humanoid.Health > 0 then
+			if Boss and Boss:FindFirstChild("HumanoidRootPart") and Boss.Humanoid.Health > 0 then
 				bringmob = false
 				MonFarm = "Cake Prince"
 
 				repeat
 					task.wait()
-					EquipWeapon(_G.SelectWeapon)
 
+					if not _G.Auto_Cake_Prince then break end
+					if not Boss.Parent or Boss.Humanoid.Health <= 0 then break end
+
+					EquipWeapon(_G.SelectWeapon)
 					if Boud and not Char:FindFirstChild("HasBuso") then
 						replicated.Remotes.CommF_:InvokeServer("Buso")
 					end
 
-					_tp(Boss.HumanoidRootPart.CFrame * CFrame.new(0,20,0))
+					_tp(Boss.HumanoidRootPart.CFrame * PlayerOffset)
 
 					Boss.HumanoidRootPart.CanCollide = false
 					Boss.HumanoidRootPart.Size = Vector3.new(80,80,80)
 					Boss.Humanoid.WalkSpeed = 0
 					Boss.Humanoid.JumpPower = 0
-					if Boss:FindFirstChild("Head") then
-						Boss.Head.CanCollide = false
-					end
-				until not _G.Auto_Cake_Prince
-				   or not Boss.Parent
-				   or Boss.Humanoid.Health <= 0
+				until false
 
-				task.wait(1) 
+				task.wait(0.5)
+				return
 			end
 
 			if _G.AutoSpawnCP then
@@ -4488,10 +4489,9 @@ spawn(function()
 					replicated.Remotes.CommF_:InvokeServer("CakePrinceSpawner", true)
 				end
 			end
-
 			local QuestGui = plr.PlayerGui.Main.Quest
 			if _G.AcceptQuestC and QuestGui and not QuestGui.Visible then
-				_tp(CFrame.new(-1927.92, 37.8, -12842.54))
+				_tp(CakeQuestPos)
 				task.wait(1)
 				replicated.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",2)
 			end
@@ -4499,8 +4499,8 @@ spawn(function()
 			local FoundMob = false
 			for _,mob in pairs(Enemies:GetChildren()) do
 				if CakeMobs[mob.Name]
-				and mob:FindFirstChild("Humanoid")
 				and mob:FindFirstChild("HumanoidRootPart")
+				and mob:FindFirstChild("Humanoid")
 				and mob.Humanoid.Health > 0 then
 
 					FoundMob = true
@@ -4510,28 +4510,35 @@ spawn(function()
 
 					repeat
 						task.wait()
-						EquipWeapon(_G.SelectWeapon)
 
+						if Enemies:FindFirstChild("Cake Prince") then
+							bringmob = false
+							return
+						end
+
+						if not _G.Auto_Cake_Prince then break end
+						if not mob.Parent or mob.Humanoid.Health <= 0 then break end
+
+						EquipWeapon(_G.SelectWeapon)
 						if Boud and not Char:FindFirstChild("HasBuso") then
 							replicated.Remotes.CommF_:InvokeServer("Buso")
 						end
 
-						_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,20,0))
+						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
 
 						mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
 						mob.HumanoidRootPart.Transparency = 1
 						mob.HumanoidRootPart.CanCollide = false
 						mob.Humanoid.WalkSpeed = 0
 						mob.Humanoid.JumpPower = 0
-					until not _G.Auto_Cake_Prince
-					   or not mob.Parent
-					   or mob.Humanoid.Health <= 0
+					until false
 
 					bringmob = false
 				end
 			end
+
 			if not FoundMob then
-				_tp(CFrame.new(-2130.8, 70, -12327.8) * CFrame.new(0,20,0))
+				_tp(CakeFarmPos * PlayerOffset)
 			end
 		end)
 	end
@@ -4845,26 +4852,20 @@ spawn(function()
 		end)
 	end
 end)
--- =========================
--- FIX AUTO FARM BONE
--- Đánh liên tục + bật Buso
--- Giữ nguyên logic cũ, CHỈ SỬA LỖI
--- =========================
-
 L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Farm Bone";
-	["Description"] = "",
-	["Default"] = false;
-	["Callback"] = function(v)
+	Name = "Auto Farm Bone + Soul Reaper",
+	Description = "",
+	Default = false,
+	Callback = function(v)
 		_G.AutoFarm_Bone = v
 	end
 })
 
-BoneQ = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Accept Quests",
-	["Description"] = "",
-	["Default"] = true,
-	["Callback"] = function(v)
+L_1_[93]["Main"]:AddToggle({
+	Name = "Accept Quests",
+	Description = "",
+	Default = true,
+	Callback = function(v)
 		_G.AcceptQuestB = v
 	end
 })
@@ -4872,6 +4873,7 @@ BoneQ = L_1_[93]["Main"]:AddToggle({
 spawn(function()
 	local Player = game.Players.LocalPlayer
 	local Enemies = workspace.Enemies
+
 	local BoneMobs = {
 		["Reborn Skeleton"] = true,
 		["Living Zombie"] = true,
@@ -4889,39 +4891,69 @@ spawn(function()
 			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
 			if not HRP then return end
 
-			-- AUTO BUSO
 			if Boud and not Char:FindFirstChild("HasBuso") then
 				game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
 			end
 
-			-- QUEST
-			local QuestGui = Player.PlayerGui.Main.Quest
+			local SoulReaper = nil
+			for _,v in pairs(Enemies:GetChildren()) do
+				if v.Name == "Soul Reaper"
+				and v:FindFirstChild("Humanoid")
+				and v:FindFirstChild("HumanoidRootPart")
+				and v.Humanoid.Health > 0 then
+					SoulReaper = v
+					break
+				end
+			end
+
+			if SoulReaper then
+				repeat
+					task.wait()
+					EquipWeapon(_G.SelectWeapon)
+
+					if Boud and not Char:FindFirstChild("HasBuso") then
+						game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
+					end
+
+					_tp(SoulReaper.HumanoidRootPart.CFrame * CFrame.new(0,15,0))
+
+					SoulReaper.HumanoidRootPart.CanCollide = false
+					SoulReaper.Humanoid.WalkSpeed = 0
+					SoulReaper.Humanoid.JumpPower = 0
+				until not _G.AutoFarm_Bone
+				   or not SoulReaper.Parent
+				   or SoulReaper.Humanoid.Health <= 0
+
+				return
+			end
+
+			local QuestGui = Player.PlayerGui.Main:FindFirstChild("Quest")
 			if _G.AcceptQuestB and QuestGui and not QuestGui.Visible then
 				_tp(CFrame.new(-9516.99,172.01,6078.46))
 				task.wait(1)
-				game.ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest","HauntedQuest2",1)
+				game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+					"StartQuest","HauntedQuest2",1
+				)
 			end
 
-			-- FARM LOOP (KHÔNG DỪNG SAU 1 CON)
+			local HasMob = false
 			for _,mob in pairs(Enemies:GetChildren()) do
 				if BoneMobs[mob.Name]
 				and mob:FindFirstChild("Humanoid")
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob.Humanoid.Health > 0 then
 
+					HasMob = true
 					repeat
 						task.wait()
 						EquipWeapon(_G.SelectWeapon)
 
-						-- luôn bật buso khi đánh
 						if Boud and not Char:FindFirstChild("HasBuso") then
 							game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
 						end
 
-						-- TP lên đầu quái
 						_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,15,0))
 
-						-- khóa quái
 						mob.HumanoidRootPart.CanCollide = false
 						mob.Humanoid.WalkSpeed = 0
 						mob.Humanoid.JumpPower = 0
@@ -4933,362 +4965,245 @@ spawn(function()
 					   or mob.Humanoid.Health <= 0
 				end
 			end
+
+			if not HasMob and FarmPos then
+				_tp(FarmPos)
+			end
 		end)
 	end
 end)
-L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Soul Reaper",
-	["Description"] = "";
-	["Default"] = false,
-	["Callback"] = function(L_519_arg0)
-		local L_520_ = {}
-		L_520_[2] = L_519_arg0
-		_G["AutoHytHallow"] = L_520_[2]
+RanBone = L_1_[93]["Main"]:AddToggle({
+	Name = "Auto Random Bones",
+	Description = "",
+	Default = false,
+	Callback = function(v)
+		_G.Auto_Random_Bone = v
 	end
 })
+
 spawn(function()
-	while wait(Sec) do
-		if _G["AutoHytHallow"] then
+	while task.wait(1) do
+		if _G.Auto_Random_Bone then
 			pcall(function()
-				local L_521_ = {}
-				L_521_[2] = GetConnectionEnemies("Soul Reaper")
-				if L_521_[2] then
-					repeat
-						task["wait"]()
-						L_1_[4]["Kill"](L_521_[2], _G["AutoHytHallow"])
-					until L_521_[2]["Humanoid"]["Health"] <= 0 or _G["AutoHytHallow"] == false
-				else
-					if not GetBP("Hallow Essence") then
-						repeat
-							task["wait"](.1)
-							L_1_[18]["Remotes"]["CommF_"]:InvokeServer("Bones", "Buy", 1, 1)
-						until _G["AutoHytHallow"] == false or GetBP("Hallow Essence")
-					else
-						repeat
-							wait(.1)
-							_tp(CFrame["new"](-8932.322265625, 146.83154296875, 6062.55078125))
-						until _G["AutoHytHallow"] == false or L_1_[136]["Character"]["HumanoidRootPart"]["CFrame"] == CFrame["new"](-8932.322265625, 146.83154296875, 6062.55078125)
-						EquipWeapon("Hallow Essence")
-					end
-				end
+				game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+					"Bones", "Buy", 1, 1
+				)
 			end)
 		end
 	end
 end)
-RanBone = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Random Bones",
-	["Description"] = "",
-	["Default"] = false;
-	["Callback"] = function(L_522_arg0)
-		local L_523_ = {}
-		L_523_[1] = L_522_arg0
-		_G["Auto_Random_Bone"] = L_523_[1]
-	end
-})
-spawn(function()
-	while wait(Sec) do
-		pcall(function()
-			if _G["Auto_Random_Bone"] then
-				repeat
-					task["wait"]()
-					L_1_[18]["Remotes"]["CommF_"]:InvokeServer("Bones", "Buy", 1, 1)
-				until not _G["Auto_Random_Bone"]
-			end
-		end)
-	end
-end)
 Lucky = L_1_[93]["Main"]:AddToggle({
-	["Name"] = L_1_[2]({
-		"Auto Try Luck Graves",
-		"tone"
-	}),
-	["Description"] = "";
-	["Default"] = false;
-	["Callback"] = function(L_524_arg0)
-		local L_525_ = {}
-		L_525_[2] = L_524_arg0
-		_G["TryLucky"] = L_525_[2]
+	Name = "Auto Try Luck Graves",
+	Description = "",
+	Default = false,
+	Callback = function(v)
+		_G.TryLucky = v
 	end
 })
+
+local GravePos = CFrame.new(-8761.3154, 164.8583, 6161.1567)
+
 spawn(function()
-	while wait(Sec) do
-		if _G["TryLucky"] then
-			local L_526_ = {}
-			L_526_[1] = CFrame["new"](-8761.3154296875, 164.85829162598, 6161.1567382813)
-			if L_1_[136]["Character"]["HumanoidRootPart"]["CFrame"] ~= L_526_[1] then
-				_tp(CFrame["new"](-8761.3154296875, 164.85829162598, 6161.1567382813))
-			elseif L_1_[136]["Character"]["HumanoidRootPart"]["CFrame"] == L_526_[1] then
-				L_1_[18]["Remotes"]["CommF_"]:InvokeServer("gravestoneEvent", 1)
-			end
+	while task.wait(0.5) do
+		if _G.TryLucky then
+			pcall(function()
+				local Char = game.Players.LocalPlayer.Character
+				local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
+				if not HRP then return end
+
+				if (HRP.Position - GravePos.Position).Magnitude > 5 then
+					_tp(GravePos)
+				else
+					game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+						"gravestoneEvent", 1
+					)
+					task.wait(2)
+				end
+			end)
 		end
 	end
 end)
 Pray = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Pray Gravestone";
-	["Description"] = "",
-	["Default"] = false;
-	["Callback"] = function(L_527_arg0)
-		local L_528_ = {}
-		L_528_[2] = L_527_arg0
-		_G["Praying"] = L_528_[2]
+	Name = "Auto Pray Gravestone",
+	Description = "",
+	Default = false,
+	Callback = function(v)
+		_G.Praying = v
 	end
 })
+
 spawn(function()
-	while wait(Sec) do
-		if _G["Praying"] then
-			local L_529_ = {}
-			L_529_[2] = CFrame["new"](-8761.3154296875, 164.85829162598, 6161.1567382813)
-			if L_1_[136]["Character"]["HumanoidRootPart"]["CFrame"] ~= L_529_[2] then
-				_tp(CFrame["new"](-8761.3154296875, 164.85829162598, 6161.1567382813))
-			elseif L_1_[136]["Character"]["HumanoidRootPart"]["CFrame"] == L_529_[2] then
-				L_1_[18]["Remotes"]["CommF_"]:InvokeServer("gravestoneEvent", 2)
-			end
-		end
-	end
-end)
-L_1_[93]["Main"]:AddSection({
-	"Tyrant of the Skies"
-})
-TyrantStatus = L_1_[93]["Main"]:AddParagraph({
-	["Title"] = "Boss Spawn",
-	["Content"] = ""
-})
-spawn(function()
-	pcall(function()
-		while wait(1) do
-			if workspace["Enemies"]:FindFirstChild("Tyrant of the Skies") then
-				TyrantStatus:SetDesc("✅")
-			else
-				TyrantStatus:SetDesc("❌")
-			end
-		end
-	end)
-end)
-EyeStatus = L_1_[93]["Main"]:AddParagraph({
-	["Title"] = "Check Status Eyes",
-	["Content"] = ""
-})
-function Check_Eye()
-	local L_530_ = {}
-	L_530_[4] = workspace["Map"]["TikiOutpost"]["IslandModel"]
-	L_530_[1] = {
-		L_530_[4]["Eye1"];
-		L_530_[4]["Eye2"],
-		L_530_[4]["IslandChunks"]["E"]["Eye3"];
-		L_530_[4]["IslandChunks"]["E"]["Eye4"]
-	}
-	L_530_[3] = 0
-	for L_531_forvar0, L_532_forvar1 in ipairs(L_530_[1]) do
-		local L_533_ = {}
-		L_533_[2], L_533_[3] = L_531_forvar0, L_532_forvar1
-		if L_533_[3] and L_533_[3]["Transparency"] ~= 1 then
-			R_[3] += 1
-		end
-	end
-	L_530_[2] = L_530_[3] == 4
-	return L_530_[3], L_530_[2]
-end
-task["spawn"](function()
-	local L_534_ = {}
-	L_534_[2] = false
-	while task["wait"](1) do
-		local L_535_ = {}
-		L_535_[1], L_535_[2] = Check_Eye()
-		EyeStatus:SetDesc("Eyes: " .. (L_535_[1] .. "/4"))
-		if L_535_[2] and not L_534_[2] then
-			L_534_[2] = true
-		elseif not L_535_[2] then
-			L_534_[2] = false
-		end
-	end
-end)
-FarmTyrant = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Farm Boss";
-	["Description"] = "",
-	["Default"] = false,
-	["Callback"] = function(L_536_arg0)
-		local L_537_ = {}
-		L_537_[2] = L_536_arg0
-		_G["FarmTyrant"] = L_537_[2]
-	end
-})
-spawn(function()
-	while wait(Sec) do
-		if _G["FarmTyrant"] then
+	while task.wait(0.5) do
+		if _G.Praying then
 			pcall(function()
-				local L_538_ = {}
-				if not L_1_[136]["Character"] then
-					return
-				end
-				L_538_[3] = L_1_[136]["Character"]:FindFirstChild("HumanoidRootPart")
-				if not L_538_[3] then
-					return
-				end
-				L_538_[1] = Vector3["new"](-16268.287, 152.616, 1390.773)
-				if (L_538_[3]["Position"] - L_538_[1])["Magnitude"] > 5 then
-					_tp(CFrame["new"](L_538_[1]))
-					repeat
-						wait()
-					until not _G["FarmTyrant"] or L_1_[136]["Character"] and (L_1_[136]["Character"]:FindFirstChild("HumanoidRootPart") and (L_1_[136]["Character"]["HumanoidRootPart"]["Position"] - L_538_[1])["Magnitude"] <= 5)
-				end
-				L_538_[4] = workspace["Enemies"]:FindFirstChild("Tyrant of the Skies")
-				if L_538_[4] and (L_538_[4]:FindFirstChild("Humanoid") and L_538_[4]["Humanoid"]["Health"] > 0) then
-					repeat
-						if not _G["FarmTyrant"] then
-							break
-						end
-						if L_1_[4] and L_1_[4]["Kill"] then
-							L_1_[4]["Kill"](L_538_[4], _G["FarmTyrant"])
-						end
-						wait()
-					until not _G["FarmTyrant"] or not L_538_[4]["Parent"] or L_538_[4]["Humanoid"]["Health"] <= 0
-					return
-				end
-				L_538_[5] = {
-					"Serpent Hunter";
-					"Skull Slayer",
-					"Isle Champion";
-					"Sun-kissed Warrior"
-				}
-				for L_539_forvar0, L_540_forvar1 in ipairs(L_538_[5]) do
-					local L_541_ = {}
-					L_541_[1], L_541_[2] = L_539_forvar0, L_540_forvar1
-					if not _G["FarmTyrant"] then
-						break
-					end
-					for L_542_forvar0, L_543_forvar1 in pairs(workspace["Enemies"]:GetChildren()) do
-						local L_544_ = {}
-						L_544_[2], L_544_[3] = L_542_forvar0, L_543_forvar1
-						if not _G["FarmTyrant"] then
-							break
-						end
-						if L_544_[3] and (L_544_[3]["Name"] == L_541_[2] and (L_544_[3]:FindFirstChild("HumanoidRootPart") and (L_544_[3]:FindFirstChild("Humanoid") and L_544_[3]["Humanoid"]["Health"] > 0))) then
-							if (L_538_[3]["Position"] - L_544_[3]["HumanoidRootPart"]["Position"])["Magnitude"] > 5000 then
-								local L_545_ = {}
-								_tp(L_544_[3]["HumanoidRootPart"]["CFrame"] * CFrame["new"](0, 30, 0))
-								L_545_[2] = tick()
-								repeat
-									wait()
-									L_538_[3] = L_1_[136]["Character"] and L_1_[136]["Character"]:FindFirstChild("HumanoidRootPart")
-								until not _G["FarmTyrant"] or not L_538_[3] or (L_538_[3]["Position"] - L_544_[3]["HumanoidRootPart"]["Position"])["Magnitude"] <= 6 or tick() - L_545_[2] > 8
-							end
-							repeat
-								if not _G["FarmTyrant"] then
-									break
-								end
-								if L_1_[4] and L_1_[4]["Kill"] then
-									L_1_[4]["Kill"](L_544_[3], _G["FarmTyrant"])
-								end
-								wait()
-							until not _G["FarmTyrant"] or not L_544_[3]["Parent"] or L_544_[3]["Humanoid"]["Health"] <= 0
-						end
-					end
+				local Char = game.Players.LocalPlayer.Character
+				local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
+				if not HRP then return end
+
+				if (HRP.Position - GravePos.Position).Magnitude > 5 then
+					_tp(GravePos)
+				else
+					game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+						"gravestoneEvent", 2
+					)
+					task.wait(2)
 				end
 			end)
 		end
 	end
 end)
-FarmPhaBinh = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Summon Boss";
-	["Description"] = "",
-	["Default"] = false;
-	["Callback"] = function(L_546_arg0)
-		local L_547_ = {}
-		L_547_[2] = L_546_arg0
-		_G["FarmPhaBinh"] = L_547_[2]
+L_1_[93]["Main"]:AddSection({ "Tyrant of the Skies" })
+
+TyrantStatus = L_1_[93]["Main"]:AddParagraph({
+	Title = "Boss Spawn",
+	Content = ""
+})
+
+EyeStatus = L_1_[93]["Main"]:AddParagraph({
+	Title = "Check Status Eyes",
+	Content = ""
+})
+
+FarmTyrant = L_1_[93]["Main"]:AddToggle({
+	Name = "Auto Farm Tyrant (Fully)",
+	Description = "",
+	Default = false,
+	Callback = function(v)
+		_G.FarmTyrant = v
 	end
 })
-L_1_[100] = function(L_548_arg0)
-	local L_549_ = {}
-	L_549_[2] = L_548_arg0
-	L_549_[1] = game:GetService("VirtualInputManager")
-	L_549_[1]:SendKeyEvent(true, L_549_[2], false, game)
-	wait(.05)
-	L_549_[1]:SendKeyEvent(false, L_549_[2], false, game)
-end
-L_1_[3] = function(L_550_arg0)
-	local L_551_ = {}
-	L_551_[4] = L_550_arg0
-	L_551_[2] = L_1_[136]["Character"]
-	L_551_[3] = L_1_[136]["Backpack"]
-	if not(L_551_[2] and (L_551_[2]:FindFirstChild("Humanoid") and L_551_[2]["Humanoid"]["Health"] > 0)) then
-		return
+
+task.spawn(function()
+	while task.wait(1) do
+		if workspace.Enemies:FindFirstChild("Tyrant of the Skies") then
+			TyrantStatus:SetDesc("✅")
+		else
+			TyrantStatus:SetDesc("❌")
+		end
 	end
-	for L_552_forvar0, L_553_forvar1 in pairs(L_551_[3]:GetChildren()) do
-		local L_554_ = {}
-		L_554_[3], L_554_[2] = L_552_forvar0, L_553_forvar1
-		if L_554_[2]:IsA("Tool") and L_554_[2]["ToolTip"] == L_551_[4] then
-			L_554_[2]["Parent"] = L_551_[2]
-			wait(.12)
-			for L_555_forvar0, L_556_forvar1 in ipairs({
-				"Z",
-				"X",
-				"C",
-				"V",
-				"F"
-			}) do
-				local L_557_ = {}
-				L_557_[1], L_557_[2] = L_555_forvar0, L_556_forvar1
-				if not _G["FarmPhaBinh"] then
-					break
-				end
+end)
+
+function Check_Eye()
+	local Island = workspace.Map.TikiOutpost.IslandModel
+	local Eyes = {
+		Island.Eye1,
+		Island.Eye2,
+		Island.IslandChunks.E.Eye3,
+		Island.IslandChunks.E.Eye4
+	}
+	local count = 0
+	for _,e in ipairs(Eyes) do
+		if e and e.Transparency ~= 1 then
+			count += 1
+		end
+	end
+	return count, count == 4
+end
+
+task.spawn(function()
+	while task.wait(1) do
+		local c,_ = Check_Eye()
+		EyeStatus:SetDesc("Eyes: "..c.."/4")
+	end
+end)
+
+local Player = game.Players.LocalPlayer
+local Enemies = workspace.Enemies
+
+local TyrantPos = Vector3.new(-16268.287, 152.616, 1390.773)
+local MobList = {
+	"Serpent Hunter",
+	"Skull Slayer",
+	"Isle Champion",
+	"Sun-kissed Warrior"
+}
+
+local BreakJars = {
+	CFrame.new(-16332.526,158.072,1440.324),
+	CFrame.new(-16288.609,158.167,1470.368),
+	CFrame.new(-16245.412,158.437,1463.366),
+	CFrame.new(-16212.469,158.167,1466.344),
+	CFrame.new(-16211.946,158.072,1322.398),
+	CFrame.new(-16260.922,154.921,1323.616),
+	CFrame.new(-16297.060,159.323,1317.224),
+	CFrame.new(-16335.097,159.334,1324.886)
+}
+
+local function UseSkills(toolTip)
+	local Char = Player.Character
+	local BP = Player.Backpack
+	if not (Char and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0) then return end
+	for _,t in pairs(BP:GetChildren()) do
+		if t:IsA("Tool") and t.ToolTip == toolTip then
+			t.Parent = Char
+			task.wait(0.12)
+			for _,k in ipairs({"Z","X","C","V","F"}) do
+				if not _G.FarmTyrant then break end
 				pcall(function()
-					L_1_[100](L_557_[2])
+					game:GetService("VirtualInputManager"):SendKeyEvent(true,k,false,game)
+					task.wait(0.05)
+					game:GetService("VirtualInputManager"):SendKeyEvent(false,k,false,game)
 				end)
-				wait(.12)
+				task.wait(0.12)
 			end
-			L_554_[2]["Parent"] = L_551_[3]
+			t.Parent = BP
 			break
 		end
 	end
 end
-L_1_[101] = {
-	CFrame["new"](-16332.526367188, 158.07200622559, 1440.3249511719);
-	CFrame["new"](-16288.609375, 158.16700744629, 1470.3680419922),
-	CFrame["new"](-16245.412109375, 158.43699645996, 1463.3659667969);
-	CFrame["new"](-16212.46875, 158.16700744629, 1466.3439941406),
-	CFrame["new"](-16211.946289062, 158.07200622559, 1322.3979492188);
-	CFrame["new"](-16260.921875, 154.92100524902, 1323.6159667969),
-	CFrame["new"](-16297.059570312, 159.32299804688, 1317.2239990234);
-	CFrame["new"](-16335.096679688, 159.33399963379, 1324.8859863281)
-}
-spawn(function()
-	while wait(Sec) do
-		if _G["FarmPhaBinh"] then
-			pcall(function()
-				if not(L_1_[136] and (L_1_[136]["Character"] and (L_1_[136]["Character"]:FindFirstChild("HumanoidRootPart") and (L_1_[136]["Character"]:FindFirstChild("Humanoid") and L_1_[136]["Character"]["Humanoid"]["Health"] > 0)))) then
-					return
-				end
-				for L_558_forvar0, L_559_forvar1 in ipairs(L_1_[101]) do
-					local L_560_ = {}
-					L_560_[3], L_560_[5] = L_558_forvar0, L_559_forvar1
-					if not _G["FarmPhaBinh"] then
-						break
-					end
-					_tp(L_560_[5])
-					L_560_[1] = false
-					L_560_[2] = tick()
-					while tick() - L_560_[2] < 12 and (not L_560_[1] and _G["FarmPhaBinh"]) do
-						local L_561_ = {}
-						L_561_[2] = L_1_[136]["Character"] and L_1_[136]["Character"]:FindFirstChild("HumanoidRootPart")
-						if not L_561_[2] then
-							break
-						end
-						L_561_[3] = (L_561_[2]["Position"] - L_560_[5]["Position"])["Magnitude"]
-						if L_561_[3] <= 3 then
-							L_560_[1] = true
-							break
-						end
-						wait(.1)
-					end
-					if _G["FarmPhaBinh"] and L_560_[1] then
-						L_1_[3]("Melee")
-						L_1_[3]("Sword")
-						L_1_[3]("Gun")
-					end
-				end
-			end)
+
+task.spawn(function()
+	while task.wait(0.3) do
+		if not _G.FarmTyrant then
+			continue
 		end
+
+		pcall(function()
+			local Char = Player.Character
+			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
+			if not HRP then return end
+
+			if (HRP.Position - TyrantPos).Magnitude > 20 then
+				_tp(CFrame.new(TyrantPos))
+			end
+
+			local Tyrant = Enemies:FindFirstChild("Tyrant of the Skies")
+			if Tyrant and Tyrant:FindFirstChild("Humanoid") and Tyrant.Humanoid.Health > 0 then
+				repeat
+					task.wait()
+					if L_1_[4] and L_1_[4].Kill then
+						L_1_[4].Kill(Tyrant, _G.FarmTyrant)
+					end
+				until not _G.FarmTyrant or not Tyrant.Parent or Tyrant.Humanoid.Health <= 0
+				return
+			end
+			local eyeCount, fullEye = Check_Eye()
+			if fullEye then
+				for _,cf in ipairs(BreakJars) do
+					if not _G.FarmTyrant then break end
+					_tp(cf)
+					task.wait(0.3)
+					UseSkills("Melee")
+					UseSkills("Sword")
+					UseSkills("Gun")
+				end
+				return
+			end
+
+			for _,name in ipairs(MobList) do
+				if not _G.FarmTyrant then break end
+				for _,mob in pairs(Enemies:GetChildren()) do
+					if mob.Name == name and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+						repeat
+							task.wait()
+							if L_1_[4] and L_1_[4].Kill then
+								L_1_[4].Kill(mob, _G.FarmTyrant)
+							end
+						until not _G.FarmTyrant or not mob.Parent or mob.Humanoid.Health <= 0
+					end
+				end
+			end
+		end)
 	end
 end)
 L_1_[93]["Main"]:AddSection({
