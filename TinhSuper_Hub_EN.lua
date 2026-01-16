@@ -2031,166 +2031,100 @@ QuestCheck = function()
 		end
 	end
 end
-MaterialMon = function()
-	local L_173_ = {}
-	L_173_[2] = game["Players"]["LocalPlayer"]
-	L_173_[1] = L_173_[2]["Character"] and L_173_[2]["Character"]:FindFirstChild("HumanoidRootPart")
-	if not L_173_[1] then
-		return
-	end
-	shouldRequestEntrance = function(L_174_arg0, L_175_arg1)
-		local L_176_ = {}
-		L_176_[4], L_176_[1] = L_174_arg0, L_175_arg1
-		L_176_[2] = (L_173_[1]["Position"] - L_176_[4])["Magnitude"]
-		if L_176_[2] >= L_176_[1] then
-			replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", L_176_[4])
-		end
-	end
-	if World1 then
-		if SelectMaterial == "Angel Wings" then
-			local L_177_ = {}
-			MMon = {
-				"Shanda",
-				"Royal Squad",
-				"Royal Soldier";
-				"Wysper",
-				"Thunder God"
-			}
-			MPos = CFrame["new"](-4698, 845, -1912)
-			SP = "Default"
-			L_177_[1] = Vector3["new"](-4607.82275, 872.54248, -1667.55688)
-			shouldRequestEntrance(L_177_[1], 10000)
-		elseif SelectMaterial == L_1_[2]({
-			"Leather + Scrap Meta";
-			"l"
-		}) then
-			MMon = {
-				"Brute",
-				"Pirate"
-			}
-			MPos = CFrame["new"](-1145, 15, 4350)
-			SP = "Default"
-		elseif SelectMaterial == "Magma Ore" then
-			MMon = {
-				"Military Soldier";
-				"Military Spy";
-				"Magma Admiral"
-			}
-			MPos = CFrame["new"](-5815, 84, 8820)
-			SP = "Default"
-		elseif SelectMaterial == "Fish Tail" then
-			local L_178_ = {}
-			MMon = {
-				"Fishman Warrior",
-				"Fishman Commando";
-				"Fishman Lord"
-			}
-			MPos = CFrame["new"](61123, 19, 1569)
-			SP = "Default"
-			L_178_[1] = Vector3["new"](61163.8515625, 5.342342376709, 1819.7841796875)
-			shouldRequestEntrance(L_178_[1], 17000)
-		end
-	elseif World2 then
-		if SelectMaterial == L_1_[2]({
-			"Leather + Scrap Meta";
-			"l"
-		}) then
-			MMon = {
-				"Marine Captain"
-			}
-			MPos = CFrame["new"](-2010.5059814453, 73.001159667969, -3326.6208496094)
-			SP = "Default"
-		elseif SelectMaterial == "Magma Ore" then
-			MMon = {
-				"Magma Ninja",
-				"Lava Pirate"
-			}
-			MPos = CFrame["new"](-5428, 78, -5959)
-			SP = "Default"
-		elseif SelectMaterial == "Ectoplasm" then
-			local L_179_ = {}
-			MMon = {
-				"Ship Deckhand",
-				"Ship Engineer",
-				"Ship Steward",
-				"Ship Officer"
-			}
-			MPos = CFrame["new"](911.35827636719, 125.95812988281, 33159.5390625)
-			SP = "Default"
-			L_179_[1] = Vector3["new"](61163.8515625, 5.342342376709, 1819.7841796875)
-			shouldRequestEntrance(L_179_[1], 18000)
-		elseif SelectMaterial == "Mystic Droplet" then
-			MMon = {
-				"Water Fighter"
-			}
-			MPos = CFrame["new"](-3385, 239, -10542)
-			SP = "Default"
-		elseif SelectMaterial == "Radioactive Material" then
-			MMon = {
-				"Factory Staff"
-			}
-			MPos = CFrame["new"](295, 73, -56)
-			SP = "Default"
-		elseif SelectMaterial == "Vampire Fang" then
-			MMon = {
-				"Vampire"
-			}
-			MPos = CFrame["new"](-6033, 7, -1317)
-			SP = "Default"
-		end
-	elseif World3 then
-		if SelectMaterial == "Scrap Metal" then
-			MMon = {
-				"Jungle Pirate",
-				"Forest Pirate"
-			}
-			MPos = CFrame["new"](-11975.78515625, 331.77340698242, -10620.030273438)
-			SP = "Default"
-		elseif SelectMaterial == "Fish Tail" then
-			MMon = {
-				"Fishman Raider",
-				"Fishman Captain"
-			}
-			MPos = CFrame["new"](-10993, 332, -8940)
-			SP = "Default"
-		elseif SelectMaterial == "Conjured Cocoa" then
-			MMon = {
-				L_1_[2]({
-					"Chocolate Bar Battle",
-					"r"
-				}),
-				"Cocoa Warrior"
-			}
-			MPos = CFrame["new"](620.63446044922, 78.936447143555, -12581.369140625)
-			SP = "Default"
-		elseif SelectMaterial == "Dragon Scale" then
-			MMon = {
-				"Dragon Crew Archer";
-				"Dragon Crew Warrior"
-			}
-			MPos = CFrame["new"](6594, 383, 139)
-			SP = "Default"
-		elseif SelectMaterial == "Gunpowder" then
-			MMon = {
-				"Pistol Billionaire"
-			}
-			MPos = CFrame["new"](-84.855690002441, 85.620613098145, 6132.0087890625)
-			SP = "Default"
-		elseif SelectMaterial == "Mini Tusk" then
-			MMon = {
-				"Mythological Pirate"
-			}
-			MPos = CFrame["new"](-13545, 470, -6917)
-			SP = "Default"
-		elseif SelectMaterial == "Demonic Wisp" then
-			MMon = {
-				"Demonic Soul"
-			}
-			MPos = CFrame["new"](-9495.6806640625, 453.58624267578, 5977.3486328125)
-			SP = "Default"
-		end
-	end
-end
+MaterialList = {
+
+	-- WORLD 1
+	["Angel Wings"] = {
+		World = 1,
+		Mobs = {"Shanda","Royal Squad","Royal Soldier","Wysper","Thunder God"},
+		Pos = CFrame.new(-4698,845,-1912),
+		Entrance = Vector3.new(-4607.82,872.54,-1667.55),
+		Distance = 10000
+	},
+
+	["Leather"] = {
+		World = 1,
+		Mobs = {"Brute","Pirate"},
+		Pos = CFrame.new(-1145,15,4350)
+	},
+
+	["Magma Ore"] = {
+		World = 1,
+		Mobs = {"Military Soldier","Military Spy","Magma Admiral"},
+		Pos = CFrame.new(-5815,84,8820)
+	},
+
+	["Fish Tail"] = {
+		World = 1,
+		Mobs = {"Fishman Warrior","Fishman Commando","Fishman Lord"},
+		Pos = CFrame.new(61123,19,1569),
+		Entrance = Vector3.new(61163.85,5.34,1819.78),
+		Distance = 17000
+	},
+
+	-- WORLD 2
+	["Ectoplasm"] = {
+		World = 2,
+		Mobs = {"Ship Deckhand","Ship Engineer","Ship Steward","Ship Officer"},
+		Pos = CFrame.new(911.35,125.95,33159.53),
+		Distance = 18000
+	},
+
+	["Mystic Droplet"] = {
+		World = 2,
+		Mobs = {"Water Fighter"},
+		Pos = CFrame.new(-3385,239,-10542)
+	},
+
+	["Radioactive Material"] = {
+		World = 2,
+		Mobs = {"Factory Staff"},
+		Pos = CFrame.new(295,73,-56)
+	},
+
+	["Vampire Fang"] = {
+		World = 2,
+		Mobs = {"Vampire"},
+		Pos = CFrame.new(-6033,7,-1317)
+	},
+
+	-- WORLD 3
+	["Scrap Metal"] = {
+		World = 3,
+		Mobs = {"Jungle Pirate","Forest Pirate"},
+		Pos = CFrame.new(-11975,332,-10620)
+	},
+
+	["Conjured Cocoa"] = {
+		World = 3,
+		Mobs = {"Chocolate Bar Battle","Cocoa Warrior"},
+		Pos = CFrame.new(620.63,78.93,-12581.36)
+	},
+
+	["Dragon Scale"] = {
+		World = 3,
+		Mobs = {"Dragon Crew Archer","Dragon Crew Warrior"},
+		Pos = CFrame.new(6594,383,139)
+	},
+
+	["Gunpowder"] = {
+		World = 3,
+		Mobs = {"Pistol Billionaire"},
+		Pos = CFrame.new(-84.85,85.62,6132)
+	},
+
+	["Mini Tusk"] = {
+		World = 3,
+		Mobs = {"Mythological Pirate"},
+		Pos = CFrame.new(-13545,470,-6917)
+	},
+
+	["Demonic Wisp"] = {
+		World = 3,
+		Mobs = {"Demonic Soul"},
+		Pos = CFrame.new(-9495,453,5977)
+	}
+}
 QuestNeta = function()
 	local L_180_ = {}
 	L_180_[2] = QuestCheck()
@@ -4830,12 +4764,6 @@ spawn(function()
 		end
 	end
 end)
--- =========================
--- AUTO FARM BONE (NGON – BRING + DI CHUYỂN LINH HOẠT)
--- Thay thế toàn bộ logic farm bone cũ
--- =========================
-
--- ===== UI =====
 L_1_[93]["Main"]:AddSection({"Farming Bone"})
 
 CheckingBone = L_1_[93]["Main"]:AddParagraph({
@@ -4846,12 +4774,12 @@ CheckingBone = L_1_[93]["Main"]:AddParagraph({
 spawn(function()
 	while task.wait(0.5) do
 		pcall(function()
-			CheckingBone:SetDesc(" Bones : "..tostring(
-				game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Bones","Check")
-			))
+			local bone = game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Bones","Check")
+			CheckingBone:SetDesc(" Bones : "..tostring(bone))
 		end)
 	end
 end)
+
 L_1_[93]["Main"]:AddToggle({
 	Name = "Auto Farm Bone + Soul Reaper",
 	Description = "",
@@ -4862,7 +4790,7 @@ L_1_[93]["Main"]:AddToggle({
 })
 
 L_1_[93]["Main"]:AddToggle({
-	Name = "Accept Quests",
+	Name = "Accept Quest Bone",
 	Description = "",
 	Default = true,
 	Callback = function(v)
@@ -4870,52 +4798,49 @@ L_1_[93]["Main"]:AddToggle({
 	end
 })
 
+local BoneQuestPos = CFrame.new(-9516.99,172.01,6078.46)
+local SoulSummonPos = CFrame.new(-8932.3223,146.8315,6062.5508)
+local BoneOffset = CFrame.new(0,15,0)
+
+local BoneMobs = {
+	["Reborn Skeleton"] = true,
+	["Living Zombie"] = true,
+	["Demonic Soul"] = true,
+	["Possessed Mummy"] = true
+}
+
 spawn(function()
-	local Player = game.Players.LocalPlayer
-	local Enemies = workspace.Enemies
-
-	local BoneMobs = {
-		["Reborn Skeleton"] = true,
-		["Living Zombie"] = true,
-		["Demonic Soul"] = true,
-		["Possessed Mummy"] = true
-	}
-
 	while task.wait(0.2) do
 		if not _G.AutoFarm_Bone then
 			continue
 		end
 
 		pcall(function()
-			local Char = Player.Character
+			local Char = plr.Character
 			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
 			if not HRP then return end
 
+			-- AUTO BUSO
 			if Boud and not Char:FindFirstChild("HasBuso") then
-				game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
+				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
 
-			local SoulReaper = nil
-			for _,v in pairs(Enemies:GetChildren()) do
-				if v.Name == "Soul Reaper"
-				and v:FindFirstChild("Humanoid")
-				and v:FindFirstChild("HumanoidRootPart")
-				and v.Humanoid.Health > 0 then
-					SoulReaper = v
-					break
-				end
-			end
+			local SoulReaper = GetConnectionEnemies("Soul Reaper")
+			if SoulReaper
+			and SoulReaper:FindFirstChild("Humanoid")
+			and SoulReaper:FindFirstChild("HumanoidRootPart")
+			and SoulReaper.Humanoid.Health > 0 then
 
-			if SoulReaper then
+				MonFarm = "Soul Reaper"
 				repeat
 					task.wait()
 					EquipWeapon(_G.SelectWeapon)
 
 					if Boud and not Char:FindFirstChild("HasBuso") then
-						game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
+						replicated.Remotes.CommF_:InvokeServer("Buso")
 					end
 
-					_tp(SoulReaper.HumanoidRootPart.CFrame * CFrame.new(0,15,0))
+					_tp(SoulReaper.HumanoidRootPart.CFrame * BoneOffset)
 
 					SoulReaper.HumanoidRootPart.CanCollide = false
 					SoulReaper.Humanoid.WalkSpeed = 0
@@ -4927,32 +4852,38 @@ spawn(function()
 				return
 			end
 
-			local QuestGui = Player.PlayerGui.Main:FindFirstChild("Quest")
+			if GetBP("Hallow Essence") then
+				_tp(SoulSummonPos)
+				if (HRP.Position - SoulSummonPos.Position).Magnitude <= 6 then
+					EquipWeapon("Hallow Essence")
+				end
+			end
+
+			local QuestGui = plr.PlayerGui.Main:FindFirstChild("Quest")
 			if _G.AcceptQuestB and QuestGui and not QuestGui.Visible then
-				_tp(CFrame.new(-9516.99,172.01,6078.46))
+				_tp(BoneQuestPos)
 				task.wait(1)
-				game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+				replicated.Remotes.CommF_:InvokeServer(
 					"StartQuest","HauntedQuest2",1
 				)
 			end
 
-			local HasMob = false
 			for _,mob in pairs(Enemies:GetChildren()) do
 				if BoneMobs[mob.Name]
 				and mob:FindFirstChild("Humanoid")
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob.Humanoid.Health > 0 then
 
-					HasMob = true
+					MonFarm = mob.Name
 					repeat
 						task.wait()
 						EquipWeapon(_G.SelectWeapon)
 
 						if Boud and not Char:FindFirstChild("HasBuso") then
-							game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
+							replicated.Remotes.CommF_:InvokeServer("Buso")
 						end
 
-						_tp(mob.HumanoidRootPart.CFrame * CFrame.new(0,15,0))
+						_tp(mob.HumanoidRootPart.CFrame * BoneOffset)
 
 						mob.HumanoidRootPart.CanCollide = false
 						mob.Humanoid.WalkSpeed = 0
@@ -4965,10 +4896,6 @@ spawn(function()
 					   or mob.Humanoid.Health <= 0
 				end
 			end
-
-			if not HasMob and FarmPos then
-				_tp(FarmPos)
-			end
 		end)
 	end
 end)
@@ -4980,7 +4907,6 @@ RanBone = L_1_[93]["Main"]:AddToggle({
 		_G.Auto_Random_Bone = v
 	end
 })
-
 spawn(function()
 	while task.wait(1) do
 		if _G.Auto_Random_Bone then
@@ -5052,29 +4978,17 @@ spawn(function()
 		end
 	end
 end)
-L_1_[93]["Main"]:AddSection({ "Tyrant of the Skies" })
+L_1_[93]["Main"]:AddSection({
+	"Tyrant of the Skies"
+})
 
 TyrantStatus = L_1_[93]["Main"]:AddParagraph({
-	Title = "Boss Spawn",
-	Content = ""
+	["Title"] = "Boss Spawn",
+	["Content"] = ""
 })
 
-EyeStatus = L_1_[93]["Main"]:AddParagraph({
-	Title = "Check Status Eyes",
-	Content = ""
-})
-
-FarmTyrant = L_1_[93]["Main"]:AddToggle({
-	Name = "Auto Farm Tyrant (Fully)",
-	Description = "",
-	Default = false,
-	Callback = function(v)
-		_G.FarmTyrant = v
-	end
-})
-
-task.spawn(function()
-	while task.wait(1) do
+spawn(function()
+	while wait(1) do
 		if workspace.Enemies:FindFirstChild("Tyrant of the Skies") then
 			TyrantStatus:SetDesc("✅")
 		else
@@ -5082,6 +4996,11 @@ task.spawn(function()
 		end
 	end
 end)
+
+EyeStatus = L_1_[93]["Main"]:AddParagraph({
+	["Title"] = "Check Status Eyes",
+	["Content"] = ""
+})
 
 function Check_Eye()
 	local Island = workspace.Map.TikiOutpost.IslandModel
@@ -5091,26 +5010,30 @@ function Check_Eye()
 		Island.IslandChunks.E.Eye3,
 		Island.IslandChunks.E.Eye4
 	}
-	local count = 0
-	for _,e in ipairs(Eyes) do
-		if e and e.Transparency ~= 1 then
-			count += 1
+	local Count = 0
+	for _,v in pairs(Eyes) do
+		if v and v.Transparency ~= 1 then
+			Count += 1
 		end
 	end
-	return count, count == 4
+	return Count, Count == 4
 end
 
 task.spawn(function()
 	while task.wait(1) do
-		local c,_ = Check_Eye()
+		local c = Check_Eye()
 		EyeStatus:SetDesc("Eyes: "..c.."/4")
 	end
 end)
 
-local Player = game.Players.LocalPlayer
-local Enemies = workspace.Enemies
+FarmTyrant = L_1_[93]["Main"]:AddToggle({
+	Name = "Auto Farm Boss",
+	Default = false,
+	Callback = function(v)
+		_G.FarmTyrant = v
+	end
+})
 
-local TyrantPos = Vector3.new(-16268.287, 152.616, 1390.773)
 local MobList = {
 	"Serpent Hunter",
 	"Skull Slayer",
@@ -5118,166 +5041,176 @@ local MobList = {
 	"Sun-kissed Warrior"
 }
 
-local BreakJars = {
-	CFrame.new(-16332.526,158.072,1440.324),
-	CFrame.new(-16288.609,158.167,1470.368),
-	CFrame.new(-16245.412,158.437,1463.366),
-	CFrame.new(-16212.469,158.167,1466.344),
-	CFrame.new(-16211.946,158.072,1322.398),
-	CFrame.new(-16260.922,154.921,1323.616),
-	CFrame.new(-16297.060,159.323,1317.224),
-	CFrame.new(-16335.097,159.334,1324.886)
-}
-
-local function UseSkills(toolTip)
-	local Char = Player.Character
-	local BP = Player.Backpack
-	if not (Char and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0) then return end
-	for _,t in pairs(BP:GetChildren()) do
-		if t:IsA("Tool") and t.ToolTip == toolTip then
-			t.Parent = Char
-			task.wait(0.12)
-			for _,k in ipairs({"Z","X","C","V","F"}) do
-				if not _G.FarmTyrant then break end
-				pcall(function()
-					game:GetService("VirtualInputManager"):SendKeyEvent(true,k,false,game)
-					task.wait(0.05)
-					game:GetService("VirtualInputManager"):SendKeyEvent(false,k,false,game)
-				end)
-				task.wait(0.12)
-			end
-			t.Parent = BP
-			break
-		end
-	end
-end
-
-task.spawn(function()
-	while task.wait(0.3) do
-		if not _G.FarmTyrant then
-			continue
-		end
-
+spawn(function()
+	while wait(Sec) do
+		if not _G.FarmTyrant then continue end
 		pcall(function()
-			local Char = Player.Character
-			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
+
+			local Char = L_1_[136].Character
+			if not Char then return end
+			local HRP = Char:FindFirstChild("HumanoidRootPart")
 			if not HRP then return end
 
-			if (HRP.Position - TyrantPos).Magnitude > 20 then
-				_tp(CFrame.new(TyrantPos))
-			end
-
-			local Tyrant = Enemies:FindFirstChild("Tyrant of the Skies")
-			if Tyrant and Tyrant:FindFirstChild("Humanoid") and Tyrant.Humanoid.Health > 0 then
+			local Boss = workspace.Enemies:FindFirstChild("Tyrant of the Skies")
+			if Boss and Boss:FindFirstChild("Humanoid") and Boss.Humanoid.Health > 0 then
 				repeat
-					task.wait()
+					wait()
+					HRP.CFrame = Boss.HumanoidRootPart.CFrame * CFrame.new(0,30,0)
 					if L_1_[4] and L_1_[4].Kill then
-						L_1_[4].Kill(Tyrant, _G.FarmTyrant)
+						L_1_[4].Kill(Boss, _G.FarmTyrant)
 					end
-				until not _G.FarmTyrant or not Tyrant.Parent or Tyrant.Humanoid.Health <= 0
+				until not _G.FarmTyrant or not Boss.Parent or Boss.Humanoid.Health <= 0
 				return
 			end
-			local eyeCount, fullEye = Check_Eye()
-			if fullEye then
-				for _,cf in ipairs(BreakJars) do
+
+			local EyeCount, FullEye = Check_Eye()
+			if FullEye then
+				local SpawnPos = Vector3.new(-16268.287,152.616,1390.773)
+				if (HRP.Position - SpawnPos).Magnitude > 5 then
+					_tp(CFrame.new(SpawnPos))
+				end
+				for i = 1,6 do
 					if not _G.FarmTyrant then break end
-					_tp(cf)
-					task.wait(0.3)
-					UseSkills("Melee")
-					UseSkills("Sword")
-					UseSkills("Gun")
+					for _,k in pairs({"Z","X","C","V","F"}) do
+						vim1:SendKeyEvent(true,k,false,game)
+						task.wait(.05)
+						vim1:SendKeyEvent(false,k,false,game)
+					end
+					wait(.25)
 				end
 				return
 			end
 
-			for _,name in ipairs(MobList) do
-				if not _G.FarmTyrant then break end
-				for _,mob in pairs(Enemies:GetChildren()) do
-					if mob.Name == name and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+			for _,mobName in pairs(MobList) do
+				for _,mob in pairs(workspace.Enemies:GetChildren()) do
+					if mob.Name == mobName
+					and mob:FindFirstChild("HumanoidRootPart")
+					and mob:FindFirstChild("Humanoid")
+					and mob.Humanoid.Health > 0 then
+
 						repeat
-							task.wait()
+							wait()
+							HRP.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0,25,0)
 							if L_1_[4] and L_1_[4].Kill then
 								L_1_[4].Kill(mob, _G.FarmTyrant)
 							end
 						until not _G.FarmTyrant or not mob.Parent or mob.Humanoid.Health <= 0
+
+						return
 					end
 				end
 			end
+
 		end)
 	end
 end)
 L_1_[93]["Main"]:AddSection({
 	"Farm Material"
 })
-Test = L_1_[93]["Main"]:AddDropdown({
+
+L_1_[93]["Main"]:AddDropdown({
 	["Name"] = "Choose Material";
 	["Description"] = "",
 	["Options"] = MaterialList;
-	["Default"] = false;
-	["Callback"] = function(L_562_arg0)
-		local L_563_ = {}
-		L_563_[2] = L_562_arg0;
-		(getgenv())["SelectMaterial"] = L_563_[2]
+	["Default"] = false,
+	["Callback"] = function(v)
+		getgenv().SelectMaterial = v
 	end
 })
-Toggle = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Auto Materials";
+
+L_1_[93]["Main"]:AddToggle({
+	["Name"] = "Auto Farm Materials";
 	["Description"] = "";
 	["Default"] = false,
-	["Callback"] = function(L_564_arg0)
-		local L_565_ = {}
-		L_565_[1] = L_564_arg0;
-		(getgenv())["AutoMaterial"] = L_565_[1]
+	["Callback"] = function(v)
+		getgenv().AutoMaterial = v
 	end
 })
-spawn(function()
-	local L_566_ = {}
-	L_566_[1] = function(L_567_arg0, L_568_arg1)
-		local L_569_ = {}
-		L_569_[3], L_569_[1] = L_567_arg0, L_568_arg1
-		if L_569_[3]:FindFirstChild("Humanoid") and (L_569_[3]:FindFirstChild("HumanoidRootPart") and L_569_[3]["Humanoid"]["Health"] > 0) then
-			if L_569_[3]["Name"] == L_569_[1] then
-				repeat
-					wait()
-					L_1_[4]["Kill"](L_569_[3], (getgenv())["AutoMaterial"])
-				until not(getgenv())["AutoMaterial"] or not L_569_[3]["Parent"] or L_569_[3]["Humanoid"]["Health"] <= 0
+
+local FARM_DISTANCE = 15
+
+local function GetRoot()
+	local c = plr.Character
+	if c then
+		return c:FindFirstChild("HumanoidRootPart")
+	end
+end
+
+local function ValidMob(m)
+	return m
+	and m.Parent
+	and m:FindFirstChild("Humanoid")
+	and m:FindFirstChild("HumanoidRootPart")
+	and m.Humanoid.Health > 0
+end
+
+local function LockMob(m)
+	pcall(function()
+		m.HumanoidRootPart.Anchored = true
+		m.Humanoid.WalkSpeed = 0
+		m.Humanoid.JumpPower = 0
+	end)
+end
+
+local function UnlockMob(m)
+	pcall(function()
+		m.HumanoidRootPart.Anchored = false
+	end)
+end
+
+local function MoveAbove(m)
+	local r = GetRoot()
+	if r then
+		r.CFrame = m.HumanoidRootPart.CFrame * CFrame.new(0, FARM_DISTANCE, 0)
+	end
+end
+
+local function Click()
+	vim1:SendMouseButtonEvent(0,0,0,true,game,0)
+	vim1:SendMouseButtonEvent(0,0,0,false,game,0)
+end
+
+local function FindTarget()
+	for _,name in ipairs(MMon or {}) do
+		for _,mob in pairs(Enemies:GetChildren()) do
+			if mob.Name == name and ValidMob(mob) then
+				return mob
 			end
 		end
 	end
-	L_566_[2] = function()
-		for L_570_forvar0, L_571_forvar1 in pairs((game:GetService("Workspace"))["_WorldOrigin"]["EnemySpawns"]:GetChildren()) do
-			local L_572_ = {}
-			L_572_[3], L_572_[2] = L_570_forvar0, L_571_forvar1
-			for L_573_forvar0, L_574_forvar1 in ipairs(MMon) do
-				local L_575_ = {}
-				L_575_[3], L_575_[2] = L_573_forvar0, L_574_forvar1
-				if string["find"](L_572_[2]["Name"], L_575_[2]) then
-					if (game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"] - L_572_[2]["Position"])["Magnitude"] >= 10 then
-						_tp(L_572_[2]["CFrame"] * Pos)
-					end
-				end
-			end
-		end
+end
+local function FarmMob(mob)
+	while getgenv().AutoMaterial and ValidMob(mob) do
+		AutoHaki()
+		EquipWeapon(_G.SelectWeapon)
+
+		LockMob(mob)
+		MoveAbove(mob)
+		Click()
+
+		task.wait(0.1)
 	end
-	while wait() do
-		if (getgenv())["AutoMaterial"] then
-			pcall(function()
-				if (getgenv())["SelectMaterial"] then
-					MaterialMon((getgenv())["SelectMaterial"])
+	UnlockMob(mob)
+end
+task.spawn(function()
+	while task.wait(0.1) do
+		if not getgenv().AutoMaterial then continue end
+		if not getgenv().SelectMaterial then continue end
+
+		pcall(function()
+			-- Setup material data
+			MaterialMon(getgenv().SelectMaterial)
+			local target = FindTarget()
+
+			if not target then
+				if MPos then
 					_tp(MPos)
 				end
-				for L_576_forvar0, L_577_forvar1 in ipairs(MMon) do
-					local L_578_ = {}
-					L_578_[3], L_578_[1] = L_576_forvar0, L_577_forvar1
-					for L_579_forvar0, L_580_forvar1 in pairs(workspace["Enemies"]:GetChildren()) do
-						local L_581_ = {}
-						L_581_[3], L_581_[2] = L_579_forvar0, L_580_forvar1
-						L_566_[1](L_581_[2], L_578_[1])
-					end
-				end
-				L_566_[2]()
-			end)
-		end
+				return
+			end
+
+			FarmMob(target)
+		end)
 	end
 end)
 L_1_[93]["Main"]:AddSection({
