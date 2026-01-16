@@ -2144,8 +2144,8 @@ L_1_[16] = (loadstring(game:HttpGet(L_1_[2]({
 	"s/main/UiRedzHub.lua"
 }))))()
 L_1_[38] = L_1_[16]:MakeWindow({
-	["Title"] = "TinhSuper Hub";
-	["SubTitle"] = "by TinhSuper",
+	["Title"] = "TinhSuper Hub [Beta]";
+	["SubTitle"] = "by tinhsuper_gm",
 	["SaveFolder"] = "TinhSuper_Hub.json"
 })
 L_1_[87] = Instance["new"]("ScreenGui")
@@ -4319,18 +4319,19 @@ MobKilled = L_1_[93]["Main"]:AddParagraph({
 	["Title"] = "Cake Princes :";
 	["Content"] = ""
 })
-
 spawn(function()
-	while wait(.2) do
-		pcall(function()
-			local left = string.match(L_1_[18].Remotes.CommF_:InvokeServer("CakePrinceSpawner"), "%d+")
-			if left then
-				MobKilled:SetDesc(" Killed : " .. 500 - left)
-			end
-		end)
+	while wait(1) do
+		local L_199_ = {}
+		L_199_[2] = (game:GetService("ReplicatedStorage"))["Remotes"]["CommF_"]:InvokeServer("CakePrinceSpawner")
+		L_199_[3] = "Cake Prince: ✅️"
+		if string["len"](L_199_[2]) >= 86 then
+			local L_200_ = {}
+			L_200_[1] = string["sub"](L_199_[2], 39, 41)
+			L_199_[3] = "Kill: " .. L_200_[1]
+		end
+		MobCakePrince:SetDesc(L_199_[3])
 	end
 end)
-
 Cake = L_1_[93]["Main"]:AddToggle({
 	["Name"] = L_1_[2]({"Auto Farm Cake Princ","e"}),
 	["Description"] = "",
