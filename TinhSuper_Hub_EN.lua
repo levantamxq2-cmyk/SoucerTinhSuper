@@ -2385,7 +2385,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [15/1/";
+		"Release Date [16/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -4402,109 +4402,106 @@ Cake = L_1_[93]["Main"]:AddToggle({
 	}),
 	["Description"] = "",
 	["Default"] = false,
-	["Callback"] = function(L_480_arg0)
-		local L_481_ = {}
-		L_481_[2] = L_480_arg0
-		_G["Auto_Cake_Prince"] = L_481_[2]
+	["Callback"] = function(v)
+		_G.Auto_Cake_Prince = v
 	end
 })
+
+CakeQ = L_1_[93]["Main"]:AddToggle({
+	["Name"] = "Accept Quests",
+	["Description"] = "",
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G.AcceptQuestC = v
+	end
+})
+
 -- ===== CONFIG =====
-local CakeFarmPos = CFrame.new(-2130.80712890625, 69.95634460449219, -12327.83984375)
+local CakeQuestPos = CFrame.new(-1927.92, 37.8, -12842.54)
+local CakeFarmPos  = CFrame.new(-2130.80712890625, 69.95634460449219, -12327.83984375)
+local PlayerOffset = CFrame.new(0, 30, 0)
 
 local CakeMobs = {
-    ["Cookie Crafter"] = true,
-    ["Cake Guard"] = true,
-    ["Baking Staff"] = true,
-    ["Head Baker"] = true
+	["Cookie Crafter"] = true,
+	["Cake Guard"] = true,
+	["Baking Staff"] = true,
+	["Head Baker"] = true
 }
 
-local SCAN_DISTANCE = 5000 -- bán kính quét mob
-
--- ===== FARM LOGIC =====
+-- ===== FARM LOGIC (GIỐNG BONE) =====
 task.spawn(function()
-    while task.wait(0.15) do
-        if not (_G.AutoFarmFruits and _G.selectFruitFarm == "Farm Cake Mastery") then
-            bringmob = false
-            StartBring = false
-            continue
-        end
+	while task.wait(0.15) do
+		if not _G.Auto_Cake_Prince or not World3 then
+			bringmob = false
+			StartBring = false
+			continue
+		end
 
-        local plr = game.Players.LocalPlayer
-        local char = plr.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then continue end
+		pcall(function()
+			local plr = game.Players.LocalPlayer
+			local char = plr.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
 
-        -- 1️⃣ ÉP TỚI KHU FARM TRƯỚC (FIX ĐỨNG YÊN)
-        if (hrp.Position - CakeFarmPos.Position).Magnitude > 150 then
-            _tp(CakeFarmPos * CFrame.new(0, 30, 0))
-            continue
-        end
+			-- AUTO QUEST (VĨNH VIỄN)
+			if _G.AcceptQuestC then
+				local QuestGui = plr.PlayerGui.Main.Quest
+				if not QuestGui.Visible then
+					_tp(CakeQuestPos)
+					repeat task.wait(.2)
+					until (hrp.Position - CakeQuestPos.Position).Magnitude < 30 or not _G.Auto_Cake_Prince
+					if not _G.Auto_Cake_Prince then return end
+					game.ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",2)
+					task.wait(.3)
+				end
+			end
 
-        local foundMob = false
-        local nearestMob
-        local nearestDist = math.huge
+			-- ÉP VỀ KHU FARM
+			if (hrp.Position - CakeFarmPos.Position).Magnitude > 200 then
+				_tp(CakeFarmPos * PlayerOffset)
+				return
+			end
 
-        -- 2️⃣ SCAN MOB TRONG BÁN KÍNH LỚN
-        for _, v in pairs(workspace.Enemies:GetChildren()) do
-            if CakeMobs[v.Name]
-            and v:FindFirstChild("Humanoid")
-            and v:FindFirstChild("HumanoidRootPart")
-            and v.Humanoid.Health > 0 then
+			local Found = false
 
-                local dist = (v.HumanoidRootPart.Position - hrp.Position).Magnitude
-                if dist < nearestDist and dist <= SCAN_DISTANCE then
-                    nearestDist = dist
-                    nearestMob = v
-                end
-            end
-        end
+			for _, mob in pairs(workspace.Enemies:GetChildren()) do
+				if CakeMobs[mob.Name]
+				and mob:FindFirstChild("Humanoid")
+				and mob:FindFirstChild("HumanoidRootPart")
+				and mob.Humanoid.Health > 0 then
 
-        -- 3️⃣ KHÔNG CÓ MOB → ĐỨNG CHỜ Ở FARM
-        if not nearestMob then
-            _tp(CakeFarmPos * CFrame.new(0, 30, 0))
-            continue
-        end
+					Found = true
+					MonFarm = mob.Name
+					FarmPos = mob.HumanoidRootPart.CFrame
+					bringmob = true
+					StartBring = true
 
-        -- 4️⃣ FARM MOB
-        foundMob = true
-        MonFarm = nearestMob.Name
+					repeat
+						task.wait(_G.Fast_Delay or 0.1)
+						AutoHaki()
+						EquipWeapon(_G.SelectWeapon)
+						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
 
-        repeat task.wait(_G.Fast_Delay or 0.1)
+						mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
+						mob.HumanoidRootPart.Transparency = 1
+						mob.HumanoidRootPart.CanCollide = false
+						mob.Humanoid.WalkSpeed = 0
+						mob.Humanoid.JumpPower = 0
+					until not _G.Auto_Cake_Prince
+					or not mob.Parent
+					or mob.Humanoid.Health <= 0
+				end
+			end
 
-            AutoHaki()
-            EquipWeapon(_G.SelectWeapon)
-
-            -- BAY LÊN ĐẦU MOB
-            _tp(nearestMob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-
-            -- KHÓA + GOM MOB
-            nearestMob.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-            nearestMob.HumanoidRootPart.Transparency = 1
-            nearestMob.HumanoidRootPart.CanCollide = false
-            nearestMob.Humanoid.WalkSpeed = 0
-
-            bringmob = true
-            StartBring = true
-            FarmPos = nearestMob.HumanoidRootPart.CFrame
-
-        until not (_G.AutoFarmFruits and _G.selectFruitFarm == "Farm Cake Mastery")
-        or not nearestMob.Parent
-        or nearestMob.Humanoid.Health <= 0
-
-        bringmob = false
-        StartBring = false
-    end
-end)
-CakeQ = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Accept Quests";
-	["Description"] = "";
-	["Default"] = false;
-	["Callback"] = function(L_486_arg0)
-		local L_487_ = {}
-		L_487_[2] = L_486_arg0
-		_G["AcceptQuestC"] = L_487_[2]
+			-- KHÔNG CÓ MOB → ĐỨNG CHỜ SPAWN
+			if not Found then
+				bringmob = false
+				StartBring = false
+				_tp(CakeFarmPos * PlayerOffset)
+			end
+		end)
 	end
-})
+end)
 CakeSM = L_1_[93]["Main"]:AddToggle({
 	["Name"] = L_1_[2]({
 		"Auto Summon Cake Pri",
@@ -4867,7 +4864,7 @@ L_1_[93]["Main"]:AddToggle({
 BoneQ = L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Accept Quests",
 	["Description"] = "",
-	["Default"] = false,
+	["Default"] = true,
 	["Callback"] = function(v)
 		_G.AcceptQuestB = v
 	end
