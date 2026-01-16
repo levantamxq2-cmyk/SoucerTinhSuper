@@ -4410,17 +4410,25 @@ Cake = L_1_[93]["Main"]:AddToggle({
 CakeQ = L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Accept Quests",
 	["Description"] = "",
-	["Default"] = false,
+	["Default"] = true,
 	["Callback"] = function(v)
 		_G.AcceptQuestC = v
 	end
 })
+-- =========================
+-- AUTO FARM CAKE (BONE CORE)
+-- =========================
 
--- ===== CONFIG =====
+_G.Auto_Cake_Prince = _G.Auto_Cake_Prince or false
+_G.AcceptQuestC = _G.AcceptQuestC or false
+
+local PlayerOffset = CFrame.new(0,30,0)
+
+-- ===== POSITIONS =====
+local CakeFarmPos  = CFrame.new(-2130.8071, 69.9563, -12327.8398)
 local CakeQuestPos = CFrame.new(-1927.92, 37.8, -12842.54)
-local CakeFarmPos  = CFrame.new(-2130.80712890625, 69.95634460449219, -12327.83984375)
-local PlayerOffset = CFrame.new(0, 30, 0)
 
+-- ===== CAKE MOBS =====
 local CakeMobs = {
 	["Cookie Crafter"] = true,
 	["Cake Guard"] = true,
@@ -4428,9 +4436,10 @@ local CakeMobs = {
 	["Head Baker"] = true
 }
 
--- ===== FARM LOGIC (GIỐNG BONE) =====
--- ===== FARM LOGIC (FIX TP + VĨNH VIỄN) =====
-task.spawn(function()
+-- =========================
+-- MAIN FARM LOOP (BONE STYLE)
+-- =========================
+spawn(function()
 	while task.wait(0.15) do
 		if not _G.Auto_Cake_Prince or not World3 then
 			bringmob = false
@@ -4443,13 +4452,13 @@ task.spawn(function()
 			local hrp = char and char:FindFirstChild("HumanoidRootPart")
 			if not hrp then return end
 
-			-- ===== AUTO QUEST (LUÔN NHẬN LẠI) =====
+			-- ===== AUTO QUEST (GIỐNG BONE) =====
 			if _G.AcceptQuestC then
 				local QuestGui = plr.PlayerGui.Main.Quest
 				if not QuestGui.Visible then
 					_tp(CakeQuestPos)
 					repeat task.wait(.2)
-					until (hrp.Position - CakeQuestPos.Position).Magnitude < 30
+					until (hrp.Position - CakeQuestPos.Position).Magnitude < 40
 						or not _G.Auto_Cake_Prince
 					if not _G.Auto_Cake_Prince then return end
 					replicated.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",2)
@@ -4457,7 +4466,7 @@ task.spawn(function()
 				end
 			end
 
-			-- ===== LUÔN ÉP Ở KHU FARM (KHÔNG RETURN) =====
+			-- ===== ÉP LUÔN Ở KHU FARM (BONE CORE) =====
 			if (hrp.Position - CakeFarmPos.Position).Magnitude > 200 then
 				_tp(CakeFarmPos * PlayerOffset)
 				return
@@ -4479,6 +4488,7 @@ task.spawn(function()
 
 					repeat
 						task.wait(_G.Fast_Delay or 0.1)
+
 						AutoHaki()
 						EquipWeapon(_G.SelectWeapon)
 
@@ -4495,7 +4505,7 @@ task.spawn(function()
 				end
 			end
 
-			-- ===== KHÔNG CÓ MOB → VẪN BAY CHỜ SPAWN =====
+			-- ===== KHÔNG CÓ MOB → BAY CHỜ (Y BONE) =====
 			if not FoundMob then
 				bringmob = false
 				StartBring = false
