@@ -2144,7 +2144,7 @@ L_1_[16] = (loadstring(game:HttpGet(L_1_[2]({
 	"s/main/UiRedzHub.lua"
 }))))()
 L_1_[38] = L_1_[16]:MakeWindow({
-	["Title"] = "TinhSuper Hub [Beta]-[V 1.1.0]";
+	["Title"] = "TinhSuper Hub [Beta]-[V 1.1.1]";
 	["SubTitle"] = "by tinhsuper_gm",
 	["SaveFolder"] = "TinhSuper_Hub.json"
 })
@@ -2779,63 +2779,106 @@ task.spawn(function()
         task.wait(0.15)
     end
 end)
---// AUTO FARM NEAREST (FIX GIẬT – CHỌN QUÁI GẦN NHẤT – BAY TRÊN ĐẦU LIÊN TỤC)
-
 L_1_[93]["Main"]:AddToggle({
-    ["Name"] = "Auto Farm Nearest",
-    ["Description"] = "",
-    ["Default"] = false,
-    ["Callback"] = function(state)
-        _G.AutoFarmNear = state
-        _G.FastAttack = state
-    end
+	["Name"] = "Auto Farm Nearest",
+	["Default"] = false,
+	["Callback"] = function(v)
+		_G.AutoFarmNear = v
+		_G.FastAttack = v
+	end
 })
 
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local plr = Players.LocalPlayer
+local Enemies = workspace.Enemies
+
+local Running = false
+local Stop = false
+
+-- ===== Nearest Scan =====
+local function GetNearestEnemy(hrp)
+	local nearest, dist = nil, math.huge
+	for _, mob in ipairs(Enemies:GetChildren()) do
+		local hum = mob:FindFirstChild("Humanoid")
+		local mhrp = mob:FindFirstChild("HumanoidRootPart")
+		if hum and mhrp and hum.Health > 0 then
+			local d = (mhrp.Position - hrp.Position).Magnitude
+			if d < dist then
+				dist = d
+				nearest = mob
+			end
+		end
+	end
+	return nearest
+end
+
+-- ===== Smooth Move (NO TP) =====
+local function MoveToTarget(hrp, cf)
+	local dist = (hrp.Position - cf.Position).Magnitude
+	local time = math.clamp(dist / 80, 0.15, 1)
+
+	local tween = TweenService:Create(
+		hrp,
+		TweenInfo.new(time, Enum.EasingStyle.Linear),
+		{ CFrame = cf }
+	)
+	tween:Play()
+	tween.Completed:Wait()
+end
+
+-- ===== MAIN LOOP =====
 task.spawn(function()
-    local plr = game.Players.LocalPlayer
-    local RUN_DELAY = 0.15
+	while task.wait(0.15) do
 
-    local function getNearestEnemy(hrp)
-        local nearest, dist = nil, math.huge
-        for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-            local hum = enemy:FindFirstChild("Humanoid")
-            local eHrp = enemy:FindFirstChild("HumanoidRootPart")
-            if hum and eHrp and hum.Health > 0 then
-                local d = (eHrp.Position - hrp.Position).Magnitude
-                if d < dist then
-                    dist = d
-                    nearest = enemy
-                end
-            end
-        end
-        return nearest
-    end
+		-- HARD STOP
+		if not _G.AutoFarmNear then
+			Stop = true
+			Running = false
+			continue
+		end
 
-    while task.wait(RUN_DELAY) do
-        if not _G.AutoFarmNear then
-            task.wait(0.4)
-            continue
-        end
+		if Running then continue end
+		Running = true
+		Stop = false
 
-        pcall(function()
-            local char = plr.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
+		pcall(function()
+			local char = plr.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if not hrp then return end
 
-            local target = getNearestEnemy(hrp)
-            if not target then return end
+			while _G.AutoFarmNear and not Stop do
+				local target = GetNearestEnemy(hrp)
+				if not target then
+					task.wait(0.3)
+					continue
+				end
 
-            local hum = target:FindFirstChild("Humanoid")
-            local eHrp = target:FindFirstChild("HumanoidRootPart")
-            if not hum or not eHrp or hum.Health <= 0 then return end
+				local hum = target:FindFirstChild("Humanoid")
+				local mhrp = target:FindFirstChild("HumanoidRootPart")
+				if not hum or not mhrp then
+					task.wait()
+					continue
+				end
 
-            --// Luôn đứng trên đầu quái (không spam TP)
-            hrp.CFrame = eHrp.CFrame * CFrame.new(0, 12, 0)
+				-- DI CHUYỂN TỚI QUÁI (BÌNH THƯỜNG)
+				while hum.Health > 0 and _G.AutoFarmNear do
+					if Stop then break end
 
-            --// Kill liên tục
-            L_1_[4]["Kill"](target, _G.FastAttack)
-        end)
-    end
+					MoveToTarget(hrp, mhrp.CFrame * CFrame.new(0, 12, 0))
+
+					-- ATTACK
+					L_1_[4]["Kill"](target, _G.FastAttack)
+
+					task.wait(0.05)
+				end
+
+				task.wait(0.1)
+			end
+		end)
+
+		Running = false
+	end
 end)
 FactoryRaids = L_1_[93]["Main"]:AddToggle({ 
     ["Name"] = "Auto Factory Raid",
