@@ -4380,10 +4380,10 @@ task.spawn(function()
 end)
 
 -- =========================
--- CORE LOOP
+-- CORE LOOP (ÉP FARM)
 -- =========================
 task.spawn(function()
-	while task.wait(0.2) do
+	while task.wait(0.15) do
 		if not _G.AutoCakePrince then
 			Stop = true
 			Running = false
@@ -4407,7 +4407,7 @@ task.spawn(function()
 			end
 
 			-- =========================
-			-- STEP 1: CHECK BOSS
+			-- STEP 1: CHECK BOSS (ƯU TIÊN)
 			-- =========================
 			local Boss = Enemies:FindFirstChild("Cake Prince")
 			if Boss and Boss:FindFirstChild("HumanoidRootPart") and Boss.Humanoid.Health > 0 then
@@ -4433,20 +4433,14 @@ task.spawn(function()
 			end
 
 			-- =========================
-			-- STEP 2: CHECK SUMMON
+			-- STEP 2: TRY SUMMON (CHECK)
 			-- =========================
-			local CakeLoaf = workspace.Map:FindFirstChild("CakeLoaf")
-			local BigMirror = CakeLoaf and CakeLoaf:FindFirstChild("BigMirror")
-
-			if BigMirror
-			and not Enemies:FindFirstChild("Cake Prince")
-			and BigMirror.Other.Transparency ~= 0
-			and not SummonLock then
+			if not SummonLock then
 				SummonLock = true
 				replicated.Remotes.CommF_:InvokeServer("CakePrinceSpawner", true)
-				task.wait(2)
-				Running = false
-				return
+				task.delay(3, function()
+					SummonLock = false
+				end)
 			end
 
 			-- =========================
@@ -4456,22 +4450,23 @@ task.spawn(function()
 				local QuestGui = plr.PlayerGui.Main.Quest
 				if QuestGui and not QuestGui.Visible then
 					_tp(CakeQuestPos)
-					task.wait(1)
+					task.wait(0.8)
 					replicated.Remotes.CommF_:InvokeServer("StartQuest", "CakeQuest2", 2)
 				end
 			end
 
 			-- =========================
-			-- STEP 4: FARM CAKE MOBS
+			-- STEP 4: ÉP FARM MOB CAKE
 			-- =========================
-			local Found = false
+			local FoundMob = false
+
 			for _, mob in pairs(Enemies:GetChildren()) do
 				if CakeMobs[mob.Name]
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob:FindFirstChild("Humanoid")
 				and mob.Humanoid.Health > 0 then
 
-					Found = true
+					FoundMob = true
 					bringmob = true
 					MonFarm = mob.Name
 
@@ -4495,7 +4490,8 @@ task.spawn(function()
 				end
 			end
 
-			if not Found then
+			-- ÉP DI CHUYỂN ĐỂ SPAWN MOB
+			if not FoundMob then
 				_tp(CakeFarmPos * PlayerOffset)
 			end
 		end)
