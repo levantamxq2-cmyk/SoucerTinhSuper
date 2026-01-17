@@ -1846,36 +1846,42 @@ QuestCheck = function()
 
 		-- Submerged cases (2600+), use helper to request entrance if far
 		elseif lvl >= 2600 and lvl <= 2624 then
+			GoSubmerged()
 			PosQ = CFrame.new(10882.264, -2086.322, 10034.226)
 			GoSubmerged(PosQ)
 			Mon = "Reef Bandit"; Qdata = 1; Qname = "SubmergedQuest1"; NameMon = "Reef Bandit"
 			PosM = CFrame.new(10736.6191, -2087.8439, 9338.4882)
 
 		elseif lvl >= 2625 and lvl <= 2649 then
+			GoSubmerged()
 			PosQ = CFrame.new(10882.264, -2086.322, 10034.226)
 			GoSubmerged(PosQ)
 			Mon = "Coral Pirate"; Qdata = 2; Qname = "SubmergedQuest1"; NameMon = "Coral Pirate"
 			PosM = CFrame.new(10965.1025, -2158.8842, 9177.2597)
 
 		elseif lvl >= 2650 and lvl <= 2674 then
+			GoSubmerged()
 			PosQ = CFrame.new(10882.264, -2086.322, 10034.226)
 			GoSubmerged(PosQ)
 			Mon = "Sea Chanter"; Qdata = 1; Qname = "SubmergedQuest2"; NameMon = "Sea Chanter"
 			PosM = CFrame.new(10621.0342, -2087.844, 10102.0332)
 
 		elseif lvl >= 2675 and lvl <= 2699 then
+			GoSubmerged()
 			PosQ = CFrame.new(10882.264, -2086.322, 10034.226)
 			GoSubmerged(PosQ)
 			Mon = "Ocean Prophet"; Qdata = 2; Qname = "SubmergedQuest2"; NameMon = "Ocean Prophet"
 			PosM = CFrame.new(11056.1445, -2001.6717, 10117.4493)
 
 		elseif lvl >= 2700 and lvl <= 2724 then
+			GoSubmerged()
 			PosQ = CFrame.new(9636.52441, -1992.19507, 9609.52832)
 			GoSubmerged(PosQ)
 			Mon = "High Disciple"; Qdata = 1; Qname = "SubmergedQuest3"; NameMon = "High Disciple"
 			PosM = CFrame.new(9828.087890625, -1940.9089355469, 9693.0634765625)
 
 		elseif lvl >= 2725 then
+			GoSubmerged()
 			PosQ = CFrame.new(9636.52441, -1992.19507, 9609.52832)
 			GoSubmerged(PosQ)
 			Mon = "Grand Devotee"; Qdata = 2; Qname = "SubmergedQuest3"; NameMon = "Grand Devotee"
@@ -1996,7 +2002,7 @@ L_1_[16] = (loadstring(game:HttpGet(L_1_[2]({
 	"s/main/UiRedzHub.lua"
 }))))()
 L_1_[38] = L_1_[16]:MakeWindow({
-	["Title"] = "TinhSuper Hub [V 1.1.4]";
+	["Title"] = "TinhSuper Hub [V 1.1.5]";
 	["SubTitle"] = "by tinhsuper_gm",
 	["SaveFolder"] = "TinhSuper_Hub.json"
 })
@@ -2562,7 +2568,10 @@ task.spawn(function()
     local lastTP = 0
 
     while task.wait(0.15) do
-        if not _G.Level then continue end
+        if not _G.Level then
+            task.wait(0.3)
+            continue
+        end
 
         pcall(function()
             local plr = game.Players.LocalPlayer
@@ -2570,16 +2579,17 @@ task.spawn(function()
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
-            -- 🔑 CỰC QUAN TRỌNG
+            -- 🔑 UPDATE QUEST DATA
             QuestCheck()
-            GoSubmerged()
 
-            -- ⛔ CHỜ QUESTCHECK SET DATA
-            if not Mon or not Qname or not PosQ or not PosM then return end
+            if not Mon or not Qname or not PosQ or not PosM then
+                task.wait(0.3)
+                return
+            end
 
             local questGui = plr.PlayerGui.Main.Quest
 
-            -- CHƯA CÓ QUEST → VỀ NPC
+            -- 🚶 CHƯA CÓ QUEST → VỀ NPC
             if not questGui.Visible then
                 if tick() - lastTP > 2 then
                     _tp(PosQ)
@@ -2588,7 +2598,7 @@ task.spawn(function()
                 return
             end
 
-            -- TÌM QUÁI ĐÚNG QUEST
+            -- 🔍 TÌM QUÁI
             local target
             for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
                 if enemy.Name == Mon
