@@ -1342,42 +1342,66 @@ QuestBeta = function()
 	}
 end
 
--- ===== GET HRP =====
 local function GetHRP()
-	local char = game.Players.LocalPlayer.Character
-	return char and char:FindFirstChild("HumanoidRootPart")
+    local char = game.Players.LocalPlayer.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
 end
 
--- ===== TALK SUBMARINE WORKER (2 LẦN CÓ) =====
-local function TalkSubmarineWorker()
-	local npcFolder = workspace:FindFirstChild("NPCs")
-	if not npcFolder then return end
+local InSubmerged = false
+local LastSubmerge = 0
 
-	local npc = npcFolder:FindFirstChild("Submarine Worker")
-	if not npc or not npc:FindFirstChild("HumanoidRootPart") then return end
+-- VỊ TRÍ NPC SUBMARINE WORKER (CHUẨN)
+local SubNPC = CFrame.new(
+    923.2125,
+    126.976,
+    32852.832
+)
 
-	local hrp = GetHRP()
-	if not hrp then return end
+local function GoSubmerged()
+    if not _G.Level then return end
 
-	-- đứng gần NPC
-	hrp.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-	task.wait(0.8)
+    local hrp = GetHRP()
+    if not hrp then return end
 
-	local CommF = game.ReplicatedStorage.Remotes.CommF_
+    -- Đã ở dưới biển rồi → thôi
+    if hrp.Position.Y < -1500 then return end
 
-	-- mở hội thoại
-	CommF:InvokeServer("TalkNpc", npc)
-	task.wait(0.6)
+    if InSubmerged then return end
+    if tick() - LastSubmerge < 6 then return end
 
-	-- chọn CÓ lần 1
-	CommF:InvokeServer("SubChoice", npc, 1)
-	task.wait(0.6)
+    InSubmerged = true
+    LastSubmerge = tick()
 
-	-- chọn CÓ lần 2 (confirm)
-	CommF:InvokeServer("SubChoice", npc, 1)
-	task.wait(0.6)
+    -- 1️⃣ TP tới NPC
+    _tp(SubNPC)
+    task.wait(1)
+
+    -- 2️⃣ NÓI CHUYỆN NPC (YES lần 1)
+    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+        "Talk",
+        "SubmarineWorker",
+        "Yes"
+    )
+    task.wait(0.8)
+
+    -- 3️⃣ YES lần 2 (BẮT BUỘC)
+    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+        "Talk",
+        "SubmarineWorker",
+        "Yes"
+    )
+    task.wait(0.8)
+
+    -- 4️⃣ YÊU CẦU XUỐNG BIỂN
+    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+        "requestEntrance",
+        Vector3.new(923.2125, 126.976, 32852.832)
+    )
+
+    task.delay(5, function()
+        InSubmerged = false
+    end)
 end
-
 -- ===== GO SUBMERGED (FIX CỨNG) =====
 local InSubmerged = false
 local LastSubmerge = 0
