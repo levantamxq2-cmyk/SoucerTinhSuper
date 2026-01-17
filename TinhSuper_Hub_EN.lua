@@ -4311,54 +4311,38 @@ task.spawn(function()
 		task.wait(0.5)
 	end
 end)
-L_1_[93]["Main"]:AddSection({
-	"Farming Cake"
+-- =========================
+-- UI
+-- =========================
+L_1_[93]["Main"]:AddSection({ "Farming Cake" })
+
+local CakeStatus = L_1_[93]["Main"]:AddParagraph({
+	Title = "Cake Prince :",
+	Content = "Checking..."
 })
 
-MobKilled = L_1_[93]["Main"]:AddParagraph({
-	["Title"] = "Cake Princes :";
-	["Content"] = ""
-})
-spawn(function()
-	while wait(1) do
-		local L_199_ = {}
-		L_199_[2] = (game:GetService("ReplicatedStorage"))["Remotes"]["CommF_"]:InvokeServer("CakePrinceSpawner")
-		L_199_[3] = "Cake Prince: ✅️"
-		if string["len"](L_199_[2]) >= 86 then
-			local L_200_ = {}
-			L_200_[1] = string["sub"](L_199_[2], 39, 41)
-			L_199_[3] = "Kill: " .. L_200_[1]
-		end
-		MobCakePrince:SetDesc(L_199_[3])
-	end
-end)
-Cake = L_1_[93]["Main"]:AddToggle({
-	["Name"] = L_1_[2]({"Auto Farm Cake Princ","e"}),
-	["Description"] = "",
-	["Default"] = false,
-	["Callback"] = function(v)
-		_G.Auto_Cake_Prince = v
+-- =========================
+-- TOGGLES
+-- =========================
+L_1_[93]["Main"]:AddToggle({
+	Name = "Auto Farm Cake Prince",
+	Default = false,
+	Callback = function(v)
+		_G.AutoCakePrince = v
 	end
 })
 
-CakeQ = L_1_[93]["Main"]:AddToggle({
-	["Name"] = "Accept Quests",
-	["Description"] = "",
-	["Default"] = true,
-	["Callback"] = function(v)
-		_G.AcceptQuestC = v
+L_1_[93]["Main"]:AddToggle({
+	Name = "Accept Quest",
+	Default = true,
+	Callback = function(v)
+		_G.CakeAcceptQuest = v
 	end
 })
 
-CakeSM = L_1_[93]["Main"]:AddToggle({
-	["Name"] = L_1_[2]({"Auto Summon Cake Pri","nce"}),
-	["Description"] = "",
-	["Default"] = false,
-	["Callback"] = function(v)
-		_G.AutoSpawnCP = v
-	end
-})
-
+-- =========================
+-- CONSTANTS
+-- =========================
 local CakeQuestPos = CFrame.new(-1927.92, 37.8, -12842.54)
 local CakeFarmPos  = CFrame.new(-2130.8071, 69.9563, -12327.8398)
 local PlayerOffset = CFrame.new(0, 20, 0)
@@ -4370,95 +4354,132 @@ local CakeMobs = {
 	["Head Baker"] = true
 }
 
-spawn(function()
-	while task.wait(0.15) do
-		if not _G.Auto_Cake_Prince then
+-- =========================
+-- STATE
+-- =========================
+local Running = false
+local Stop = false
+local SummonLock = false
+
+-- =========================
+-- CAKE STATUS CHECK (LUÔN CHẠY)
+-- =========================
+task.spawn(function()
+	while task.wait(1) do
+		pcall(function()
+			local res = replicated.Remotes.CommF_:InvokeServer("CakePrinceSpawner")
+			local text = "Cake Prince: ✅"
+
+			if typeof(res) == "string" and #res >= 86 then
+				text = "Kill: " .. string.sub(res, 39, 41)
+			end
+
+			CakeStatus:SetDesc(text)
+		end)
+	end
+end)
+
+-- =========================
+-- CORE LOOP
+-- =========================
+task.spawn(function()
+	while task.wait(0.2) do
+		if not _G.AutoCakePrince then
+			Stop = true
+			Running = false
+			SummonLock = false
 			bringmob = false
+			StopTween(true)
 			continue
 		end
 
+		if Running then continue end
+		Running = true
+		Stop = false
+
 		pcall(function()
-			local Char = plr.Character
-			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
-			if not HRP then return end
+			local Char = plr.Character or plr.CharacterAdded:Wait()
+			local HRP = Char:WaitForChild("HumanoidRootPart")
 
 			-- AUTO BUSO
 			if Boud and not Char:FindFirstChild("HasBuso") then
 				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
 
+			-- =========================
+			-- STEP 1: CHECK BOSS
+			-- =========================
 			local Boss = Enemies:FindFirstChild("Cake Prince")
 			if Boss and Boss:FindFirstChild("HumanoidRootPart") and Boss.Humanoid.Health > 0 then
 				bringmob = false
 				MonFarm = "Cake Prince"
 
-				repeat
-					task.wait()
-
-					if not _G.Auto_Cake_Prince then break end
-					if not Boss.Parent or Boss.Humanoid.Health <= 0 then break end
+				while Boss.Parent and Boss.Humanoid.Health > 0 do
+					if Stop or not _G.AutoCakePrince then break end
 
 					EquipWeapon(_G.SelectWeapon)
-					if Boud and not Char:FindFirstChild("HasBuso") then
-						replicated.Remotes.CommF_:InvokeServer("Buso")
-					end
-
 					_tp(Boss.HumanoidRootPart.CFrame * PlayerOffset)
 
-					Boss.HumanoidRootPart.CanCollide = false
 					Boss.HumanoidRootPart.Size = Vector3.new(80,80,80)
+					Boss.HumanoidRootPart.CanCollide = false
 					Boss.Humanoid.WalkSpeed = 0
 					Boss.Humanoid.JumpPower = 0
-				until false
 
-				task.wait(0.5)
+					task.wait()
+				end
+
+				Running = false
 				return
 			end
 
-			if _G.AutoSpawnCP then
-				local CakeLoaf = workspace.Map:FindFirstChild("CakeLoaf")
-				local BigMirror = CakeLoaf and CakeLoaf:FindFirstChild("BigMirror")
-				if BigMirror
-				and not Enemies:FindFirstChild("Cake Prince")
-				and BigMirror.Other.Transparency ~= 0 then
-					replicated.Remotes.CommF_:InvokeServer("CakePrinceSpawner", true)
-				end
-			end
-			local QuestGui = plr.PlayerGui.Main.Quest
-			if _G.AcceptQuestC and QuestGui and not QuestGui.Visible then
-				_tp(CakeQuestPos)
-				task.wait(1)
-				replicated.Remotes.CommF_:InvokeServer("StartQuest","CakeQuest2",2)
+			-- =========================
+			-- STEP 2: CHECK SUMMON
+			-- =========================
+			local CakeLoaf = workspace.Map:FindFirstChild("CakeLoaf")
+			local BigMirror = CakeLoaf and CakeLoaf:FindFirstChild("BigMirror")
+
+			if BigMirror
+			and not Enemies:FindFirstChild("Cake Prince")
+			and BigMirror.Other.Transparency ~= 0
+			and not SummonLock then
+				SummonLock = true
+				replicated.Remotes.CommF_:InvokeServer("CakePrinceSpawner", true)
+				task.wait(2)
+				Running = false
+				return
 			end
 
-			local FoundMob = false
-			for _,mob in pairs(Enemies:GetChildren()) do
+			-- =========================
+			-- STEP 3: QUEST (OPTIONAL)
+			-- =========================
+			if _G.CakeAcceptQuest then
+				local QuestGui = plr.PlayerGui.Main.Quest
+				if QuestGui and not QuestGui.Visible then
+					_tp(CakeQuestPos)
+					task.wait(1)
+					replicated.Remotes.CommF_:InvokeServer("StartQuest", "CakeQuest2", 2)
+				end
+			end
+
+			-- =========================
+			-- STEP 4: FARM CAKE MOBS
+			-- =========================
+			local Found = false
+			for _, mob in pairs(Enemies:GetChildren()) do
 				if CakeMobs[mob.Name]
 				and mob:FindFirstChild("HumanoidRootPart")
 				and mob:FindFirstChild("Humanoid")
 				and mob.Humanoid.Health > 0 then
 
-					FoundMob = true
+					Found = true
 					bringmob = true
 					MonFarm = mob.Name
-					FarmPos = mob.HumanoidRootPart.CFrame
 
-					repeat
-						task.wait()
-
-						if Enemies:FindFirstChild("Cake Prince") then
-							bringmob = false
-							return
-						end
-
-						if not _G.Auto_Cake_Prince then break end
-						if not mob.Parent or mob.Humanoid.Health <= 0 then break end
+					while mob.Parent and mob.Humanoid.Health > 0 do
+						if Stop or not _G.AutoCakePrince then break end
+						if Enemies:FindFirstChild("Cake Prince") then break end
 
 						EquipWeapon(_G.SelectWeapon)
-						if Boud and not Char:FindFirstChild("HasBuso") then
-							replicated.Remotes.CommF_:InvokeServer("Buso")
-						end
-
 						_tp(mob.HumanoidRootPart.CFrame * PlayerOffset)
 
 						mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
@@ -4466,16 +4487,20 @@ spawn(function()
 						mob.HumanoidRootPart.CanCollide = false
 						mob.Humanoid.WalkSpeed = 0
 						mob.Humanoid.JumpPower = 0
-					until false
+
+						task.wait()
+					end
 
 					bringmob = false
 				end
 			end
 
-			if not FoundMob then
+			if not Found then
 				_tp(CakeFarmPos * PlayerOffset)
 			end
 		end)
+
+		Running = false
 	end
 end)
 L_1_[93]["Main"]:AddToggle({
