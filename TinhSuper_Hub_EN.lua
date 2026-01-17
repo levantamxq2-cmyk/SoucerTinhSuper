@@ -2002,7 +2002,7 @@ L_1_[16] = (loadstring(game:HttpGet(L_1_[2]({
 	"s/main/UiRedzHub.lua"
 }))))()
 L_1_[38] = L_1_[16]:MakeWindow({
-	["Title"] = "TinhSuper Hub [V 1.1.5]";
+	["Title"] = "TinhSuper Hub [V 1.1.6]";
 	["SubTitle"] = "by tinhsuper_gm",
 	["SaveFolder"] = "TinhSuper_Hub.json"
 })
@@ -2568,10 +2568,7 @@ task.spawn(function()
     local lastTP = 0
 
     while task.wait(0.15) do
-        if not _G.Level then
-            task.wait(0.3)
-            continue
-        end
+        if not _G.Level then continue end
 
         pcall(function()
             local plr = game.Players.LocalPlayer
@@ -2579,17 +2576,20 @@ task.spawn(function()
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
-            -- 🔑 UPDATE QUEST DATA
+            -- ✅ CHỈ CHECK QUEST
             QuestCheck()
 
-            if not Mon or not Qname or not PosQ or not PosM then
-                task.wait(0.3)
-                return
+            -- ✅ CHỈ SUBMERGED KHI QUEST YÊU CẦU
+            if Qname and string.find(Qname, "Submerged") then
+                GoSubmerged()
             end
+
+            -- ⛔ CHỜ QUESTCHECK SET DATA
+            if not Mon or not Qname or not PosQ or not PosM then return end
 
             local questGui = plr.PlayerGui.Main.Quest
 
-            -- 🚶 CHƯA CÓ QUEST → VỀ NPC
+            -- ===== NHẬN QUEST =====
             if not questGui.Visible then
                 if tick() - lastTP > 2 then
                     _tp(PosQ)
@@ -2598,7 +2598,7 @@ task.spawn(function()
                 return
             end
 
-            -- 🔍 TÌM QUÁI
+            -- ===== TÌM QUÁI =====
             local target
             for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
                 if enemy.Name == Mon
@@ -2609,12 +2609,14 @@ task.spawn(function()
                 end
             end
 
+            -- ===== FARM =====
             if target then
                 repeat
                     if not _G.Level then break end
                     task.wait()
                     L_1_[4]["Kill"](target, _G.FastAttack)
-                until not target.Parent or target.Humanoid.Health <= 0
+                until not target.Parent
+                   or target.Humanoid.Health <= 0
             else
                 if tick() - lastTP > 2 then
                     _tp(PosM)
