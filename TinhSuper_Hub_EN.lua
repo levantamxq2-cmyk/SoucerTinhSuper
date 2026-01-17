@@ -2319,7 +2319,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [16/1/";
+		"Release Date [17/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -2696,8 +2696,77 @@ end)
 L_1_[93]["Main"]:AddSection({
 	"Farming"
 })
+pcall(function()
+	if MobKilled and not MobCakePrince then
+		MobCakePrince = MobKilled
+	end
+	if MobCakePrince and not MobKilled then
+		MobKilled = MobCakePrince
+	end
+end)
+local toggleCleanupMap = {
+	{g="_G.AutoFarm_Bone", flags={"bringmob","BoneRunning","MonFarm","CakeTarget"}},
+	{g="_G.Auto_Cake_Prince", flags={"bringmob","CakeRunning","MonFarm","CakeTarget"}},
+	{g="_G.AutoSpawnCP", flags={}},
+	{g="_G.AutoFarmNear", flags={"NearestRunning"}},
+	{g="_G.AutoFactory", flags={"FactoryRunning"}},
+	{g="_G.FarmPirate", flags={"PirateRunning"}},
+	{g="_G.AutoKillMob", flags={"AutoKillRunning","CurrentTarget"}},
+	{g="_G.AutoFarmIsland", flags={"IslandRunning","currentTarget"}},
+	{g="_G.FarmEliteHunt", flags={"EliteRunning","waitingQuest"}},
+	{g="_G.AutoDoughKing", flags={"DoughRunning"}},
+}
+local function safeClear(name)
+	if type(name) ~= "string" then return end
+	pcall(function()
+		_G[name] = false
+	end)
+	pcall(function()
+		if rawget(_G, name) ~= nil then rawset(_G, name, false) end
+	end)
+	pcall(function()
+		_ENV = _ENV or _G
+		if rawget(_ENV, name) ~= nil then rawset(_ENV, name, nil) end
+	end)
+end
+spawn(function()
+	while task.wait(0.5) do
+		pcall(function()
+			for _,entry in ipairs(toggleCleanupMap) do
+				local gname = entry.g
+				local ok, val = pcall(function() return load("return " .. gname)() end)
+				if ok and val == false then
+					for _,f in ipairs(entry.flags or {}) do
+						pcall(function() _G[f] = false end)
+						pcall(function() if rawget(_G, f) ~= nil then rawset(_G, f, false) end end)
+						pcall(function() if rawget(_ENV, f) ~= nil then rawset(_ENV, f, nil) end end)
+					end
+					pcall(function() bringmob = false end)
+					pcall(function() MonFarm = nil end)
+					pcall(function() FarmPos = nil end)
+					pcall(function() if StopTween then StopTween(true) end end)
+				end
+			end
+		end)
+	end
+end)
+spawn(function()
+	while task.wait(1) do
+		pcall(function()
+			if CheckingBone == nil then
+				CheckingBone = L_1_[93]["Main"]:AddParagraph({["Name"]="Bones :", ["Description"]=""})
+			end
+			if MobKilled == nil and MobCakePrince == nil then
+				MobKilled = L_1_[93]["Main"]:AddParagraph({["Title"]="Cake Princes :", ["Description"]=""})
+				MobCakePrince = MobKilled
+			else
+				if MobKilled and not MobCakePrince then MobCakePrince = MobKilled end
+				if MobCakePrince and not MobKilled then MobKilled = MobCakePrince end
+			end
+		end)
+	end
+end)
 _G.Level = false
--- Replace Level loop with safer pattern
 local LevelRunning = false
 FarmLevel = L_1_[93]["Main"]:AddToggle({
 	["Name"] = "Auto Farm Level",
@@ -4768,17 +4837,6 @@ CheckingBone = L_1_[93]["Main"]:AddParagraph({
 	["Title"] = "Bones :",
 	["Content"] = ""
 })
-spawn(function()
-	while wait(1) do
-		StatusBone:SetDesc("You Have: " .. (tostring((game:GetService("ReplicatedStorage"))["Remotes"]["CommF_"]:InvokeServer("Bones", "Check")) .. " Bones"))
-	end
-end)
-L_1_[93]["Main"]:AddSection({"Farming Bone"})
-
-CheckingBone = L_1_[93]["Main"]:AddParagraph({
-	["Title"] = "Bones :",
-	["Content"] = ""
-})
 
 spawn(function()
 	while task.wait(0.5) do
@@ -4788,28 +4846,18 @@ spawn(function()
 		end)
 	end
 end)
--- replace Bone logic with this safer version
-local BoneRunning = false
-local CurrentBoneTarget = nil
-local SoulCooldown = false
 
 L_1_[93]["Main"]:AddToggle({
-	Name = "Tự Động Cày Bone + Soul Reaper",
+	Name = "Auto Farm Bone + Soul Reaper",
 	Description = "",
 	Default = false,
 	Callback = function(v)
 		_G.AutoFarm_Bone = v
-		if not v then
-			BoneRunning = false
-			CurrentBoneTarget = nil
-			SoulCooldown = false
-			StopTween(true)
-		end
 	end
 })
 
 L_1_[93]["Main"]:AddToggle({
-	Name = "Nhận Nhiệm Vụ Farm Bone",
+	Name = "Accept Quest Bone",
 	Description = "",
 	Default = true,
 	Callback = function(v)
@@ -4817,102 +4865,104 @@ L_1_[93]["Main"]:AddToggle({
 	end
 })
 
-task.spawn(function()
-	while true do
+local BoneQuestPos = CFrame.new(-9516.99,172.01,6078.46)
+local SoulSummonPos = CFrame.new(-8932.3223,146.8315,6062.5508)
+local BoneOffset = CFrame.new(0,15,0)
+
+local BoneMobs = {
+	["Reborn Skeleton"] = true,
+	["Living Zombie"] = true,
+	["Demonic Soul"] = true,
+	["Possessed Mummy"] = true
+}
+
+spawn(function()
+	while task.wait(0.2) do
 		if not _G.AutoFarm_Bone then
-			task.wait(1)
 			continue
 		end
-		if BoneRunning then
-			task.wait()
-			continue
-		end
-		BoneRunning = true
 
 		pcall(function()
 			local Char = plr.Character
 			local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
-			if not HRP then BoneRunning = false return end
+			if not HRP then return end
 
-			-- auto buso
 			if Boud and not Char:FindFirstChild("HasBuso") then
-				pcall(function() replicated.Remotes.CommF_:InvokeServer("Buso") end)
+				replicated.Remotes.CommF_:InvokeServer("Buso")
 			end
 
-			-- if Soul Reaper exists -> fight it
 			local SoulReaper = GetConnectionEnemies("Soul Reaper")
-			if SoulReaper and SoulReaper:FindFirstChild("Humanoid") and SoulReaper:FindFirstChild("HumanoidRootPart") and SoulReaper.Humanoid.Health > 0 then
-				CurrentBoneTarget = SoulReaper
-				while _G.AutoFarm_Bone and SoulReaper.Parent and SoulReaper.Humanoid.Health > 0 do
+			if SoulReaper
+			and SoulReaper:FindFirstChild("Humanoid")
+			and SoulReaper:FindFirstChild("HumanoidRootPart")
+			and SoulReaper.Humanoid.Health > 0 then
+
+				MonFarm = "Soul Reaper"
+				repeat
 					task.wait()
 					EquipWeapon(_G.SelectWeapon)
+
 					if Boud and not Char:FindFirstChild("HasBuso") then
-						pcall(function() replicated.Remotes.CommF_:InvokeServer("Buso") end)
+						replicated.Remotes.CommF_:InvokeServer("Buso")
 					end
+
 					_tp(SoulReaper.HumanoidRootPart.CFrame * BoneOffset)
-					pcall(function()
-						SoulReaper.HumanoidRootPart.CanCollide = false
-						SoulReaper.Humanoid.WalkSpeed = 0
-						SoulReaper.Humanoid.JumpPower = 0
-					end)
-				end
-				CurrentBoneTarget = nil
-				BoneRunning = false
+
+					SoulReaper.HumanoidRootPart.CanCollide = false
+					SoulReaper.Humanoid.WalkSpeed = 0
+					SoulReaper.Humanoid.JumpPower = 0
+				until not _G.AutoFarm_Bone
+				   or not SoulReaper.Parent
+				   or SoulReaper.Humanoid.Health <= 0
+
 				return
 			end
 
-			-- if have Hallow Essence and no cooldown -> go summon (with cooldown)
-			if GetBP("Hallow Essence") and not SoulCooldown then
-				SoulCooldown = true
+			if GetBP("Hallow Essence") then
 				_tp(SoulSummonPos)
-				task.wait(0.8)
-				if HRP and (HRP.Position - SoulSummonPos.Position).Magnitude <= 8 then
-					pcall(function() EquipWeapon("Hallow Essence") end)
+				if (HRP.Position - SoulSummonPos.Position).Magnitude <= 6 then
+					EquipWeapon("Hallow Essence")
 				end
-				task.delay(8, function() SoulCooldown = false end)
-				BoneRunning = false
-				return
 			end
 
-			-- accept quest if needed
-			local QuestGui = plr.PlayerGui.Main and plr.PlayerGui.Main:FindFirstChild("Quest")
+			local QuestGui = plr.PlayerGui.Main:FindFirstChild("Quest")
 			if _G.AcceptQuestB and QuestGui and not QuestGui.Visible then
 				_tp(BoneQuestPos)
 				task.wait(1)
-				pcall(function() replicated.Remotes.CommF_:InvokeServer("StartQuest","HauntedQuest2",1) end)
-				BoneRunning = false
-				return
+				replicated.Remotes.CommF_:InvokeServer(
+					"StartQuest","HauntedQuest2",1
+				)
 			end
 
-			-- farm regular bone mobs
-			for _, mob in pairs(Enemies:GetChildren()) do
-				if not _G.AutoFarm_Bone then break end
-				if BoneMobs[mob.Name] and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-					CurrentBoneTarget = mob
-					while _G.AutoFarm_Bone and mob.Parent and mob.Humanoid.Health > 0 do
+			for _,mob in pairs(Enemies:GetChildren()) do
+				if BoneMobs[mob.Name]
+				and mob:FindFirstChild("Humanoid")
+				and mob:FindFirstChild("HumanoidRootPart")
+				and mob.Humanoid.Health > 0 then
+
+					MonFarm = mob.Name
+					repeat
 						task.wait()
 						EquipWeapon(_G.SelectWeapon)
+
 						if Boud and not Char:FindFirstChild("HasBuso") then
-							pcall(function() replicated.Remotes.CommF_:InvokeServer("Buso") end)
+							replicated.Remotes.CommF_:InvokeServer("Buso")
 						end
+
 						_tp(mob.HumanoidRootPart.CFrame * BoneOffset)
-						pcall(function()
-							mob.HumanoidRootPart.CanCollide = false
-							mob.Humanoid.WalkSpeed = 0
-							mob.Humanoid.JumpPower = 0
-							if mob:FindFirstChild("Head") then mob.Head.CanCollide = false end
-						end)
-					end
-					CurrentBoneTarget = nil
-					-- short delay and re-loop to be safe
-					task.wait(0.2)
-					if not _G.AutoFarm_Bone then break end
+
+						mob.HumanoidRootPart.CanCollide = false
+						mob.Humanoid.WalkSpeed = 0
+						mob.Humanoid.JumpPower = 0
+						if mob:FindFirstChild("Head") then
+							mob.Head.CanCollide = false
+						end
+					until not _G.AutoFarm_Bone
+					   or not mob.Parent
+					   or mob.Humanoid.Health <= 0
 				end
 			end
 		end)
-
-		BoneRunning = false
-		task.wait(0.3)
 	end
 end)
 RanBone = L_1_[93]["Main"]:AddToggle({
