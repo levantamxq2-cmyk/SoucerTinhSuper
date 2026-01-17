@@ -1328,6 +1328,7 @@ QuestB = function()
 		end
 	end
 end
+-- ===== QUEST BETA (GIỮ NGUYÊN LOGIC CŨ) =====
 QuestBeta = function()
 	local L_171_ = {}
 	L_171_[1] = QuestB()
@@ -1340,37 +1341,74 @@ QuestBeta = function()
 		[5] = PosQBoss
 	}
 end
+
+-- ===== GET HRP =====
 local function GetHRP()
-    local char = game.Players.LocalPlayer.Character
-    return char and char:FindFirstChild("HumanoidRootPart")
+	local char = game.Players.LocalPlayer.Character
+	return char and char:FindFirstChild("HumanoidRootPart")
 end
 
+-- ===== TALK SUBMARINE WORKER (2 LẦN CÓ) =====
+local function TalkSubmarineWorker()
+	local npcFolder = workspace:FindFirstChild("NPCs")
+	if not npcFolder then return end
+
+	local npc = npcFolder:FindFirstChild("Submarine Worker")
+	if not npc or not npc:FindFirstChild("HumanoidRootPart") then return end
+
+	local hrp = GetHRP()
+	if not hrp then return end
+
+	-- đứng gần NPC
+	hrp.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+	task.wait(0.8)
+
+	local CommF = game.ReplicatedStorage.Remotes.CommF_
+
+	-- mở hội thoại
+	CommF:InvokeServer("TalkNpc", npc)
+	task.wait(0.6)
+
+	-- chọn CÓ lần 1
+	CommF:InvokeServer("SubChoice", npc, 1)
+	task.wait(0.6)
+
+	-- chọn CÓ lần 2 (confirm)
+	CommF:InvokeServer("SubChoice", npc, 1)
+	task.wait(0.6)
+end
+
+-- ===== GO SUBMERGED (FIX CỨNG) =====
 local InSubmerged = false
 local LastSubmerge = 0
 
 local function GoSubmerged()
-    if not _G.Level then return end
+	if not _G.Level then return end
 
-    local hrp = GetHRP()
-    if not hrp then return end
+	local hrp = GetHRP()
+	if not hrp then return end
 
-    -- Nếu đã ở Submerged thì thôi
-    if hrp.Position.Y < -1500 then return end
+	-- đã ở dưới biển thì không làm gì nữa
+	if hrp.Position.Y < -1500 then return end
 
-    if InSubmerged then return end
-    if tick() - LastSubmerge < 5 then return end
+	if InSubmerged then return end
+	if tick() - LastSubmerge < 8 then return end
 
-    InSubmerged = true
-    LastSubmerge = tick()
+	InSubmerged = true
+	LastSubmerge = tick()
 
-    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
-        "requestEntrance",
-        Vector3.new(923.2125, 126.976, 32852.832)
-    )
+	-- 1️⃣ nói chuyện NPC + xác nhận 2 lần
+	TalkSubmarineWorker()
 
-    task.delay(4, function()
-        InSubmerged = false
-    end)
+	-- 2️⃣ request xuống dưới
+	game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+		"requestEntrance",
+		Vector3.new(923.2125, 126.976, 32852.832)
+	)
+
+	task.delay(6, function()
+		InSubmerged = false
+	end)
 end
 QuestCheck = function()
 	local L_172_ = {}
@@ -2002,7 +2040,7 @@ L_1_[16] = (loadstring(game:HttpGet(L_1_[2]({
 	"s/main/UiRedzHub.lua"
 }))))()
 L_1_[38] = L_1_[16]:MakeWindow({
-	["Title"] = "TinhSuper Hub [V 1.1.6]";
+	["Title"] = "TinhSuper Hub [V 1.1.7]";
 	["SubTitle"] = "by tinhsuper_gm",
 	["SaveFolder"] = "TinhSuper_Hub.json"
 })
