@@ -1340,694 +1340,535 @@ QuestBeta = function()
 		[5] = PosQBoss
 	}
 end
+-- Helper: vào Submerged (anti-spam)
+local InSubmerged = false
+local LastSubmerge = 0
+local function GoSubmerged(PosQ)
+	if not _G["Level"] then return end
+	if not Root or not PosQ then return end
+	if InSubmerged then return end
+	if tick() - LastSubmerge < 3 then return end
+
+	if (PosQ.Position - Root.Position).Magnitude > 500 then
+		InSubmerged = true
+		LastSubmerge = tick()
+		replicated.Remotes.CommF_:InvokeServer(
+			"requestEntrance",
+			Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)
+		)
+		task.delay(2, function() InSubmerged = false end)
+	end
+end
+
+-- ===== QuestCheck (thay thế toàn bộ) =====
 QuestCheck = function()
 	local L_172_ = {}
-	L_172_[2] = game["Players"]["LocalPlayer"]["Data"]["Level"]["Value"]
+	L_172_[2] = game.Players.LocalPlayer.Data.Level.Value
+	local lvl = L_172_[2]
+
+	-- reset defaults (safety)
+	Mon, Qdata, Qname, NameMon, PosQ, PosM = nil, nil, nil, nil, nil, nil
+
 	if World1 then
-		if L_172_[2] == 1 or L_172_[2] <= 9 then
+		if lvl >= 1 and lvl <= 9 then
 			if tostring(TeamSelf) == "Marines" then
-				Mon = "Trainee"
-				Qname = "MarineQuest"
-				Qdata = 1
-				NameMon = "Trainee"
-				PosM = CFrame["new"](-2709.67944, 24.5206585, 2104.24585, -0.744724929, -3.97967455e-08, -0.667371571, 4.32403588e-08, 1, -1.07884304e-07, .667371571, -1.09201515e-07, -0.744724929)
-				PosQ = CFrame["new"](-2709.67944, 24.5206585, 2104.24585, -0.744724929, -3.97967455e-08, -0.667371571, 4.32403588e-08, 1, -1.07884304e-07, .667371571, -1.09201515e-07, -0.744724929)
+				Mon = "Trainee"; Qname = "MarineQuest"; Qdata = 1; NameMon = "Trainee"
+				PosM = CFrame.new(-2709.67944, 24.5206585, 2104.24585, -0.744724929, -3.97967455e-08, -0.667371571, 4.32403588e-08, 1, -1.07884304e-07, .667371571, -1.09201515e-07, -0.744724929)
+				PosQ = PosM
 			elseif tostring(TeamSelf) == "Pirates" then
-				Mon = "Bandit"
-				Qdata = 1
-				Qname = "BanditQuest1"
-				NameMon = "Bandit"
-				PosM = CFrame["new"](1045.9626464844, 27.002508163452, 1560.8203125)
-				PosQ = CFrame["new"](1045.9626464844, 27.002508163452, 1560.8203125)
+				Mon = "Bandit"; Qdata = 1; Qname = "BanditQuest1"; NameMon = "Bandit"
+				PosM = CFrame.new(1045.9626464844, 27.002508163452, 1560.8203125)
+				PosQ = PosM
 			end
-		elseif L_172_[2] == 10 or L_172_[2] <= 14 then
-			Mon = "Monkey"
-			Qdata = 1
-			Qname = "JungleQuest"
-			NameMon = "Monkey"
-			PosQ = CFrame["new"](-1598.08911, 35.5501175, 153.377838, 0, 0, 1, 0, 1, 0, -1, 0, 0)
-			PosM = CFrame["new"](-1448.5180664062, 67.853012084961, 11.465796470642)
-		elseif L_172_[2] == 15 or L_172_[2] <= 29 then
-			Mon = "Gorilla"
-			Qdata = 2
-			Qname = "JungleQuest"
-			NameMon = "Gorilla"
-			PosQ = CFrame["new"](-1598.08911, 35.5501175, 153.377838, 0, 0, 1, 0, 1, 0, -1, 0, 0)
-			PosM = CFrame["new"](-1129.8836669922, 40.46354675293, -525.42370605469)
-		elseif L_172_[2] == 30 or L_172_[2] <= 39 then
-			Mon = "Pirate"
-			Qdata = 1
-			Qname = "BuggyQuest1"
-			NameMon = "Pirate"
-			PosQ = CFrame["new"](-1141.07483, 4.10001802, 3831.5498, .965929627, 0, -0.258804798, 0, 1, 0, .258804798, 0, .965929627)
-			PosM = CFrame["new"](-1103.5134277344, 13.752052307129, 3896.0910644531)
-		elseif L_172_[2] == 40 or L_172_[2] <= 59 then
-			Mon = "Brute"
-			Qdata = 2
-			Qname = "BuggyQuest1"
-			NameMon = "Brute"
-			PosQ = CFrame["new"](-1141.07483, 4.10001802, 3831.5498, .965929627, 0, -0.258804798, 0, 1, 0, .258804798, 0, .965929627)
-			PosM = CFrame["new"](-1140.0837402344, 14.809885025024, 4322.9213867188)
-		elseif L_172_[2] == 60 or L_172_[2] <= 74 then
-			Mon = "Desert Bandit"
-			Qdata = 1
-			Qname = "DesertQuest"
-			NameMon = "Desert Bandit"
-			PosQ = CFrame["new"](894.488647, 5.14000702, 4392.43359, .819155693, 0, -0.573571265, 0, 1, 0, .573571265, 0, .819155693)
-			PosM = CFrame["new"](924.7998046875, 6.4486746788025, 4481.5859375)
-		elseif L_172_[2] == 75 or L_172_[2] <= 89 then
-			Mon = "Desert Officer"
-			Qdata = 2
-			Qname = "DesertQuest"
-			NameMon = "Desert Officer"
-			PosQ = CFrame["new"](894.488647, 5.14000702, 4392.43359, .819155693, 0, -0.573571265, 0, 1, 0, .573571265, 0, .819155693)
-			PosM = CFrame["new"](1608.2822265625, 8.6142244338989, 4371.0073242188)
-		elseif L_172_[2] == 90 or L_172_[2] <= 99 then
-			Mon = "Snow Bandit"
-			Qdata = 1
-			Qname = "SnowQuest"
-			NameMon = "Snow Bandit"
-			PosQ = CFrame["new"](1389.74451, 88.1519318, -1298.90796, -0.342042685, 0, .939684391, 0, 1, 0, -0.939684391, 0, -0.342042685)
-			PosM = CFrame["new"](1354.3479003906, 87.272773742676, -1393.9465332031)
-		elseif L_172_[2] == 100 or L_172_[2] <= 119 then
-			Mon = "Snowman"
-			Qdata = 2
-			Qname = "SnowQuest"
-			NameMon = "Snowman"
-			PosQ = CFrame["new"](1389.74451, 88.1519318, -1298.90796, -0.342042685, 0, .939684391, 0, 1, 0, -0.939684391, 0, -0.342042685)
-			PosM = CFrame["new"](6241.9951171875, 51.522083282471, -1243.9771728516)
-		elseif L_172_[2] == 120 or L_172_[2] <= 149 then
-			Mon = "Chief Petty Officer"
-			Qdata = 1
-			Qname = "MarineQuest2"
-			NameMon = "Chief Petty Officer"
-			PosQ = CFrame["new"](-5039.58643, 27.3500385, 4324.68018, 0, 0, -1, 0, 1, 0, 1, 0, 0)
-			PosM = CFrame["new"](-4881.2309570312, 22.652044296265, 4273.7524414062)
-		elseif L_172_[2] == 150 or L_172_[2] <= 174 then
-			Mon = "Sky Bandit"
-			Qdata = 1
-			Qname = "SkyQuest"
-			NameMon = "Sky Bandit"
-			PosQ = CFrame["new"](-4839.53027, 716.368591, -2619.44165, .866007268, 0, .500031412, 0, 1, 0, -0.500031412, 0, .866007268)
-			PosM = CFrame["new"](-4953.20703125, 295.74420166016, -2899.2290039062)
-		elseif L_172_[2] == 175 or L_172_[2] <= 189 then
-			Mon = "Dark Master"
-			Qdata = 2
-			Qname = "SkyQuest"
-			NameMon = "Dark Master"
-			PosQ = CFrame["new"](-4839.53027, 716.368591, -2619.44165, .866007268, 0, .500031412, 0, 1, 0, -0.500031412, 0, .866007268)
-			PosM = CFrame["new"](-5259.8447265625, 391.39767456055, -2229.0354003906)
-		elseif L_172_[2] == 190 or L_172_[2] <= 209 then
-			Mon = "Prisoner"
-			Qdata = 1
-			Qname = "PrisonerQuest"
-			NameMon = "Prisoner"
-			PosQ = CFrame["new"](5308.93115, 1.65517521, 475.120514, -0.0894274712, -5.00292918e-09, -0.995993316, 1.60817859e-09, 1, -5.16744869e-09, .995993316, -2.06384709e-09, -0.0894274712)
-			PosM = CFrame["new"](5098.9736328125, -0.3204058110714, 474.23733520508)
-		elseif L_172_[2] == 210 or L_172_[2] <= 249 then
-			Mon = "Dangerous Prisoner"
-			Qdata = 2
-			Qname = "PrisonerQuest"
-			NameMon = "Dangerous Prisoner"
-			PosQ = CFrame["new"](5308.93115, 1.65517521, 475.120514, -0.0894274712, -5.00292918e-09, -0.995993316, 1.60817859e-09, 1, -5.16744869e-09, .995993316, -2.06384709e-09, -0.0894274712)
-			PosM = CFrame["new"](5654.5634765625, 15.633401870728, 866.29919433594)
-		elseif L_172_[2] == 250 or L_172_[2] <= 274 then
-			Mon = "Toga Warrior"
-			Qdata = 1
-			Qname = "ColosseumQuest"
-			NameMon = "Toga Warrior"
-			PosQ = CFrame["new"](-1580.04663, 6.35000277, -2986.47534, -0.515037298, 0, -0.857167721, 0, 1, 0, .857167721, 0, -0.515037298)
-			PosM = CFrame["new"](-1820.21484375, 51.683856964111, -2740.6650390625)
-		elseif L_172_[2] == 275 or L_172_[2] <= 299 then
-			Mon = "Gladiator"
-			Qdata = 2
-			Qname = "ColosseumQuest"
-			NameMon = "Gladiator"
-			PosQ = CFrame["new"](-1580.04663, 6.35000277, -2986.47534, -0.515037298, 0, -0.857167721, 0, 1, 0, .857167721, 0, -0.515037298)
-			PosM = CFrame["new"](-1292.8381347656, 56.380882263184, -3339.0314941406)
-		elseif L_172_[2] == 300 or L_172_[2] <= 324 then
+
+		elseif lvl >= 10 and lvl <= 14 then
+			Mon = "Monkey"; Qdata = 1; Qname = "JungleQuest"; NameMon = "Monkey"
+			PosQ = CFrame.new(-1598.08911, 35.5501175, 153.377838, 0,0,1,0,1,0,-1,0,0)
+			PosM = CFrame.new(-1448.5180664062, 67.853012084961, 11.465796470642)
+
+		elseif lvl >= 15 and lvl <= 29 then
+			Mon = "Gorilla"; Qdata = 2; Qname = "JungleQuest"; NameMon = "Gorilla"
+			PosQ = CFrame.new(-1598.08911, 35.5501175, 153.377838, 0,0,1,0,1,0,-1,0,0)
+			PosM = CFrame.new(-1129.8836669922, 40.46354675293, -525.42370605469)
+
+		elseif lvl >= 30 and lvl <= 39 then
+			Mon = "Pirate"; Qdata = 1; Qname = "BuggyQuest1"; NameMon = "Pirate"
+			PosQ = CFrame.new(-1141.07483, 4.10001802, 3831.5498, .965929627,0,-0.258804798,0,1,0,.258804798,0,.965929627)
+			PosM = CFrame.new(-1103.5134277344, 13.752052307129, 3896.0910644531)
+
+		elseif lvl >= 40 and lvl <= 59 then
+			Mon = "Brute"; Qdata = 2; Qname = "BuggyQuest1"; NameMon = "Brute"
+			PosQ = CFrame.new(-1141.07483, 4.10001802, 3831.5498, .965929627,0,-0.258804798,0,1,0,.258804798,0,.965929627)
+			PosM = CFrame.new(-1140.0837402344, 14.809885025024, 4322.9213867188)
+
+		elseif lvl >= 60 and lvl <= 74 then
+			Mon = "Desert Bandit"; Qdata = 1; Qname = "DesertQuest"; NameMon = "Desert Bandit"
+			PosQ = CFrame.new(894.488647, 5.14000702, 4392.43359, .819155693,0,-0.573571265,0,1,0,.573571265,0,.819155693)
+			PosM = CFrame.new(924.7998046875, 6.4486746788025, 4481.5859375)
+
+		elseif lvl >= 75 and lvl <= 89 then
+			Mon = "Desert Officer"; Qdata = 2; Qname = "DesertQuest"; NameMon = "Desert Officer"
+			PosQ = CFrame.new(894.488647, 5.14000702, 4392.43359, .819155693,0,-0.573571265,0,1,0,.573571265,0,.819155693)
+			PosM = CFrame.new(1608.2822265625, 8.6142244338989, 4371.0073242188)
+
+		elseif lvl >= 90 and lvl <= 99 then
+			Mon = "Snow Bandit"; Qdata = 1; Qname = "SnowQuest"; NameMon = "Snow Bandit"
+			PosQ = CFrame.new(1389.74451, 88.1519318, -1298.90796, -0.342042685,0,.939684391,0,1,0,-0.939684391,0,-0.342042685)
+			PosM = CFrame.new(1354.3479003906, 87.272773742676, -1393.9465332031)
+
+		elseif lvl >= 100 and lvl <= 119 then
+			Mon = "Snowman"; Qdata = 2; Qname = "SnowQuest"; NameMon = "Snowman"
+			PosQ = CFrame.new(1389.74451, 88.1519318, -1298.90796, -0.342042685,0,.939684391,0,1,0,-0.939684391,0,-0.342042685)
+			PosM = CFrame.new(6241.9951171875, 51.522083282471, -1243.9771728516)
+
+		elseif lvl >= 120 and lvl <= 149 then
+			Mon = "Chief Petty Officer"; Qdata = 1; Qname = "MarineQuest2"; NameMon = "Chief Petty Officer"
+			PosQ = CFrame.new(-5039.58643, 27.3500385, 4324.68018, 0,0,-1,0,1,0,1,0,0)
+			PosM = CFrame.new(-4881.2309570312, 22.652044296265, 4273.7524414062)
+
+		elseif lvl >= 150 and lvl <= 174 then
+			Mon = "Sky Bandit"; Qdata = 1; Qname = "SkyQuest"; NameMon = "Sky Bandit"
+			PosQ = CFrame.new(-4839.53027, 716.368591, -2619.44165, .866007268,0,.500031412,0,1,0,-0.500031412,0,.866007268)
+			PosM = CFrame.new(-4953.20703125, 295.74420166016, -2899.2290039062)
+
+		elseif lvl >= 175 and lvl <= 189 then
+			Mon = "Dark Master"; Qdata = 2; Qname = "SkyQuest"; NameMon = "Dark Master"
+			PosQ = CFrame.new(-4839.53027, 716.368591, -2619.44165, .866007268,0,.500031412,0,1,0,-0.500031412,0,.866007268)
+			PosM = CFrame.new(-5259.8447265625, 391.39767456055, -2229.0354003906)
+
+		elseif lvl >= 190 and lvl <= 209 then
+			Mon = "Prisoner"; Qdata = 1; Qname = "PrisonerQuest"; NameMon = "Prisoner"
+			PosQ = CFrame.new(5308.93115, 1.65517521, 475.120514, -0.0894274712, -5.00292918e-09, -0.995993316, 1.60817859e-09, 1, -5.16744869e-09, .995993316, -2.06384709e-09, -0.0894274712)
+			PosM = CFrame.new(5098.9736328125, -0.3204058110714, 474.23733520508)
+
+		elseif lvl >= 210 and lvl <= 249 then
+			Mon = "Dangerous Prisoner"; Qdata = 2; Qname = "PrisonerQuest"; NameMon = "Dangerous Prisoner"
+			PosQ = CFrame.new(5308.93115, 1.65517521, 475.120514, -0.0894274712, -5.00292918e-09, -0.995993316, 1.60817859e-09, 1, -5.16744869e-09, .995993316, -2.06384709e-09, -0.0894274712)
+			PosM = CFrame.new(5654.5634765625, 15.633401870728, 866.29919433594)
+
+		elseif lvl >= 250 and lvl <= 274 then
+			Mon = "Toga Warrior"; Qdata = 1; Qname = "ColosseumQuest"; NameMon = "Toga Warrior"
+			PosQ = CFrame.new(-1580.04663, 6.35000277, -2986.47534, -0.515037298,0,-0.857167721,0,1,0,.857167721,0,-0.515037298)
+			PosM = CFrame.new(-1820.21484375, 51.683856964111, -2740.6650390625)
+
+		elseif lvl >= 275 and lvl <= 299 then
+			Mon = "Gladiator"; Qdata = 2; Qname = "ColosseumQuest"; NameMon = "Gladiator"
+			PosQ = CFrame.new(-1580.04663, 6.35000277, -2986.47534, -0.515037298,0,-0.857167721,0,1,0,.857167721,0,-0.515037298)
+			PosM = CFrame.new(-1292.8381347656, 56.380882263184, -3339.0314941406)
+
+		elseif lvl >= 300 and lvl <= 324 then
 			Boubty = false
-			Mon = "Military Soldier"
-			Qdata = 1
-			Qname = "MagmaQuest"
-			NameMon = "Military Soldier"
-			PosQ = CFrame["new"](-5313.37012, 10.9500084, 8515.29395, -0.499959469, 0, .866048813, 0, 1, 0, -0.866048813, 0, -0.499959469)
-			PosM = CFrame["new"](-5411.1645507812, 11.081554412842, 8454.29296875)
-		elseif L_172_[2] == 325 or L_172_[2] <= 374 then
-			Mon = "Military Spy"
-			Qdata = 2
-			Qname = "MagmaQuest"
-			NameMon = "Military Spy"
-			PosQ = CFrame["new"](-5313.37012, 10.9500084, 8515.29395, -0.499959469, 0, .866048813, 0, 1, 0, -0.866048813, 0, -0.499959469)
-			PosM = CFrame["new"](-5802.8681640625, 86.262413024902, 8828.859375)
-		elseif L_172_[2] == 375 or L_172_[2] <= 399 then
-			Mon = "Fishman Warrior"
-			Qdata = 1
-			Qname = "FishmanQuest"
-			NameMon = "Fishman Warrior"
-			PosQ = CFrame["new"](61122.65234375, 18.497442245483, 1569.3997802734)
-			PosM = CFrame["new"](60878.30078125, 18.482830047607, 1543.7574462891)
-			if _G["Level"] and (PosQ["Position"] - game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] > 10000 then
-				replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](61163.8515625, 11.6796875, 1819.7841796875))
+			Mon = "Military Soldier"; Qdata = 1; Qname = "MagmaQuest"; NameMon = "Military Soldier"
+			PosQ = CFrame.new(-5313.37012, 10.9500084, 8515.29395, -0.499959469,0,.866048813,0,1,0,-0.866048813,0,-0.499959469)
+			PosM = CFrame.new(-5411.1645507812, 11.081554412842, 8454.29296875)
+
+		elseif lvl >= 325 and lvl <= 374 then
+			Mon = "Military Spy"; Qdata = 2; Qname = "MagmaQuest"; NameMon = "Military Spy"
+			PosQ = CFrame.new(-5313.37012, 10.9500084, 8515.29395, -0.499959469,0,.866048813,0,1,0,-0.866048813,0,-0.499959469)
+			PosM = CFrame.new(-5802.8681640625, 86.262413024902, 8828.859375)
+
+		elseif lvl >= 375 and lvl <= 399 then
+			Mon = "Fishman Warrior"; Qdata = 1; Qname = "FishmanQuest"; NameMon = "Fishman Warrior"
+			PosQ = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734)
+			PosM = CFrame.new(60878.30078125, 18.482830047607, 1543.7574462891)
+			if _G["Level"] and (PosQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > 10000 then
+				replicated.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(61163.8515625, 11.6796875, 1819.7841796875))
 			end
-		elseif L_172_[2] == 400 or L_172_[2] <= 449 then
-			Mon = "Fishman Commando"
-			Qdata = 2
-			Qname = "FishmanQuest"
-			NameMon = "Fishman Commando"
-			PosQ = CFrame["new"](61122.65234375, 18.497442245483, 1569.3997802734)
-			PosM = CFrame["new"](61922.6328125, 18.482830047607, 1493.9343261719)
-			if _G["Level"] and (PosQ["Position"] - game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] > 10000 then
-				replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](61163.8515625, 11.6796875, 1819.7841796875))
+
+		elseif lvl >= 400 and lvl <= 449 then
+			Mon = "Fishman Commando"; Qdata = 2; Qname = "FishmanQuest"; NameMon = "Fishman Commando"
+			PosQ = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734)
+			PosM = CFrame.new(61922.6328125, 18.482830047607, 1493.9343261719)
+			if _G["Level"] and (PosQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > 10000 then
+				replicated.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(61163.8515625, 11.6796875, 1819.7841796875))
 			end
-		elseif L_172_[2] == 450 or L_172_[2] <= 474 then
-			Mon = "God's Guard"
-			Qdata = 1
-			Qname = "SkyExp1Quest"
-			NameMon = "God's Guard"
-			PosQ = CFrame["new"](-4721.88867, 843.874695, -1949.96643, .996191859, 0, -0.0871884301, 0, 1, 0, .0871884301, 0, .996191859)
-			PosM = CFrame["new"](-4710.04296875, 845.27697753906, -1927.3079833984)
-			if _G["Level"] and (PosQ["Position"] - game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] > 10000 then
-				replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](-4607.82275, 872.54248, -1667.55688))
+
+		elseif lvl >= 450 and lvl <= 474 then
+			Mon = "God's Guard"; Qdata = 1; Qname = "SkyExp1Quest"; NameMon = "God's Guard"
+			PosQ = CFrame.new(-4721.88867, 843.874695, -1949.96643, .996191859,0,-0.0871884301,0,1,0,.0871884301,0,.996191859)
+			PosM = CFrame.new(-4710.04296875, 845.27697753906, -1927.3079833984)
+			if _G["Level"] and (PosQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > 10000 then
+				replicated.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(-4607.82275, 872.54248, -1667.55688))
 			end
-		elseif L_172_[2] == 475 or L_172_[2] <= 524 then
-			Mon = "Shanda"
-			Qdata = 2
-			Qname = "SkyExp1Quest"
-			NameMon = "Shanda"
-			PosQ = CFrame["new"](-7859.09814, 5544.19043, -381.476196, -0.422592998, 0, .906319618, 0, 1, 0, -0.906319618, 0, -0.422592998)
-			PosM = CFrame["new"](-7678.4897460938, 5566.4038085938, -497.21560668945)
-			if _G["Level"] and (PosQ["Position"] - game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] > 10000 then
-				replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](-7894.6176757813, 5547.1416015625, -380.29119873047))
+
+		elseif lvl >= 475 and lvl <= 524 then
+			Mon = "Shanda"; Qdata = 2; Qname = "SkyExp1Quest"; NameMon = "Shanda"
+			PosQ = CFrame.new(-7859.09814, 5544.19043, -381.476196, -0.422592998,0,.906319618,0,1,0,-0.906319618,0,-0.422592998)
+			PosM = CFrame.new(-7678.4897460938, 5566.4038085938, -497.21560668945)
+			if _G["Level"] and (PosQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > 10000 then
+				replicated.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047))
 			end
-		elseif L_172_[2] == 525 or L_172_[2] <= 549 then
-			Mon = "Royal Squad"
-			Qdata = 1
-			Qname = "SkyExp2Quest"
-			NameMon = "Royal Squad"
-			PosQ = CFrame["new"](-7906.81592, 5634.6626, -1411.99194, 0, 0, -1, 0, 1, 0, 1, 0, 0)
-			PosM = CFrame["new"](-7624.2524414062, 5658.1333007812, -1467.3542480469)
-		elseif L_172_[2] == 550 or L_172_[2] <= 624 then
-			Mon = "Royal Soldier"
-			Qdata = 2
-			Qname = "SkyExp2Quest"
-			NameMon = "Royal Soldier"
-			PosQ = CFrame["new"](-7906.81592, 5634.6626, -1411.99194, 0, 0, -1, 0, 1, 0, 1, 0, 0)
-			PosM = CFrame["new"](-7836.7534179688, 5645.6640625, -1790.6236572266)
-		elseif L_172_[2] == 625 or L_172_[2] <= 649 then
-			Mon = "Galley Pirate"
-			Qdata = 1
-			Qname = "FountainQuest"
-			NameMon = "Galley Pirate"
-			PosQ = CFrame["new"](5259.81982, 37.3500175, 4050.0293, .087131381, 0, .996196866, 0, 1, 0, -0.996196866, 0, .087131381)
-			PosM = CFrame["new"](5551.0219726562, 78.901351928711, 3930.4128417969)
-		elseif L_172_[2] >= 650 and L_172_[2] <= 2801 then
-			Mon = "Galley Captain"
-			Qdata = 2
-			Qname = "FountainQuest"
-			NameMon = "Galley Captain"
-			PosQ = CFrame["new"](5259.81982, 37.3500175, 4050.0293, .087131381, 0, .996196866, 0, 1, 0, -0.996196866, 0, .087131381)
-			PosM = CFrame["new"](5441.9516601562, 42.502059936523, 4950.09375)
+
+		elseif lvl >= 525 and lvl <= 549 then
+			Mon = "Royal Squad"; Qdata = 1; Qname = "SkyExp2Quest"; NameMon = "Royal Squad"
+			PosQ = CFrame.new(-7906.81592, 5634.6626, -1411.99194, 0,0,-1,0,1,0,1,0,0)
+			PosM = CFrame.new(-7624.2524414062, 5658.1333007812, -1467.3542480469)
+
+		elseif lvl >= 550 and lvl <= 624 then
+			Mon = "Royal Soldier"; Qdata = 2; Qname = "SkyExp2Quest"; NameMon = "Royal Soldier"
+			PosQ = CFrame.new(-7906.81592, 5634.6626, -1411.99194, 0,0,-1,0,1,0,1,0,0)
+			PosM = CFrame.new(-7836.7534179688, 5645.6640625, -1790.6236572266)
+
+		elseif lvl >= 625 and lvl <= 649 then
+			Mon = "Galley Pirate"; Qdata = 1; Qname = "FountainQuest"; NameMon = "Galley Pirate"
+			PosQ = CFrame.new(5259.81982, 37.3500175, 4050.0293, .087131381,0,.996196866,0,1,0,-0.996196866,0,.087131381)
+			PosM = CFrame.new(5551.0219726562, 78.901351928711, 3930.4128417969)
+
+		elseif lvl >= 650 then
+			Mon = "Galley Captain"; Qdata = 2; Qname = "FountainQuest"; NameMon = "Galley Captain"
+			PosQ = CFrame.new(5259.81982, 37.3500175, 4050.0293, .087131381,0,.996196866,0,1,0,-0.996196866,0,.087131381)
+			PosM = CFrame.new(5441.9516601562, 42.502059936523, 4950.09375)
 		end
+
 	elseif World2 then
-		if L_172_[2] == 700 or L_172_[2] <= 724 then
-			Mon = "Raider"
-			Qdata = 1
-			Qname = "Area1Quest"
-			NameMon = "Raider"
-			PosQ = CFrame["new"](-429.543518, 71.7699966, 1836.18188, -0.22495985, 0, -0.974368095, 0, 1, 0, .974368095, 0, -0.22495985)
-			PosM = CFrame["new"](-728.32672119141, 52.779319763184, 2345.7705078125)
-		elseif L_172_[2] == 725 or L_172_[2] <= 774 then
-			Mon = "Mercenary"
-			Qdata = 2
-			Qname = "Area1Quest"
-			NameMon = "Mercenary"
-			PosQ = CFrame["new"](-429.543518, 71.7699966, 1836.18188, -0.22495985, 0, -0.974368095, 0, 1, 0, .974368095, 0, -0.22495985)
-			PosM = CFrame["new"](-1004.3244018555, 80.158866882324, 1424.6193847656)
-		elseif L_172_[2] == 775 or L_172_[2] <= 799 then
-			Mon = "Swan Pirate"
-			Qdata = 1
-			Qname = "Area2Quest"
-			NameMon = "Swan Pirate"
-			PosQ = CFrame["new"](638.43811, 71.769989, 918.282898, .139203906, 0, .99026376, 0, 1, 0, -0.99026376, 0, .139203906)
-			PosM = CFrame["new"](1068.6643066406, 137.61428833008, 1322.1060791016)
-		elseif L_172_[2] == 800 or L_172_[2] <= 874 then
-			Mon = "Factory Staff"
-			Qname = "Area2Quest"
-			Qdata = 2
-			NameMon = "Factory Staff"
-			PosQ = CFrame["new"](632.698608, 73.1055908, 918.666321, -0.0319722369, 8.96074881e-10, -0.999488771, 1.36326533e-10, 1, 8.92172336e-10, .999488771, -1.07732087e-10, -0.0319722369)
-			PosM = CFrame["new"](73.078674316406, 81.863441467285, -27.470672607422)
-		elseif L_172_[2] == 875 or L_172_[2] <= 899 then
-			Mon = "Marine Lieutenant"
-			Qdata = 1
-			Qname = "MarineQuest3"
-			NameMon = "Marine Lieutenant"
-			PosQ = CFrame["new"](-2440.79639, 71.7140732, -3216.06812, .866007268, 0, .500031412, 0, 1, 0, -0.500031412, 0, .866007268)
-			PosM = CFrame["new"](-2821.3723144531, 75.897277832031, -3070.0891113281)
-		elseif L_172_[2] == 900 or L_172_[2] <= 949 then
-			Mon = "Marine Captain"
-			Qdata = 2
-			Qname = "MarineQuest3"
-			NameMon = "Marine Captain"
-			PosQ = CFrame["new"](-2440.79639, 71.7140732, -3216.06812, .866007268, 0, .500031412, 0, 1, 0, -0.500031412, 0, .866007268)
-			PosM = CFrame["new"](-1861.2310791016, 80.176582336426, -3254.6975097656)
-		elseif L_172_[2] == 950 or L_172_[2] <= 974 then
-			Mon = "Zombie"
-			Qdata = 1
-			Qname = "ZombieQuest"
-			NameMon = "Zombie"
-			PosQ = CFrame["new"](-5497.06152, 47.5923004, -795.237061, -0.29242146, 0, -0.95628953, 0, 1, 0, .95628953, 0, -0.29242146)
-			PosM = CFrame["new"](-5657.7768554688, 78.969734191895, -928.68701171875)
-		elseif L_172_[2] == 975 or L_172_[2] <= 999 then
-			Mon = "Vampire"
-			Qdata = 2
-			Qname = "ZombieQuest"
-			NameMon = "Vampire"
-			PosQ = CFrame["new"](-5497.06152, 47.5923004, -795.237061, -0.29242146, 0, -0.95628953, 0, 1, 0, .95628953, 0, -0.29242146)
-			PosM = CFrame["new"](-6037.66796875, 32.184638977051, -1340.6597900391)
-		elseif L_172_[2] == 1000 or L_172_[2] <= 1049 then
-			Mon = "Snow Trooper"
-			Qdata = 1
-			Qname = "SnowMountainQuest"
-			NameMon = "Snow Trooper"
-			PosQ = CFrame["new"](609.858826, 400.119904, -5372.25928, -0.374604106, 0, .92718488, 0, 1, 0, -0.92718488, 0, -0.374604106)
-			PosM = CFrame["new"](549.14733886719, 427.38705444336, -5563.6987304688)
-		elseif L_172_[2] == 1050 or L_172_[2] <= 1099 then
-			Mon = "Winter Warrior"
-			Qdata = 2
-			Qname = "SnowMountainQuest"
-			NameMon = "Winter Warrior"
-			PosQ = CFrame["new"](609.858826, 400.119904, -5372.25928, -0.374604106, 0, .92718488, 0, 1, 0, -0.92718488, 0, -0.374604106)
-			PosM = CFrame["new"](1142.7451171875, 475.63980102539, -5199.4165039062)
-		elseif L_172_[2] == 1100 or L_172_[2] <= 1124 then
-			Mon = "Lab Subordinate"
-			Qdata = 1
-			Qname = "IceSideQuest"
-			NameMon = "Lab Subordinate"
-			PosQ = CFrame["new"](-6064.06885, 15.2422857, -4902.97852, .453972578, 0, -0.891015649, 0, 1, 0, .891015649, 0, .453972578)
-			PosM = CFrame["new"](-5707.4716796875, 15.951709747314, -4513.3920898438)
-		elseif L_172_[2] == 1125 or L_172_[2] <= 1174 then
-			Mon = "Horned Warrior"
-			Qdata = 2
-			Qname = "IceSideQuest"
-			NameMon = "Horned Warrior"
-			PosQ = CFrame["new"](-6064.06885, 15.2422857, -4902.97852, .453972578, 0, -0.891015649, 0, 1, 0, .891015649, 0, .453972578)
-			PosM = CFrame["new"](-6341.3666992188, 15.951770782471, -5723.162109375)
-		elseif L_172_[2] == 1175 or L_172_[2] <= 1199 then
-			Mon = "Magma Ninja"
-			Qdata = 1
-			Qname = "FireSideQuest"
-			NameMon = "Magma Ninja"
-			PosQ = CFrame["new"](-5428.03174, 15.0622921, -5299.43457, -0.882952213, 0, .469463557, 0, 1, 0, -0.469463557, 0, -0.882952213)
-			PosM = CFrame["new"](-5449.6728515625, 76.658744812012, -5808.2006835938)
-		elseif L_172_[2] == 1200 or L_172_[2] <= 1249 then
-			Mon = "Lava Pirate"
-			Qdata = 2
-			Qname = "FireSideQuest"
-			NameMon = "Lava Pirate"
-			PosQ = CFrame["new"](-5428.03174, 15.0622921, -5299.43457, -0.882952213, 0, .469463557, 0, 1, 0, -0.469463557, 0, -0.882952213)
-			PosM = CFrame["new"](-5213.3315429688, 49.737880706787, -4701.451171875)
-		elseif L_172_[2] == 1250 or L_172_[2] <= 1274 then
-			Mon = "Ship Deckhand"
-			Qdata = 1
-			Qname = "ShipQuest1"
-			NameMon = "Ship Deckhand"
-			PosQ = CFrame["new"](1037.80127, 125.092171, 32911.6016)
-			PosM = CFrame["new"](1212.0111083984, 150.79205322266, 33059.24609375)
-			if _G["Level"] and (PosQ["Position"] - game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] > 500 then
-				replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](923.21252441406, 126.9760055542, 32852.83203125))
+		if lvl >= 700 and lvl <= 724 then
+			Mon = "Raider"; Qdata = 1; Qname = "Area1Quest"; NameMon = "Raider"
+			PosQ = CFrame.new(-429.543518, 71.7699966, 1836.18188, -0.22495985,0,-0.974368095,0,1,0,.974368095,0,-0.22495985)
+			PosM = CFrame.new(-728.32672119141, 52.779319763184, 2345.7705078125)
+
+		elseif lvl >= 725 and lvl <= 774 then
+			Mon = "Mercenary"; Qdata = 2; Qname = "Area1Quest"; NameMon = "Mercenary"
+			PosQ = CFrame.new(-429.543518, 71.7699966, 1836.18188, -0.22495985,0,-0.974368095,0,1,0,.974368095,0,-0.22495985)
+			PosM = CFrame.new(-1004.3244018555, 80.158866882324, 1424.6193847656)
+
+		elseif lvl >= 775 and lvl <= 799 then
+			Mon = "Swan Pirate"; Qdata = 1; Qname = "Area2Quest"; NameMon = "Swan Pirate"
+			PosQ = CFrame.new(638.43811, 71.769989, 918.282898, .139203906,0,.99026376,0,1,0,-0.99026376,0,.139203906)
+			PosM = CFrame.new(1068.6643066406, 137.61428833008, 1322.1060791016)
+
+		elseif lvl >= 800 and lvl <= 874 then
+			Mon = "Factory Staff"; Qdata = 2; Qname = "Area2Quest"; NameMon = "Factory Staff"
+			PosQ = CFrame.new(632.698608, 73.1055908, 918.666321, -0.0319722369, 8.96074881e-10, -0.999488771, 1.36326533e-10, 1, 8.92172336e-10, .999488771, -1.07732087e-10, -0.0319722369)
+			PosM = CFrame.new(73.078674316406, 81.863441467285, -27.470672607422)
+
+		elseif lvl >= 875 and lvl <= 899 then
+			Mon = "Marine Lieutenant"; Qdata = 1; Qname = "MarineQuest3"; NameMon = "Marine Lieutenant"
+			PosQ = CFrame.new(-2440.79639, 71.7140732, -3216.06812, .866007268,0,.500031412,0,1,0,-0.500031412,0,.866007268)
+			PosM = CFrame.new(-2821.3723144531, 75.897277832031, -3070.0891113281)
+
+		elseif lvl >= 900 and lvl <= 949 then
+			Mon = "Marine Captain"; Qdata = 2; Qname = "MarineQuest3"; NameMon = "Marine Captain"
+			PosQ = CFrame.new(-2440.79639, 71.7140732, -3216.06812, .866007268,0,.500031412,0,1,0,-0.500031412,0,.866007268)
+			PosM = CFrame.new(-1861.2310791016, 80.176582336426, -3254.6975097656)
+
+		elseif lvl >= 950 and lvl <= 974 then
+			Mon = "Zombie"; Qdata = 1; Qname = "ZombieQuest"; NameMon = "Zombie"
+			PosQ = CFrame.new(-5497.06152, 47.5923004, -795.237061, -0.29242146,0,-0.95628953,0,1,0,.95628953,0,-0.29242146)
+			PosM = CFrame.new(-5657.7768554688, 78.969734191895, -928.68701171875)
+
+		elseif lvl >= 975 and lvl <= 999 then
+			Mon = "Vampire"; Qdata = 2; Qname = "ZombieQuest"; NameMon = "Vampire"
+			PosQ = CFrame.new(-5497.06152, 47.5923004, -795.237061, -0.29242146,0,-0.95628953,0,1,0,.95628953,0,-0.29242146)
+			PosM = CFrame.new(-6037.66796875, 32.184638977051, -1340.6597900391)
+
+		elseif lvl >= 1000 and lvl <= 1049 then
+			Mon = "Snow Trooper"; Qdata = 1; Qname = "SnowMountainQuest"; NameMon = "Snow Trooper"
+			PosQ = CFrame.new(609.858826, 400.119904, -5372.25928, -0.374604106,0,.92718488,0,1,0,-0.92718488,0,-0.374604106)
+			PosM = CFrame.new(549.14733886719, 427.38705444336, -5563.6987304688)
+
+		elseif lvl >= 1050 and lvl <= 1099 then
+			Mon = "Winter Warrior"; Qdata = 2; Qname = "SnowMountainQuest"; NameMon = "Winter Warrior"
+			PosQ = CFrame.new(609.858826, 400.119904, -5372.25928, -0.374604106,0,.92718488,0,1,0,-0.92718488,0,-0.374604106)
+			PosM = CFrame.new(1142.7451171875, 475.63980102539, -5199.4165039062)
+
+		elseif lvl >= 1100 and lvl <= 1124 then
+			Mon = "Lab Subordinate"; Qdata = 1; Qname = "IceSideQuest"; NameMon = "Lab Subordinate"
+			PosQ = CFrame.new(-6064.06885, 15.2422857, -4902.97852, .453972578,0,-0.891015649,0,1,0,.891015649,0,.453972578)
+			PosM = CFrame.new(-5707.4716796875, 15.951709747314, -4513.3920898438)
+
+		elseif lvl >= 1125 and lvl <= 1174 then
+			Mon = "Horned Warrior"; Qdata = 2; Qname = "IceSideQuest"; NameMon = "Horned Warrior"
+			PosQ = CFrame.new(-6064.06885, 15.2422857, -4902.97852, .453972578,0,-0.891015649,0,1,0,.891015649,0,.453972578)
+			PosM = CFrame.new(-6341.3666992188, 15.951770782471, -5723.162109375)
+
+		elseif lvl >= 1175 and lvl <= 1199 then
+			Mon = "Magma Ninja"; Qdata = 1; Qname = "FireSideQuest"; NameMon = "Magma Ninja"
+			PosQ = CFrame.new(-5428.03174, 15.0622921, -5299.43457, -0.882952213,0,.469463557,0,1,0,-0.469463557,0,-0.882952213)
+			PosM = CFrame.new(-5449.6728515625, 76.658744812012, -5808.2006835938)
+
+		elseif lvl >= 1200 and lvl <= 1249 then
+			Mon = "Lava Pirate"; Qdata = 2; Qname = "FireSideQuest"; NameMon = "Lava Pirate"
+			PosQ = CFrame.new(-5428.03174, 15.0622921, -5299.43457, -0.882952213,0,.469463557,0,1,0,-0.469463557,0,-0.882952213)
+			PosM = CFrame.new(-5213.3315429688, 49.737880706787, -4701.451171875)
+
+		elseif lvl >= 1250 and lvl <= 1274 then
+			Mon = "Ship Deckhand"; Qdata = 1; Qname = "ShipQuest1"; NameMon = "Ship Deckhand"
+			PosQ = CFrame.new(1037.80127, 125.092171, 32911.6016)
+			PosM = CFrame.new(1212.0111083984, 150.79205322266, 33059.24609375)
+			if _G["Level"] and (PosQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > 500 then
+				replicated.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125))
 			end
-		elseif L_172_[2] == 1275 or L_172_[2] <= 1299 then
-			Mon = "Ship Engineer"
-			Qdata = 2
-			Qname = "ShipQuest1"
-			NameMon = "Ship Engineer"
-			PosQ = CFrame["new"](1037.80127, 125.092171, 32911.6016)
-			PosM = CFrame["new"](919.47863769531, 43.544013977051, 32779.96875)
-			if _G["Level"] and (PosQ["Position"] - game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] > 500 then
-				replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](923.21252441406, 126.9760055542, 32852.83203125))
+
+		elseif lvl >= 1275 and lvl <= 1299 then
+			Mon = "Ship Engineer"; Qdata = 2; Qname = "ShipQuest1"; NameMon = "Ship Engineer"
+			PosQ = CFrame.new(1037.80127, 125.092171, 32911.6016)
+			PosM = CFrame.new(919.47863769531, 43.544013977051, 32779.96875)
+			if _G["Level"] and (PosQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > 500 then
+				replicated.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125))
 			end
-		elseif L_172_[2] == 1300 or L_172_[2] <= 1324 then
-			Mon = "Ship Steward"
-			Qdata = 1
-			Qname = "ShipQuest2"
-			NameMon = "Ship Steward"
-			PosQ = CFrame["new"](968.80957, 125.092171, 33244.125)
-			PosM = CFrame["new"](919.43853759766, 129.55599975586, 33436.03515625)
-			if _G["Level"] and (PosQ["Position"] - game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] > 500 then
-				replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](923.21252441406, 126.9760055542, 32852.83203125))
+
+		elseif lvl >= 1300 and lvl <= 1324 then
+			Mon = "Ship Steward"; Qdata = 1; Qname = "ShipQuest2"; NameMon = "Ship Steward"
+			PosQ = CFrame.new(968.80957, 125.092171, 33244.125)
+			PosM = CFrame.new(919.43853759766, 129.55599975586, 33436.03515625)
+			if _G["Level"] and (PosQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > 500 then
+				replicated.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125))
 			end
-		elseif L_172_[2] == 1325 or L_172_[2] <= 1349 then
-			Mon = "Ship Officer"
-			Qdata = 2
-			Qname = "ShipQuest2"
-			NameMon = "Ship Officer"
-			PosQ = CFrame["new"](968.80957, 125.092171, 33244.125)
-			PosM = CFrame["new"](1036.0179443359, 181.4390411377, 33315.7265625)
-			if _G["Level"] and (PosQ["Position"] - game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] > 500 then
-				replicated["Remotes"]["CommF_"]:InvokeServer("requestEntrance", Vector3["new"](923.21252441406, 126.9760055542, 32852.83203125))
+
+		elseif lvl >= 1325 and lvl <= 1349 then
+			Mon = "Ship Officer"; Qdata = 2; Qname = "ShipQuest2"; NameMon = "Ship Officer"
+			PosQ = CFrame.new(968.80957, 125.092171, 33244.125)
+			PosM = CFrame.new(1036.0179443359, 181.4390411377, 33315.7265625)
+			if _G["Level"] and (PosQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > 500 then
+				replicated.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125))
 			end
-		elseif L_172_[2] == 1350 or L_172_[2] <= 1374 then
-			Mon = "Arctic Warrior"
-			Qdata = 1
-			Qname = "FrostQuest"
-			NameMon = "Arctic Warrior"
-			PosQ = CFrame["new"](5667.6582, 26.7997818, -6486.08984, -0.933587909, 0, -0.358349502, 0, 1, 0, .358349502, 0, -0.933587909)
-			PosM = CFrame["new"](5966.24609375, 62.970020294189, -6179.3828125)
-			if _G["Level"] and (PosQ["Position"] - game["Players"]["LocalPlayer"]["Character"]["HumanoidRootPart"]["Position"])["Magnitude"] > 1000 then
+
+		elseif lvl >= 1350 and lvl <= 1374 then
+			Mon = "Arctic Warrior"; Qdata = 1; Qname = "FrostQuest"; NameMon = "Arctic Warrior"
+			PosQ = CFrame.new(5667.6582, 26.7997818, -6486.08984, -0.933587909,0,-0.358349502,0,1,0,.358349502,0,-0.933587909)
+			PosM = CFrame.new(5966.24609375, 62.970020294189, -6179.3828125)
+			if _G["Level"] and (PosQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > 1000 then
 				BTP(PosM)
 			end
-		elseif L_172_[2] == 1375 or L_172_[2] <= 1424 then
-			Mon = "Snow Lurker"
-			Qdata = 2
-			Qname = "FrostQuest"
-			NameMon = "Snow Lurker"
-			PosQ = CFrame["new"](5667.6582, 26.7997818, -6486.08984, -0.933587909, 0, -0.358349502, 0, 1, 0, .358349502, 0, -0.933587909)
-			PosM = CFrame["new"](5407.0737304688, 69.194374084473, -6880.8803710938)
-		elseif L_172_[2] == 1425 or L_172_[2] <= 1449 then
-			Mon = "Sea Soldier"
-			Qdata = 1
-			Qname = "ForgottenQuest"
-			NameMon = "Sea Soldier"
-			PosQ = CFrame["new"](-3054.44458, 235.544281, -10142.8193, .990270376, 0, -0.13915664, 0, 1, 0, .13915664, 0, .990270376)
-			PosM = CFrame["new"](-3028.2236328125, 64.674514770508, -9775.4267578125)
-		elseif L_172_[2] >= 1449 and L_172_[2] <= 2801 then
-			Mon = "Water Fighter"
-			Qdata = 2
-			Qname = "ForgottenQuest"
-			NameMon = "Water Fighter"
-			PosQ = CFrame["new"](-3054.44458, 235.544281, -10142.8193, .990270376, 0, -0.13915664, 0, 1, 0, .13915664, 0, .990270376)
-			PosM = CFrame["new"](-3352.9013671875, 285.01556396484, -10534.841796875)
+
+		elseif lvl >= 1375 and lvl <= 1424 then
+			Mon = "Snow Lurker"; Qdata = 2; Qname = "FrostQuest"; NameMon = "Snow Lurker"
+			PosQ = CFrame.new(5667.6582, 26.7997818, -6486.08984, -0.933587909,0,-0.358349502,0,1,0,.358349502,0,-0.933587909)
+			PosM = CFrame.new(5407.0737304688, 69.194374084473, -6880.8803710938)
+
+		elseif lvl >= 1425 and lvl <= 1449 then
+			Mon = "Sea Soldier"; Qdata = 1; Qname = "ForgottenQuest"; NameMon = "Sea Soldier"
+			PosQ = CFrame.new(-3054.44458, 235.544281, -10142.8193, .990270376,0,-0.13915664,0,1,0,.13915664,0,.990270376)
+			PosM = CFrame.new(-3028.2236328125, 64.674514770508, -9775.4267578125)
+
+		elseif lvl >= 1450 then
+			Mon = "Water Fighter"; Qdata = 2; Qname = "ForgottenQuest"; NameMon = "Water Fighter"
+			PosQ = CFrame.new(-3054.44458, 235.544281, -10142.8193, .990270376,0,-0.13915664,0,1,0,.13915664,0,.990270376)
+			PosM = CFrame.new(-3352.9013671875, 285.01556396484, -10534.841796875)
 		end
+
 	elseif World3 then
-		if L_172_[2] == 1500 or L_172_[2] <= 1524 then
-			Mon = "Pirate Millionaire"
-			Qdata = 1
-			Qname = "PiratePortQuest"
-			NameMon = "Pirate Millionaire"
-			PosQ = CFrame["new"](-712.82727050781, 98.577049255371, 5711.9541015625)
-			PosM = CFrame["new"](-712.82727050781, 98.577049255371, 5711.9541015625)
-		elseif L_172_[2] == 1525 or L_172_[2] <= 1574 then
-			Mon = "Pistol Billionaire"
-			Qdata = 2
-			Qname = "PiratePortQuest"
-			NameMon = "Pistol Billionaire"
-			PosQ = CFrame["new"](-723.43316650391, 147.42906188965, 5931.9931640625)
-			PosM = CFrame["new"](-723.43316650391, 147.42906188965, 5931.9931640625)
-		elseif L_172_[2] == 1575 or L_172_[2] <= 1599 then
-			Mon = "Dragon Crew Warrior"
-			Qdata = 1
-			Qname = "DragonCrewQuest"
-			NameMon = "Dragon Crew Warrior"
-			PosQ = CFrame["new"](6735.12061, 127.107239, -711.085754, -0.474887252, .0169004519, -0.879884422, -0.00234961393, .999787629, .020471612, .880043507, .0117890798, -0.474746734)
-			PosM = CFrame["new"](6735.12061, 127.107239, -711.085754, -0.474887252, .0169004519, -0.879884422, -0.00234961393, .999787629, .020471612, .880043507, .0117890798, -0.474746734)
-		elseif L_172_[2] == 1600 or L_172_[2] <= 1624 then
-			Mon = "Dragon Crew Archer"
-			Qname = "DragonCrewQuest"
-			Qdata = 2
-			NameMon = "Dragon Crew Archer"
-			PosQ = CFrame["new"](6955.8974609375, 546.66589355469, 309.04013061523)
-			PosM = CFrame["new"](6955.8974609375, 546.66589355469, 309.04013061523)
-		elseif L_172_[2] == 1625 or L_172_[2] <= 1649 then
-			Mon = "Hydra Enforcer"
-			Qname = "VenomCrewQuest"
-			Qdata = 1
-			NameMon = "Hydra Enforcer"
-			PosQ = CFrame["new"](4620.6157226562, 1002.2954711914, 399.08688354492)
-			PosM = CFrame["new"](4620.6157226562, 1002.2954711914, 399.08688354492)
-		elseif L_172_[2] == 1650 or L_172_[2] <= 1699 then
-			Mon = "Venomous Assailant"
-			Qname = "VenomCrewQuest"
-			Qdata = 2
-			NameMon = "Venomous Assailant"
-			PosQ = CFrame["new"](4697.5918, 1100.65137, 946.401978, .579397917, -4.19689783e-10, .81504482, -1.49287818e-10, 1, 6.21053986e-10, -0.81504482, -4.81513662e-10, .579397917)
-			PosM = CFrame["new"](4697.5918, 1100.65137, 946.401978, .579397917, -4.19689783e-10, .81504482, -1.49287818e-10, 1, 6.21053986e-10, -0.81504482, -4.81513662e-10, .579397917)
-		elseif L_172_[2] == 1700 or L_172_[2] <= 1724 then
-			Mon = "Marine Commodore"
-			Qdata = 1
-			Qname = "MarineTreeIsland"
-			NameMon = "Marine Commodore"
-			PosQ = CFrame["new"](2180.54126, 27.8156815, -6741.5498, -0.965929747, 0, .258804798, 0, 1, 0, -0.258804798, 0, -0.965929747)
-			PosM = CFrame["new"](2286.0078125, 73.133918762207, -7159.8090820312)
-		elseif L_172_[2] == 1725 or L_172_[2] <= 1774 then
-			Mon = "Marine Rear Admiral"
-			NameMon = "Marine Rear Admiral"
-			Qname = "MarineTreeIsland"
-			Qdata = 2
-			PosQ = CFrame["new"](2179.98828125, 28.731239318848, -6740.0551757813)
-			PosM = CFrame["new"](3656.7736816406, 160.52406311035, -7001.5986328125)
-		elseif L_172_[2] == 1775 or L_172_[2] <= 1799 then
-			Mon = "Fishman Raider"
-			Qdata = 1
-			Qname = "DeepForestIsland3"
-			NameMon = "Fishman Raider"
-			PosQ = CFrame["new"](-10581.6563, 330.872955, -8761.18652, -0.882952213, 0, .469463557, 0, 1, 0, -0.469463557, 0, -0.882952213)
-			PosM = CFrame["new"](-10407.526367188, 331.76263427734, -8368.5166015625)
-		elseif L_172_[2] == 1800 or L_172_[2] <= 1824 then
-			Mon = "Fishman Captain"
-			Qdata = 2
-			Qname = "DeepForestIsland3"
-			NameMon = "Fishman Captain"
-			PosQ = CFrame["new"](-10581.6563, 330.872955, -8761.18652, -0.882952213, 0, .469463557, 0, 1, 0, -0.469463557, 0, -0.882952213)
-			PosM = CFrame["new"](-10994.701171875, 352.38140869141, -9002.1103515625)
-		elseif L_172_[2] == 1825 or L_172_[2] <= 1849 then
-			Mon = "Forest Pirate"
-			Qdata = 1
-			Qname = "DeepForestIsland"
-			NameMon = "Forest Pirate"
-			PosQ = CFrame["new"](-13234.04, 331.488495, -7625.40137, .707134247, 0, -0.707079291, 0, 1, 0, .707079291, 0, .707134247)
-			PosM = CFrame["new"](-13274.478515625, 332.37814331055, -7769.5805664062)
-		elseif L_172_[2] == 1850 or L_172_[2] <= 1899 then
-			Mon = "Mythological Pirate"
-			Qdata = 2
-			Qname = "DeepForestIsland"
-			NameMon = "Mythological Pirate"
-			PosQ = CFrame["new"](-13234.04, 331.488495, -7625.40137, .707134247, 0, -0.707079291, 0, 1, 0, .707079291, 0, .707134247)
-			PosM = CFrame["new"](-13680.607421875, 501.08154296875, -6991.189453125)
-		elseif L_172_[2] == 1900 or L_172_[2] <= 1924 then
-			Mon = "Jungle Pirate"
-			Qdata = 1
-			Qname = "DeepForestIsland2"
-			NameMon = "Jungle Pirate"
-			PosQ = CFrame["new"](-12680.3818, 389.971039, -9902.01953, -0.0871315002, 0, .996196866, 0, 1, 0, -0.996196866, 0, -0.0871315002)
-			PosM = CFrame["new"](-12256.16015625, 331.73828125, -10485.836914062)
-		elseif L_172_[2] == 1925 or L_172_[2] <= 1974 then
-			Mon = "Musketeer Pirate"
-			Qdata = 2
-			Qname = "DeepForestIsland2"
-			NameMon = "Musketeer Pirate"
-			PosQ = CFrame["new"](-12680.3818, 389.971039, -9902.01953, -0.0871315002, 0, .996196866, 0, 1, 0, -0.996196866, 0, -0.0871315002)
-			PosM = CFrame["new"](-13457.904296875, 391.54565429688, -9859.177734375)
-		elseif L_172_[2] == 1975 or L_172_[2] <= 1999 then
-			Mon = "Reborn Skeleton"
-			Qdata = 1
-			Qname = "HauntedQuest1"
-			NameMon = "Reborn Skeleton"
-			PosQ = CFrame["new"](-9479.2168, 141.215088, 5566.09277, 0, 0, 1, 0, 1, 0, -1, 0, 0)
-			PosM = CFrame["new"](-8763.7236328125, 165.72299194336, 6159.8618164062)
-		elseif L_172_[2] == 2000 or L_172_[2] <= 2024 then
-			Mon = "Living Zombie"
-			Qdata = 2
-			Qname = "HauntedQuest1"
-			NameMon = "Living Zombie"
-			PosQ = CFrame["new"](-9479.2168, 141.215088, 5566.09277, 0, 0, 1, 0, 1, 0, -1, 0, 0)
-			PosM = CFrame["new"](-10144.131835938, 138.6266784668, 5838.0888671875)
-		elseif L_172_[2] == 2025 or L_172_[2] <= 2049 then
-			Mon = "Demonic Soul"
-			Qdata = 1
-			Qname = "HauntedQuest2"
-			NameMon = "Demonic Soul"
-			PosQ = CFrame["new"](-9516.99316, 172.017181, 6078.46533, 0, 0, -1, 0, 1, 0, 1, 0, 0)
-			PosM = CFrame["new"](-9505.8720703125, 172.10482788086, 6158.9931640625)
-		elseif L_172_[2] == 2050 or L_172_[2] <= 2074 then
-			Mon = "Posessed Mummy"
-			Qdata = 2
-			Qname = "HauntedQuest2"
-			NameMon = "Posessed Mummy"
-			PosQ = CFrame["new"](-9516.99316, 172.017181, 6078.46533, 0, 0, -1, 0, 1, 0, 1, 0, 0)
-			PosM = CFrame["new"](-9582.0224609375, 6.2515273094177, 6205.478515625)
-		elseif L_172_[2] == 2075 or L_172_[2] <= 2099 then
-			Mon = "Peanut Scout"
-			Qdata = 1
-			Qname = "NutsIslandQuest"
-			NameMon = "Peanut Scout"
-			PosQ = CFrame["new"](-2104.3908691406, 38.104167938232, -10194.21875, 0, 0, -1, 0, 1, 0, 1, 0, 0)
-			PosM = CFrame["new"](-2143.2419433594, 47.721984863281, -10029.995117188)
-		elseif L_172_[2] == 2100 or L_172_[2] <= 2124 then
-			Mon = "Peanut President"
-			Qdata = 2
-			Qname = "NutsIslandQuest"
-			NameMon = "Peanut President"
-			PosQ = CFrame["new"](-2104.3908691406, 38.104167938232, -10194.21875, 0, 0, -1, 0, 1, 0, 1, 0, 0)
-			PosM = CFrame["new"](-1859.3540039062, 38.103168487549, -10422.4296875)
-		elseif L_172_[2] == 2125 or L_172_[2] <= 2149 then
-			Mon = "Ice Cream Chef"
-			Qdata = 1
-			Qname = "IceCreamIslandQuest"
-			NameMon = "Ice Cream Chef"
-			PosQ = CFrame["new"](-820.64825439453, 65.819526672363, -10965.795898438, 0, 0, -1, 0, 1, 0, 1, 0, 0)
-			PosM = CFrame["new"](-872.24658203125, 65.81957244873, -10919.95703125)
-		elseif L_172_[2] == 2150 or L_172_[2] <= 2199 then
-			Mon = "Ice Cream Commander"
-			Qdata = 2
-			Qname = "IceCreamIslandQuest"
-			NameMon = "Ice Cream Commander"
-			PosQ = CFrame["new"](-820.64825439453, 65.819526672363, -10965.795898438, 0, 0, -1, 0, 1, 0, 1, 0, 0)
-			PosM = CFrame["new"](-558.06103515625, 112.04895782471, -11290.774414062)
-		elseif L_172_[2] == 2200 or L_172_[2] <= 2224 then
-			Mon = "Cookie Crafter"
-			Qdata = 1
-			Qname = "CakeQuest1"
-			NameMon = "Cookie Crafter"
-			PosQ = CFrame["new"](-2021.32007, 37.7982254, -12028.7295, .957576931, -8.80302053e-08, .288177818, 6.9301187e-08, 1, 7.51931211e-08, -0.288177818, -5.2032135e-08, .957576931)
-			PosM = CFrame["new"](-2374.13671875, 37.798263549805, -12125.30859375)
-		elseif L_172_[2] == 2225 or L_172_[2] <= 2249 then
-			Mon = "Cake Guard"
-			Qdata = 2
-			Qname = "CakeQuest1"
-			NameMon = "Cake Guard"
-			PosQ = CFrame["new"](-2021.32007, 37.7982254, -12028.7295, .957576931, -8.80302053e-08, .288177818, 6.9301187e-08, 1, 7.51931211e-08, -0.288177818, -5.2032135e-08, .957576931)
-			PosM = CFrame["new"](-1598.3070068359, 43.773197174072, -12244.581054688)
-		elseif L_172_[2] == 2250 or L_172_[2] <= 2274 then
-			Mon = "Baking Staff"
-			Qdata = 1
-			Qname = "CakeQuest2"
-			NameMon = "Baking Staff"
-			PosQ = CFrame["new"](-1927.91602, 37.7981339, -12842.5391, -0.96804446, 4.22142143e-08, .250778586, 4.74911062e-08, 1, 1.49904711e-08, -0.250778586, 2.64211941e-08, -0.96804446)
-			PosM = CFrame["new"](-1887.8099365234, 77.618507385254, -12998.350585938)
-		elseif L_172_[2] == 2275 or L_172_[2] <= 2299 then
-			Mon = "Head Baker"
-			Qdata = 2
-			Qname = "CakeQuest2"
-			NameMon = "Head Baker"
-			PosQ = CFrame["new"](-1927.91602, 37.7981339, -12842.5391, -0.96804446, 4.22142143e-08, .250778586, 4.74911062e-08, 1, 1.49904711e-08, -0.250778586, 2.64211941e-08, -0.96804446)
-			PosM = CFrame["new"](-2216.1882324219, 82.884521484375, -12869.293945312)
-		elseif L_172_[2] == 2300 or L_172_[2] <= 2324 then
-			Mon = "Cocoa Warrior"
-			Qdata = 1
-			Qname = "ChocQuest1"
-			NameMon = "Cocoa Warrior"
-			PosQ = CFrame["new"](233.22836303711, 29.876001358032, -12201.233398438)
-			PosM = CFrame["new"](-21.553283691406, 80.574996948242, -12352.387695313)
-		elseif L_172_[2] == 2325 or L_172_[2] <= 2349 then
-			Mon = L_1_[2]({
-				"Chocolate Bar Battle";
-				"r"
-			})
-			Qdata = 2
-			Qname = "ChocQuest1"
-			NameMon = L_1_[2]({
-				"Chocolate Bar Battle",
-				"r"
-			})
-			PosQ = CFrame["new"](233.22836303711, 29.876001358032, -12201.233398438)
-			PosM = CFrame["new"](582.59057617188, 77.188095092773, -12463.162109375)
-		elseif L_172_[2] == 2350 or L_172_[2] <= 2374 then
-			Mon = "Sweet Thief"
-			Qdata = 1
-			Qname = "ChocQuest2"
-			NameMon = "Sweet Thief"
-			PosQ = CFrame["new"](150.50663757324, 30.693693161011, -12774.502929688)
-			PosM = CFrame["new"](165.1884765625, 76.058853149414, -12600.836914062)
-		elseif L_172_[2] == 2375 or L_172_[2] <= 2399 then
-			Mon = "Candy Rebel"
-			Qdata = 2
-			Qname = "ChocQuest2"
-			NameMon = "Candy Rebel"
-			PosQ = CFrame["new"](150.50663757324, 30.693693161011, -12774.502929688)
-			PosM = CFrame["new"](134.86563110352, 77.247680664062, -12876.547851562)
-		elseif L_172_[2] == 2400 or L_172_[2] <= 2449 then
-			Mon = "Candy Pirate"
-			Qdata = 1
-			Qname = "CandyQuest1"
-			NameMon = "Candy Pirate"
-			PosQ = CFrame["new"](-1150.0400390625, 20.378934860229, -14446.334960938)
-			PosM = CFrame["new"](-1310.5003662109, 26.016523361206, -14562.404296875)
-		elseif L_172_[2] == 2450 or L_172_[2] <= 2474 then
-			Mon = "Isle Outlaw"
-			Qdata = 1
-			Qname = "TikiQuest1"
-			NameMon = "Isle Outlaw"
-			PosQ = CFrame["new"](-16548.8164, 55.6059914, -172.8125, .213092566, 0, -0.977032006, 0, 1, 0, .977032006, 0, .213092566)
-			PosM = CFrame["new"](-16479.900390625, 226.6117401123, -300.31143188477)
-		elseif L_172_[2] == 2475 or L_172_[2] <= 2499 then
-			Mon = "Island Boy"
-			Qdata = 2
-			Qname = "TikiQuest1"
-			NameMon = "Island Boy"
-			PosQ = CFrame["new"](-16548.8164, 55.6059914, -172.8125, .213092566, 0, -0.977032006, 0, 1, 0, .977032006, 0, .213092566)
-			PosM = CFrame["new"](-16849.396484375, 192.86505126953, -150.78532409668)
-		elseif L_172_[2] == 2500 or L_172_[2] <= 2524 then
-			Mon = "Sun-kissed Warrior"
-			Qdata = 1
-			Qname = "TikiQuest2"
-			NameMon = "kissed Warrior"
-			PosM = CFrame["new"](-16347, 64, 984)
-			PosQ = CFrame["new"](-16538, 55, 1049)
-		elseif L_172_[2] == 2525 or L_172_[2] <= 2550 then
-			Mon = "Isle Champion"
-			Qdata = 2
-			Qname = "TikiQuest2"
-			NameMon = "Isle Champion"
-			PosQ = CFrame["new"](-16541.0215, 57.3082275, 1051.46118, .0410757065, 0, -0.999156058, 0, 1, 0, .999156058, 0, .0410757065)
-			PosM = CFrame["new"](-16602.1015625, 130.38734436035, 1087.2456054688)
-		elseif L_172_[2] >= 2551 and L_172_[2] <= 2574 then
-			Mon = "Serpent Hunter"
-			Qdata = 1
-			Qname = "TikiQuest3"
-			NameMon = "Serpent Hunter"
-			PosQ = CFrame["new"](-16679.4785, 176.7473, 1474.3995)
-			PosM = CFrame["new"](-16679.4785, 176.7473, 1474.3995)
-		elseif L_172_[2] >= 2575 and L_172_[2] <= 2599 then
-			Mon = "Skull Slayer"
-			Qdata = 2
-			Qname = "TikiQuest3"
-			NameMon = "Skull Slayer"
-			PosQ = CFrame["new"](-16759.5898, 71.2837, 1595.3399)
-			PosM = CFrame["new"](-16759.5898, 71.2837, 1595.3399)
-		elseif L_172_[2] >= 2600 and L_172_[2] <= 2624 then
-			Mon = "Reef Bandit"
-			Qdata = 1
-			Qname = "SubmergedQuest1"
-			NameMon = "Reef Bandit"
-			PosQ = CFrame["new"](10882.264, -2086.322, 10034.226)
-			PosM = CFrame["new"](10736.6191, -2087.8439, 9338.4882)
-		elseif L_172_[2] >= 2625 and L_172_[2] <= 2649 then
-			Mon = "Coral Pirate"
-			Qdata = 2
-			Qname = "SubmergedQuest1"
-			NameMon = "Coral Pirate"
-			PosQ = CFrame["new"](10882.264, -2086.322, 10034.226)
-			PosM = CFrame["new"](10965.1025, -2158.8842, 9177.2597)
-		elseif L_172_[2] >= 2650 and L_172_[2] <= 2674 then
-			Mon = "Sea Chanter"
-			Qdata = 1
-			Qname = "SubmergedQuest2"
-			NameMon = "Sea Chanter"
-			PosQ = CFrame["new"](10882.264, -2086.322, 10034.226)
-			PosM = CFrame["new"](10621.0342, -2087.844, 10102.0332)
-		elseif L_172_[2] >= 2675 and L_172_[2] <= 2699 then
-			Mon = "Ocean Prophet"
-			Qdata = 2
-			Qname = "SubmergedQuest2"
-			NameMon = "Ocean Prophet"
-			PosQ = CFrame["new"](10882.264, -2086.322, 10034.226)
-			PosM = CFrame["new"](11056.1445, -2001.6717, 10117.4493)
-		elseif L_172_[2] >= 2700 and L_172_[2] <= 2724 then
-			Mon = "High Disciple"
-			Qdata = 1
-			Qname = "SubmergedQuest3"
-			NameMon = "High Disciple"
-			PosQ = CFrame["new"](9636.52441, -1992.19507, 9609.52832)
-			PosM = CFrame["new"](9828.087890625, -1940.9089355469, 9693.0634765625)
-		elseif L_172_[2] >= 2725 and L_172_[2] <= 2801 then
-			Mon = "Grand Devotee"
-			Qdata = 2
-			Qname = "SubmergedQuest3"
-			NameMon = "Grand Devotee"
-			PosQ = CFrame["new"](9636.52441, -1992.19507, 9609.52832)
-			PosM = CFrame["new"](9557.5849609375, -1928.0404052734, 9859.1826171875)
+		if lvl >= 1500 and lvl <= 1524 then
+			Mon = "Pirate Millionaire"; Qdata = 1; Qname = "PiratePortQuest"; NameMon = "Pirate Millionaire"
+			PosQ = CFrame.new(-712.82727050781, 98.577049255371, 5711.9541015625)
+			PosM = PosQ
+
+		elseif lvl >= 1525 and lvl <= 1574 then
+			Mon = "Pistol Billionaire"; Qdata = 2; Qname = "PiratePortQuest"; NameMon = "Pistol Billionaire"
+			PosQ = CFrame.new(-723.43316650391, 147.42906188965, 5931.9931640625)
+			PosM = PosQ
+
+		elseif lvl >= 1575 and lvl <= 1599 then
+			Mon = "Dragon Crew Warrior"; Qdata = 1; Qname = "DragonCrewQuest"; NameMon = "Dragon Crew Warrior"
+			PosQ = CFrame.new(6735.12061, 127.107239, -711.085754, -0.474887252, .0169004519, -0.879884422, -0.00234961393, .999787629, .020471612, .880043507, .0117890798, -0.474746734)
+			PosM = PosQ
+
+		elseif lvl >= 1600 and lvl <= 1624 then
+			Mon = "Dragon Crew Archer"; Qdata = 2; Qname = "DragonCrewQuest"; NameMon = "Dragon Crew Archer"
+			PosQ = CFrame.new(6955.8974609375, 546.66589355469, 309.04013061523)
+			PosM = PosQ
+
+		elseif lvl >= 1625 and lvl <= 1649 then
+			Mon = "Hydra Enforcer"; Qdata = 1; Qname = "VenomCrewQuest"; NameMon = "Hydra Enforcer"
+			PosQ = CFrame.new(4620.6157226562, 1002.2954711914, 399.08688354492)
+			PosM = PosQ
+
+		elseif lvl >= 1650 and lvl <= 1699 then
+			Mon = "Venomous Assailant"; Qdata = 2; Qname = "VenomCrewQuest"; NameMon = "Venomous Assailant"
+			PosQ = CFrame.new(4697.5918, 1100.65137, 946.401978, .579397917, -4.19689783e-10, .81504482, -1.49287818e-10, 1, 6.21053986e-10, -0.81504482, -4.81513662e-10, .579397917)
+			PosM = PosQ
+
+		elseif lvl >= 1700 and lvl <= 1724 then
+			Mon = "Marine Commodore"; Qdata = 1; Qname = "MarineTreeIsland"; NameMon = "Marine Commodore"
+			PosQ = CFrame.new(2180.54126, 27.8156815, -6741.5498, -0.965929747,0,.258804798,0,1,0,-0.258804798,0,-0.965929747)
+			PosM = CFrame.new(2286.0078125, 73.133918762207, -7159.8090820312)
+
+		elseif lvl >= 1725 and lvl <= 1774 then
+			Mon = "Marine Rear Admiral"; Qdata = 2; Qname = "MarineTreeIsland"; NameMon = "Marine Rear Admiral"
+			PosQ = CFrame.new(2179.98828125, 28.731239318848, -6740.0551757813)
+			PosM = CFrame.new(3656.7736816406, 160.52406311035, -7001.5986328125)
+
+		elseif lvl >= 1775 and lvl <= 1799 then
+			Mon = "Fishman Raider"; Qdata = 1; Qname = "DeepForestIsland3"; NameMon = "Fishman Raider"
+			PosQ = CFrame.new(-10581.6563, 330.872955, -8761.18652, -0.882952213,0,.469463557,0,1,0,-0.469463557,0,-0.882952213)
+			PosM = CFrame.new(-10407.526367188, 331.76263427734, -8368.5166015625)
+
+		elseif lvl >= 1800 and lvl <= 1824 then
+			Mon = "Fishman Captain"; Qdata = 2; Qname = "DeepForestIsland3"; NameMon = "Fishman Captain"
+			PosQ = CFrame.new(-10581.6563, 330.872955, -8761.18652, -0.882952213,0,.469463557,0,1,0,-0.469463557,0,-0.882952213)
+			PosM = CFrame.new(-10994.701171875, 352.38140869141, -9002.1103515625)
+
+		elseif lvl >= 1825 and lvl <= 1849 then
+			Mon = "Forest Pirate"; Qdata = 1; Qname = "DeepForestIsland"; NameMon = "Forest Pirate"
+			PosQ = CFrame.new(-13234.04, 331.488495, -7625.40137, .707134247,0,-0.707079291,0,1,0,.707079291,0,.707134247)
+			PosM = CFrame.new(-13274.478515625, 332.37814331055, -7769.5805664062)
+
+		elseif lvl >= 1850 and lvl <= 1899 then
+			Mon = "Mythological Pirate"; Qdata = 2; Qname = "DeepForestIsland"; NameMon = "Mythological Pirate"
+			PosQ = CFrame.new(-13234.04, 331.488495, -7625.40137, .707134247,0,-0.707079291,0,1,0,.707079291,0,.707134247)
+			PosM = CFrame.new(-13680.607421875, 501.08154296875, -6991.189453125)
+
+		elseif lvl >= 1900 and lvl <= 1924 then
+			Mon = "Jungle Pirate"; Qdata = 1; Qname = "DeepForestIsland2"; NameMon = "Jungle Pirate"
+			PosQ = CFrame.new(-12680.3818, 389.971039, -9902.01953, -0.0871315002,0,.996196866,0,1,0,-0.996196866,0,-0.0871315002)
+			PosM = CFrame.new(-12256.16015625, 331.73828125, -10485.836914062)
+
+		elseif lvl >= 1925 and lvl <= 1974 then
+			Mon = "Musketeer Pirate"; Qdata = 2; Qname = "DeepForestIsland2"; NameMon = "Musketeer Pirate"
+			PosQ = CFrame.new(-12680.3818, 389.971039, -9902.01953, -0.0871315002,0,.996196866,0,1,0,-0.996196866,0,-0.0871315002)
+			PosM = CFrame.new(-13457.904296875, 391.54565429688, -9859.177734375)
+
+		elseif lvl >= 1975 and lvl <= 1999 then
+			Mon = "Reborn Skeleton"; Qdata = 1; Qname = "HauntedQuest1"; NameMon = "Reborn Skeleton"
+			PosQ = CFrame.new(-9479.2168, 141.215088, 5566.09277, 0,0,1,0,1,0,-1,0,0)
+			PosM = CFrame.new(-8763.7236328125, 165.72299194336, 6159.8618164062)
+
+		elseif lvl >= 2000 and lvl <= 2024 then
+			Mon = "Living Zombie"; Qdata = 2; Qname = "HauntedQuest1"; NameMon = "Living Zombie"
+			PosQ = CFrame.new(-9479.2168, 141.215088, 5566.09277, 0,0,1,0,1,0,-1,0,0)
+			PosM = CFrame.new(-10144.131835938, 138.6266784668, 5838.0888671875)
+
+		elseif lvl >= 2025 and lvl <= 2049 then
+			Mon = "Demonic Soul"; Qdata = 1; Qname = "HauntedQuest2"; NameMon = "Demonic Soul"
+			PosQ = CFrame.new(-9516.99316, 172.017181, 6078.46533, 0,0,-1,0,1,0,1,0,0)
+			PosM = CFrame.new(-9505.8720703125, 172.10482788086, 6158.9931640625)
+
+		elseif lvl >= 2050 and lvl <= 2074 then
+			Mon = "Posessed Mummy"; Qdata = 2; Qname = "HauntedQuest2"; NameMon = "Posessed Mummy"
+			PosQ = CFrame.new(-9516.99316, 172.017181, 6078.46533, 0,0,-1,0,1,0,1,0,0)
+			PosM = CFrame.new(-9582.0224609375, 6.2515273094177, 6205.478515625)
+
+		elseif lvl >= 2075 and lvl <= 2099 then
+			Mon = "Peanut Scout"; Qdata = 1; Qname = "NutsIslandQuest"; NameMon = "Peanut Scout"
+			PosQ = CFrame.new(-2104.3908691406, 38.104167938232, -10194.21875, 0,0,-1,0,1,0,1,0,0)
+			PosM = CFrame.new(-2143.2419433594, 47.721984863281, -10029.995117188)
+
+		elseif lvl >= 2100 and lvl <= 2124 then
+			Mon = "Peanut President"; Qdata = 2; Qname = "NutsIslandQuest"; NameMon = "Peanut President"
+			PosQ = CFrame.new(-2104.3908691406, 38.104167938232, -10194.21875, 0,0,-1,0,1,0,1,0,0)
+			PosM = CFrame.new(-1859.3540039062, 38.103168487549, -10422.4296875)
+
+		elseif lvl >= 2125 and lvl <= 2149 then
+			Mon = "Ice Cream Chef"; Qdata = 1; Qname = "IceCreamIslandQuest"; NameMon = "Ice Cream Chef"
+			PosQ = CFrame.new(-820.64825439453, 65.819526672363, -10965.795898438, 0,0,-1,0,1,0,1,0,0)
+			PosM = CFrame.new(-872.24658203125, 65.81957244873, -10919.95703125)
+
+		elseif lvl >= 2150 and lvl <= 2199 then
+			Mon = "Ice Cream Commander"; Qdata = 2; Qname = "IceCreamIslandQuest"; NameMon = "Ice Cream Commander"
+			PosQ = CFrame.new(-820.64825439453, 65.819526672363, -10965.795898438, 0,0,-1,0,1,0,1,0,0)
+			PosM = CFrame.new(-558.06103515625, 112.04895782471, -11290.774414062)
+
+		elseif lvl >= 2200 and lvl <= 2224 then
+			Mon = "Cookie Crafter"; Qdata = 1; Qname = "CakeQuest1"; NameMon = "Cookie Crafter"
+			PosQ = CFrame.new(-2021.32007, 37.7982254, -12028.7295, .957576931, -8.80302053e-08, .288177818, 6.9301187e-08, 1, 7.51931211e-08, -0.288177818, -5.2032135e-08, .957576931)
+			PosM = CFrame.new(-2374.13671875, 37.798263549805, -12125.30859375)
+
+		elseif lvl >= 2225 and lvl <= 2249 then
+			Mon = "Cake Guard"; Qdata = 2; Qname = "CakeQuest1"; NameMon = "Cake Guard"
+			PosQ = CFrame.new(-2021.32007, 37.7982254, -12028.7295, .957576931, -8.80302053e-08, .288177818, 6.9301187e-08, 1, 7.51931211e-08, -0.288177818, -5.2032135e-08, .957576931)
+			PosM = CFrame.new(-1598.3070068359, 43.773197174072, -12244.581054688)
+
+		elseif lvl >= 2250 and lvl <= 2274 then
+			Mon = "Baking Staff"; Qdata = 1; Qname = "CakeQuest2"; NameMon = "Baking Staff"
+			PosQ = CFrame.new(-1927.91602, 37.7981339, -12842.5391, -0.96804446, 4.22142143e-08, .250778586, 4.74911062e-08, 1, 1.49904711e-08, -0.250778586, 2.64211941e-08, -0.96804446)
+			PosM = CFrame.new(-1887.8099365234, 77.618507385254, -12998.350585938)
+
+		elseif lvl >= 2275 and lvl <= 2299 then
+			Mon = "Head Baker"; Qdata = 2; Qname = "CakeQuest2"; NameMon = "Head Baker"
+			PosQ = CFrame.new(-1927.91602, 37.7981339, -12842.5391, -0.96804446, 4.22142143e-08, .250778586, 4.74911062e-08, 1, 1.49904711e-08, -0.250778586, 2.64211941e-08, -0.96804446)
+			PosM = CFrame.new(-2216.1882324219, 82.884521484375, -12869.293945312)
+
+		elseif lvl >= 2300 and lvl <= 2324 then
+			Mon = "Cocoa Warrior"; Qdata = 1; Qname = "ChocQuest1"; NameMon = "Cocoa Warrior"
+			PosQ = CFrame.new(233.22836303711, 29.876001358032, -12201.233398438)
+			PosM = CFrame.new(-21.553283691406, 80.574996948242, -12352.387695313)
+
+		elseif lvl >= 2325 and lvl <= 2349 then
+			Mon = L_1_[2]({"Chocolate Bar Battle","r"}); Qdata = 2; Qname = "ChocQuest1"; NameMon = L_1_[2]({"Chocolate Bar Battle","r"})
+			PosQ = CFrame.new(233.22836303711, 29.876001358032, -12201.233398438)
+			PosM = CFrame.new(582.59057617188, 77.188095092773, -12463.162109375)
+
+		elseif lvl >= 2350 and lvl <= 2374 then
+			Mon = "Sweet Thief"; Qdata = 1; Qname = "ChocQuest2"; NameMon = "Sweet Thief"
+			PosQ = CFrame.new(150.50663757324, 30.693693161011, -12774.502929688)
+			PosM = CFrame.new(165.1884765625, 76.058853149414, -12600.836914062)
+
+		elseif lvl >= 2375 and lvl <= 2399 then
+			Mon = "Candy Rebel"; Qdata = 2; Qname = "ChocQuest2"; NameMon = "Candy Rebel"
+			PosQ = CFrame.new(150.50663757324, 30.693693161011, -12774.502929688)
+			PosM = CFrame.new(134.86563110352, 77.247680664062, -12876.547851562)
+
+		elseif lvl >= 2400 and lvl <= 2449 then
+			Mon = "Candy Pirate"; Qdata = 1; Qname = "CandyQuest1"; NameMon = "Candy Pirate"
+			PosQ = CFrame.new(-1150.0400390625, 20.378934860229, -14446.334960938)
+			PosM = CFrame.new(-1310.5003662109, 26.016523361206, -14562.404296875)
+
+		elseif lvl >= 2450 and lvl <= 2474 then
+			Mon = "Isle Outlaw"; Qdata = 1; Qname = "TikiQuest1"; NameMon = "Isle Outlaw"
+			PosQ = CFrame.new(-16548.8164, 55.6059914, -172.8125, .213092566,0,-0.977032006,0,1,0,.977032006,0,.213092566)
+			PosM = CFrame.new(-16479.900390625, 226.6117401123, -300.31143188477)
+
+		elseif lvl >= 2475 and lvl <= 2499 then
+			Mon = "Island Boy"; Qdata = 2; Qname = "TikiQuest1"; NameMon = "Island Boy"
+			PosQ = CFrame.new(-16548.8164, 55.6059914, -172.8125, .213092566,0,-0.977032006,0,1,0,.977032006,0,.213092566)
+			PosM = CFrame.new(-16849.396484375, 192.86505126953, -150.78532409668)
+
+		elseif lvl >= 2500 and lvl <= 2524 then
+			Mon = "Sun-kissed Warrior"; Qdata = 1; Qname = "TikiQuest2"; NameMon = "kissed Warrior"
+			PosM = CFrame.new(-16347, 64, 984)
+			PosQ = CFrame.new(-16538, 55, 1049)
+
+		elseif lvl >= 2525 and lvl <= 2550 then
+			Mon = "Isle Champion"; Qdata = 2; Qname = "TikiQuest2"; NameMon = "Isle Champion"
+			PosQ = CFrame.new(-16541.0215, 57.3082275, 1051.46118, .0410757065,0,-0.999156058,0,1,0,.999156058,0,.0410757065)
+			PosM = CFrame.new(-16602.1015625, 130.38734436035, 1087.2456054688)
+
+		elseif lvl >= 2551 and lvl <= 2574 then
+			Mon = "Serpent Hunter"; Qdata = 1; Qname = "TikiQuest3"; NameMon = "Serpent Hunter"
+			PosQ = CFrame.new(-16679.4785, 176.7473, 1474.3995)
+			PosM = PosQ
+
+		elseif lvl >= 2575 and lvl <= 2599 then
+			Mon = "Skull Slayer"; Qdata = 2; Qname = "TikiQuest3"; NameMon = "Skull Slayer"
+			PosQ = CFrame.new(-16759.5898, 71.2837, 1595.3399)
+			PosM = PosQ
+
+		-- Submerged cases (2600+), use helper to request entrance if far
+		elseif lvl >= 2600 and lvl <= 2624 then
+			PosQ = CFrame.new(10882.264, -2086.322, 10034.226)
+			GoSubmerged(PosQ)
+			Mon = "Reef Bandit"; Qdata = 1; Qname = "SubmergedQuest1"; NameMon = "Reef Bandit"
+			PosM = CFrame.new(10736.6191, -2087.8439, 9338.4882)
+
+		elseif lvl >= 2625 and lvl <= 2649 then
+			PosQ = CFrame.new(10882.264, -2086.322, 10034.226)
+			GoSubmerged(PosQ)
+			Mon = "Coral Pirate"; Qdata = 2; Qname = "SubmergedQuest1"; NameMon = "Coral Pirate"
+			PosM = CFrame.new(10965.1025, -2158.8842, 9177.2597)
+
+		elseif lvl >= 2650 and lvl <= 2674 then
+			PosQ = CFrame.new(10882.264, -2086.322, 10034.226)
+			GoSubmerged(PosQ)
+			Mon = "Sea Chanter"; Qdata = 1; Qname = "SubmergedQuest2"; NameMon = "Sea Chanter"
+			PosM = CFrame.new(10621.0342, -2087.844, 10102.0332)
+
+		elseif lvl >= 2675 and lvl <= 2699 then
+			PosQ = CFrame.new(10882.264, -2086.322, 10034.226)
+			GoSubmerged(PosQ)
+			Mon = "Ocean Prophet"; Qdata = 2; Qname = "SubmergedQuest2"; NameMon = "Ocean Prophet"
+			PosM = CFrame.new(11056.1445, -2001.6717, 10117.4493)
+
+		elseif lvl >= 2700 and lvl <= 2724 then
+			PosQ = CFrame.new(9636.52441, -1992.19507, 9609.52832)
+			GoSubmerged(PosQ)
+			Mon = "High Disciple"; Qdata = 1; Qname = "SubmergedQuest3"; NameMon = "High Disciple"
+			PosM = CFrame.new(9828.087890625, -1940.9089355469, 9693.0634765625)
+
+		elseif lvl >= 2725 then
+			PosQ = CFrame.new(9636.52441, -1992.19507, 9609.52832)
+			GoSubmerged(PosQ)
+			Mon = "Grand Devotee"; Qdata = 2; Qname = "SubmergedQuest3"; NameMon = "Grand Devotee"
+			PosM = CFrame.new(9557.5849609375, -1928.0404052734, 9859.1826171875)
 		end
 	end
 end
@@ -2144,7 +1985,7 @@ L_1_[16] = (loadstring(game:HttpGet(L_1_[2]({
 	"s/main/UiRedzHub.lua"
 }))))()
 L_1_[38] = L_1_[16]:MakeWindow({
-	["Title"] = "TinhSuper Hub [Beta]-[V 1.1.1]";
+	["Title"] = "TinhSuper Hub [V 1.1.3]";
 	["SubTitle"] = "by tinhsuper_gm",
 	["SaveFolder"] = "TinhSuper_Hub.json"
 })
@@ -2706,15 +2547,11 @@ FarmLevel = L_1_[93]["Main"]:AddToggle({
         _G["FastAttack"] = state
     end
 })
-
 task.spawn(function()
     local lastTP = 0
 
-    while true do
-        if not _G["Level"] then
-            task.wait(0.5)
-            continue
-        end
+    while task.wait(0.15) do
+        if not _G.Level then continue end
 
         pcall(function()
             local plr = game.Players.LocalPlayer
@@ -2722,38 +2559,25 @@ task.spawn(function()
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
+            -- ⛔ CHỜ QUESTCHECK
+            if not Mon or not Qname or not PosQ or not PosM then return end
+
             local questGui = plr.PlayerGui.Main.Quest
 
-            local NameMon = "Grand Devotee"
-            local Qname = "SubmergedQuest3"
-            local Qdata = 2
-
-            local PosQ = CFrame.new(9636.52, -1992.19, 9609.52)
-            local PosM = CFrame.new(9557.58, -1928.04, 9859.18)
-
-            -- Nhận quest
+            -- CHƯA CÓ QUEST → VỀ NPC (QuestCheck sẽ nhận)
             if not questGui.Visible then
                 if tick() - lastTP > 2 then
                     _tp(PosQ)
                     lastTP = tick()
                 end
-
-                if (hrp.Position - PosQ.Position).Magnitude <= 10 then
-                    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                        "StartQuest",
-                        Qname,
-                        Qdata
-                    )
-                end
                 return
             end
 
-            local target = nil
-
+            -- TÌM QUÁI ĐÚNG QUEST
+            local target
             for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-                if enemy.Name == NameMon
+                if enemy.Name == Mon
                 and enemy:FindFirstChild("Humanoid")
-                and enemy:FindFirstChild("HumanoidRootPart")
                 and enemy.Humanoid.Health > 0 then
                     target = enemy
                     break
@@ -2762,21 +2586,17 @@ task.spawn(function()
 
             if target then
                 repeat
-                    if not _G["Level"] then break end
+                    if not _G.Level then break end
                     task.wait()
-                    L_1_[4]["Kill"](target, true)
-                until not target.Parent
-                    or target.Humanoid.Health <= 0
+                    L_1_[4]["Kill"](target, _G.FastAttack)
+                until not target.Parent or target.Humanoid.Health <= 0
             else
-                -- KHÔNG GIẬT – chỉ TP mỗi 2s
                 if tick() - lastTP > 2 then
                     _tp(PosM)
                     lastTP = tick()
                 end
             end
         end)
-
-        task.wait(0.15)
     end
 end)
 L_1_[93]["Main"]:AddToggle({
