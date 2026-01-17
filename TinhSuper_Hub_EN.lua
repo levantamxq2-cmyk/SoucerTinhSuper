@@ -1340,27 +1340,38 @@ QuestBeta = function()
 		[5] = PosQBoss
 	}
 end
--- Helper: vào Submerged (anti-spam)
-local InSubmerged = false
-local LastSubmerge = 0
-local function GoSubmerged(PosQ)
-	if not _G["Level"] then return end
-	if not Root or not PosQ then return end
-	if InSubmerged then return end
-	if tick() - LastSubmerge < 3 then return end
-
-	if (PosQ.Position - Root.Position).Magnitude > 500 then
-		InSubmerged = true
-		LastSubmerge = tick()
-		replicated.Remotes.CommF_:InvokeServer(
-			"requestEntrance",
-			Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)
-		)
-		task.delay(2, function() InSubmerged = false end)
-	end
+local function GetHRP()
+    local char = game.Players.LocalPlayer.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
 end
 
--- ===== QuestCheck (thay thế toàn bộ) =====
+local InSubmerged = false
+local LastSubmerge = 0
+
+local function GoSubmerged()
+    if not _G.Level then return end
+
+    local hrp = GetHRP()
+    if not hrp then return end
+
+    -- Nếu đã ở Submerged thì thôi
+    if hrp.Position.Y < -1500 then return end
+
+    if InSubmerged then return end
+    if tick() - LastSubmerge < 5 then return end
+
+    InSubmerged = true
+    LastSubmerge = tick()
+
+    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+        "requestEntrance",
+        Vector3.new(923.2125, 126.976, 32852.832)
+    )
+
+    task.delay(4, function()
+        InSubmerged = false
+    end)
+end
 QuestCheck = function()
 	local L_172_ = {}
 	L_172_[2] = game.Players.LocalPlayer.Data.Level.Value
@@ -1985,7 +1996,7 @@ L_1_[16] = (loadstring(game:HttpGet(L_1_[2]({
 	"s/main/UiRedzHub.lua"
 }))))()
 L_1_[38] = L_1_[16]:MakeWindow({
-	["Title"] = "TinhSuper Hub [V 1.1.3]";
+	["Title"] = "TinhSuper Hub [V 1.1.4]";
 	["SubTitle"] = "by tinhsuper_gm",
 	["SaveFolder"] = "TinhSuper_Hub.json"
 })
@@ -2559,12 +2570,16 @@ task.spawn(function()
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
-            -- ⛔ CHỜ QUESTCHECK
+            -- 🔑 CỰC QUAN TRỌNG
+            QuestCheck()
+            GoSubmerged()
+
+            -- ⛔ CHỜ QUESTCHECK SET DATA
             if not Mon or not Qname or not PosQ or not PosM then return end
 
             local questGui = plr.PlayerGui.Main.Quest
 
-            -- CHƯA CÓ QUEST → VỀ NPC (QuestCheck sẽ nhận)
+            -- CHƯA CÓ QUEST → VỀ NPC
             if not questGui.Visible then
                 if tick() - lastTP > 2 then
                     _tp(PosQ)
@@ -2646,58 +2661,41 @@ local function MoveToTarget(hrp, cf)
 	tween:Play()
 	tween.Completed:Wait()
 end
-
--- ===== MAIN LOOP =====
 task.spawn(function()
-	while task.wait(0.15) do
-
-		-- HARD STOP
+	while task.wait(0.1) do
 		if not _G.AutoFarmNear then
-			Stop = true
-			Running = false
+			task.wait(0.3)
 			continue
 		end
 
-		if Running then continue end
-		Running = true
-		Stop = false
+		local char = plr.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if not hrp then continue end
 
-		pcall(function()
-			local char = plr.Character
-			local hrp = char and char:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
+		-- 🔍 LẤY 1 QUÁI GẦN NHẤT
+		local target = GetNearestEnemy(hrp)
+		if not target then
+			task.wait(0.2)
+			continue
+		end
 
-			while _G.AutoFarmNear and not Stop do
-				local target = GetNearestEnemy(hrp)
-				if not target then
-					task.wait(0.3)
-					continue
-				end
+		local hum = target:FindFirstChild("Humanoid")
+		local mhrp = target:FindFirstChild("HumanoidRootPart")
+		if not hum or not mhrp then continue end
 
-				local hum = target:FindFirstChild("Humanoid")
-				local mhrp = target:FindFirstChild("HumanoidRootPart")
-				if not hum or not mhrp then
-					task.wait()
-					continue
-				end
+		-- 🔒 LOCK QUÁI → ĐÁNH TỚI CHẾT
+		while _G.AutoFarmNear
+		and target.Parent
+		and hum.Health > 0 do
 
-				-- DI CHUYỂN TỚI QUÁI (BÌNH THƯỜNG)
-				while hum.Health > 0 and _G.AutoFarmNear do
-					if Stop then break end
+			-- ÉP VỊ TRÍ (KHÔNG TWEEN, KHÔNG TP NGƯỢC)
+			hrp.CFrame = mhrp.CFrame * CFrame.new(0, 12, 0)
 
-					MoveToTarget(hrp, mhrp.CFrame * CFrame.new(0, 12, 0))
+			-- ĐẤM
+			L_1_[4]["Kill"](target, _G.FastAttack)
 
-					-- ATTACK
-					L_1_[4]["Kill"](target, _G.FastAttack)
-
-					task.wait(0.05)
-				end
-
-				task.wait(0.1)
-			end
-		end)
-
-		Running = false
+			task.wait(0.03)
+		end
 	end
 end)
 FactoryRaids = L_1_[93]["Main"]:AddToggle({ 
