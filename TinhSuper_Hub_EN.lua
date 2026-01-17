@@ -1328,91 +1328,67 @@ QuestB = function()
 		end
 	end
 end
--- ===== QUEST BETA (GIỮ NGUYÊN LOGIC CŨ) =====
+-- ===== QUEST BETA (GIỮ NGUYÊN) =====
 QuestBeta = function()
 	local L_171_ = {}
 	L_171_[1] = QuestB()
 	return {
-		[0] = _G["FindBoss"];
+		[0] = _G["FindBoss"],
 		[1] = bMon,
 		[2] = Qdata,
-		[3] = Qname;
+		[3] = Qname,
 		[4] = PosB,
 		[5] = PosQBoss
 	}
 end
 
+-- ===== HRP =====
 local function GetHRP()
-    local char = game.Players.LocalPlayer.Character
-    return char and char:FindFirstChild("HumanoidRootPart")
+	local char = game.Players.LocalPlayer.Character
+	return char and char:FindFirstChild("HumanoidRootPart")
 end
 
+-- ===== SUBMERGED CONFIG =====
 local InSubmerged = false
 local LastSubmerge = 0
 
--- VỊ TRÍ NPC SUBMARINE WORKER (CHUẨN)
+-- NPC SUBMARINE WORKER (CHUẨN)
 local SubNPC = CFrame.new(
-    923.2125,
-    126.976,
-    32852.832
+	923.2125,
+	126.976,
+	32852.832
 )
 
-local function GoSubmerged()
-    if not _G.Level then return end
+-- Y TP XUỐNG BIỂN (FIX CỨNG)
+local SUBMERGED_Y = -2000
 
-    local hrp = GetHRP()
-    if not hrp then return end
-
-    -- Đã ở dưới biển rồi → thôi
-    if hrp.Position.Y < -1500 then return end
-
-    if InSubmerged then return end
-    if tick() - LastSubmerge < 6 then return end
-
-    InSubmerged = true
-    LastSubmerge = tick()
-
-    -- 1️⃣ TP tới NPC
-    _tp(SubNPC)
-    task.wait(1)
-
-    -- 2️⃣ NÓI CHUYỆN NPC (YES lần 1)
-    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
-        "Talk",
-        "SubmarineWorker",
-        "Yes"
-    )
-    task.wait(0.8)
-
-    -- 3️⃣ YES lần 2 (BẮT BUỘC)
-    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
-        "Talk",
-        "SubmarineWorker",
-        "Yes"
-    )
-    task.wait(0.8)
-
-    -- 4️⃣ YÊU CẦU XUỐNG BIỂN
-    game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
-        "requestEntrance",
-        Vector3.new(923.2125, 126.976, 32852.832)
-    )
-
-    task.delay(5, function()
-        InSubmerged = false
-    end)
+-- ===== TALK NPC =====
+local function TalkSubmarineWorker()
+	pcall(function()
+		game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+			"Talk",
+			"SubmarineWorker",
+			"Yes"
+		)
+	end)
+	task.wait(0.6)
+	pcall(function()
+		game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+			"Talk",
+			"SubmarineWorker",
+			"Yes"
+		)
+	end)
 end
--- ===== GO SUBMERGED (FIX CỨNG) =====
-local InSubmerged = false
-local LastSubmerge = 0
 
+-- ===== GO SUBMERGED (BANANA CAT STYLE) =====
 local function GoSubmerged()
 	if not _G.Level then return end
 
 	local hrp = GetHRP()
 	if not hrp then return end
 
-	-- đã ở dưới biển thì không làm gì nữa
+	-- Đã ở dưới biển thì bỏ qua
 	if hrp.Position.Y < -1500 then return end
 
 	if InSubmerged then return end
@@ -1421,14 +1397,36 @@ local function GoSubmerged()
 	InSubmerged = true
 	LastSubmerge = tick()
 
-	-- 1️⃣ nói chuyện NPC + xác nhận 2 lần
-	TalkSubmarineWorker()
+	-- 1️⃣ TP THẲNG TỚI NPC
+	pcall(function()
+		if _tp then
+			_tp(SubNPC)
+		else
+			hrp.CFrame = SubNPC
+		end
+	end)
 
-	-- 2️⃣ request xuống dưới
-	game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
-		"requestEntrance",
-		Vector3.new(923.2125, 126.976, 32852.832)
-	)
+	task.wait(1)
+
+	-- 2️⃣ TALK YES → YES
+	TalkSubmarineWorker()
+	task.wait(0.6)
+
+	-- 3️⃣ REQUEST ENTRANCE (CHO SERVER BIẾT)
+	pcall(function()
+		game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
+			"requestEntrance",
+			Vector3.new(923.2125, 126.976, 32852.832)
+		)
+	end)
+
+	task.wait(0.3)
+
+	-- 4️⃣ 🚀 TELEPORT THẲNG XUỐNG BIỂN (QUAN TRỌNG)
+	pcall(function()
+		local cf = hrp.CFrame
+		hrp.CFrame = CFrame.new(cf.X, SUBMERGED_Y, cf.Z)
+	end)
 
 	task.delay(6, function()
 		InSubmerged = false
@@ -2064,7 +2062,7 @@ L_1_[16] = (loadstring(game:HttpGet(L_1_[2]({
 	"s/main/UiRedzHub.lua"
 }))))()
 L_1_[38] = L_1_[16]:MakeWindow({
-	["Title"] = "TinhSuper Hub [V 1.1.7]";
+	["Title"] = "TinhSuper Hub [V 1.1.8]";
 	["SubTitle"] = "by tinhsuper_gm",
 	["SaveFolder"] = "TinhSuper_Hub.json"
 })
@@ -2641,11 +2639,12 @@ task.spawn(function()
             -- ✅ CHỈ CHECK QUEST
             QuestCheck()
 
-            -- ✅ CHỈ SUBMERGED KHI QUEST YÊU CẦU
-            if Qname and string.find(Qname, "Submerged") then
-                GoSubmerged()
-            end
-
+            -- ✅ CHỈ TP SUBMERGED KHI LEVEL > 2600
+	    if lvl > 2600
+	    and Qname
+	    and string.find(Qname, "Submerged") then
+		GoSubmerged()
+	    end
             -- ⛔ CHỜ QUESTCHECK SET DATA
             if not Mon or not Qname or not PosQ or not PosM then return end
 
