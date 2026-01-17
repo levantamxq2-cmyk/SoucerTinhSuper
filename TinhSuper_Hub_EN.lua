@@ -2319,7 +2319,7 @@ L_1_[93]["Info"]:AddSection("Information")
 L_1_[93]["Info"]:AddDiscordInvite({
 	["Name"] = "TinhSuper Hub",
 	["Description"] = L_1_[2]({
-		"Release Date [16/1/";
+		"Release Date [17/1/";
 		"2026]"
 	}),
 	["Logo"] = L_1_[2]({
@@ -4360,6 +4360,7 @@ local CakeMobs = {
 local Running = false
 local Stop = false
 local SummonLock = false
+local ForcedToFarm = false
 
 -- =========================
 -- CAKE STATUS CHECK (LUÔN CHẠY)
@@ -4380,14 +4381,15 @@ task.spawn(function()
 end)
 
 -- =========================
--- CORE LOOP (ÉP FARM)
+-- CORE LOOP – ÉP FARM THẬT
 -- =========================
 task.spawn(function()
-	while task.wait(0.15) do
+	while task.wait(0.1) do
 		if not _G.AutoCakePrince then
 			Stop = true
 			Running = false
 			SummonLock = false
+			ForcedToFarm = false
 			bringmob = false
 			StopTween(true)
 			continue
@@ -4407,7 +4409,16 @@ task.spawn(function()
 			end
 
 			-- =========================
-			-- STEP 1: CHECK BOSS (ƯU TIÊN)
+			-- ÉP BAY VỀ KHU FARM NGAY
+			-- =========================
+			if not ForcedToFarm then
+				ForcedToFarm = true
+				_tp(CakeFarmPos * PlayerOffset)
+				task.wait(0.3)
+			end
+
+			-- =========================
+			-- STEP 1: CHECK BOSS
 			-- =========================
 			local Boss = Enemies:FindFirstChild("Cake Prince")
 			if Boss and Boss:FindFirstChild("HumanoidRootPart") and Boss.Humanoid.Health > 0 then
@@ -4450,8 +4461,9 @@ task.spawn(function()
 				local QuestGui = plr.PlayerGui.Main.Quest
 				if QuestGui and not QuestGui.Visible then
 					_tp(CakeQuestPos)
-					task.wait(0.8)
+					task.wait(0.6)
 					replicated.Remotes.CommF_:InvokeServer("StartQuest", "CakeQuest2", 2)
+					_tp(CakeFarmPos * PlayerOffset)
 				end
 			end
 
@@ -4490,7 +4502,9 @@ task.spawn(function()
 				end
 			end
 
-			-- ÉP DI CHUYỂN ĐỂ SPAWN MOB
+			-- =========================
+			-- KHÔNG CÓ MOB → TP LẠI ĐỂ ÉP SPAWN
+			-- =========================
 			if not FoundMob then
 				_tp(CakeFarmPos * PlayerOffset)
 			end
