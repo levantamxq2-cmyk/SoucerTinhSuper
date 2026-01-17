@@ -2062,7 +2062,7 @@ L_1_[16] = (loadstring(game:HttpGet(L_1_[2]({
 	"s/main/UiRedzHub.lua"
 }))))()
 L_1_[38] = L_1_[16]:MakeWindow({
-	["Title"] = "TinhSuper Hub [V 1.1.8]";
+	["Title"] = "TinhSuper Hub [V 1.1.9]";
 	["SubTitle"] = "by tinhsuper_gm",
 	["SaveFolder"] = "TinhSuper_Hub.json"
 })
@@ -2636,23 +2636,22 @@ task.spawn(function()
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
-            -- ✅ CHỈ CHECK QUEST
+            -- 1️⃣ LUÔN CHECK QUEST TRƯỚC
             QuestCheck()
 
-            -- ✅ CHỈ TP SUBMERGED KHI LEVEL > 2600
-	    if lvl > 2600
-	    and Qname
-	    and string.find(Qname, "Submerged") then
-		GoSubmerged()
-	    end
-            -- ⛔ CHỜ QUESTCHECK SET DATA
-            if not Mon or not Qname or not PosQ or not PosM then return end
+            -- 2️⃣ ÉP SUBMERGED TRƯỚC KHI CHECK PosQ / PosM
+            if lvl > 2600 then
+                GoSubmerged()
+            end
+
+            -- 3️⃣ SAU KHI SUBMERGED MỚI CHECK DATA QUEST
+            if not Mon or not Qname then return end
 
             local questGui = plr.PlayerGui.Main.Quest
 
             -- ===== NHẬN QUEST =====
             if not questGui.Visible then
-                if tick() - lastTP > 2 then
+                if PosQ and tick() - lastTP > 2 then
                     _tp(PosQ)
                     lastTP = tick()
                 end
@@ -2675,11 +2674,11 @@ task.spawn(function()
                 repeat
                     if not _G.Level then break end
                     task.wait()
-                    L_1_[4]["Kill"](target, _G.FastAttack)
+                    L_1_[4]["Kill"](target, true)
                 until not target.Parent
                    or target.Humanoid.Health <= 0
             else
-                if tick() - lastTP > 2 then
+                if PosM and tick() - lastTP > 2 then
                     _tp(PosM)
                     lastTP = tick()
                 end
